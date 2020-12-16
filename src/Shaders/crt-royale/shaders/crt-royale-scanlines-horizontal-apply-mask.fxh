@@ -43,12 +43,12 @@ void vertexShader7(
         const float2 mask_resized_texsize = tex2Dsize(samplerOutput6);
         const float mask_sample_mode = get_mask_sample_mode();
         const float2 mask_resize_texture_size = mask_sample_mode < 0.5 ?
-            mask_resized_texsize : float2(mask_size_xy, mask_size_xy);
+            mask_resized_texsize : mask_size;
         const float2 mask_resize_video_size = mask_sample_mode < 0.5 ?
-            mask_resized_texsize : float2(mask_size_xy, mask_size_xy);
+            mask_resized_texsize : mask_size;
     #else
-        const float2 mask_resize_texture_size = float2(mask_size_xy, mask_size_xy);
-        const float2 mask_resize_video_size = float2(mask_size_xy, mask_size_xy);
+        const float2 mask_resize_texture_size = mask_size;
+        const float2 mask_resize_video_size = fmask_size;
     #endif
 
     //  Compute mask tile dimensions, starting points, etc.:
@@ -99,41 +99,38 @@ void pixelShader7(
         //  If mask_type is static, this branch will be resolved statically.
         if(mask_type < 0.5)
         {
-            phosphor_mask_sample = tex2D_linearize(samplerMaskGrille, mask_tex_uv, 1.0).rgb;
+            phosphor_mask_sample = tex2D(samplerMaskGrille, mask_tex_uv).rgb;
         }
         else if(mask_type < 1.5)
         {
-            phosphor_mask_sample = tex2D_linearize(samplerMaskSlot, mask_tex_uv, 1.0).rgb;
+            phosphor_mask_sample = tex2D(samplerMaskSlot, mask_tex_uv).rgb;
         }
         else
         {
-            phosphor_mask_sample = tex2D_linearize(samplerMaskShadow, mask_tex_uv, 1.0).rgb;
+            phosphor_mask_sample = tex2D(samplerMaskShadow, mask_tex_uv).rgb;
         }
     }
     else
     {
         //  Sample the resized mask, and avoid tiling artifacts:
-        phosphor_mask_sample = tex2Dtiled_mask_linearize(samplerOutput6, mask_tex_uv, 1.0).rgb;
+        phosphor_mask_sample = tex2D(samplerOutput6, mask_tex_uv).rgb;
     }
 
     //  Sample the halation texture (auto-dim to match the scanlines), and
     //  account for both horizontal and vertical convergence offsets, given
     //  in units of texels horizontally and same-field scanlines vertically:
-    const float3 halation_color = tex2D_linearize(
-        samplerOutput4, texcoord, 1.0).rgb;
+    const float3 halation_color = tex2D(samplerOutput4, texcoord).rgb;
 
     //  Apply halation: Halation models electrons flying around under the glass
     //  and hitting the wrong phosphors (of any color).  It desaturates, so
     //  average the halation electrons to a scalar.  Reduce the local scanline
     //  intensity accordingly to conserve energy.
-    const float halation_intensity_dim_scalar = dot(halation_color, auto_dim_factor/3.0 * float3(1, 1, 1));
+    const float halation_intensity_dim_scalar = dot(halation_color, auto_dim_factor / float3(3, 3, 3));
     const float3 halation_intensity_dim = halation_intensity_dim_scalar * float3(1, 1, 1);
-    const float3 electron_intensity_dim = lerp(scanline_color_dim,
-        halation_intensity_dim, halation_weight);
+    const float3 electron_intensity_dim = lerp(scanline_color_dim, halation_intensity_dim, halation_weight);
 
     //  Apply the phosphor mask:
-    const float3 phosphor_emission_dim = electron_intensity_dim *
-        phosphor_mask_sample;
+    const float3 phosphor_emission_dim = electron_intensity_dim * phosphor_mask_sample;
     
     #ifdef PHOSPHOR_BLOOM_FAKE
         //  The BLOOM_APPROX pass approximates a blurred version of a masked

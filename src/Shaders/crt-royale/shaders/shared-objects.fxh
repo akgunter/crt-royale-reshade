@@ -12,11 +12,13 @@
 	#define CONTENT_ASPECT_RATIO_Y 3.0
 #endif
 
-#ifndef A_TEXTURE0_FORMAT
-	#define A_TEXTURE0_FORMAT RGBA8
-#endif
-#ifndef A_TEXTURE1_FORMAT
-	#define A_TEXTURE1_FORMAT RGBA8
+#ifndef INTERNAL_BUFFER_FORMAT
+	// The libretro version uses R8G8B8A8_SRGB.
+	// The closest thing ReShade has to this is RGB10A2, but that format has
+	// issues with Passes 7 and 8 crushing blacks. RGBA16 is the smallest
+	// nonlinear format available that does not have crushing issues.
+	// TODO: Figure out which passes can safely use RGB10A2
+	#define INTERNAL_BUFFER_FORMAT RGBA16
 #endif
 
 static const float CONTENT_WIDTH = root_ceil(BUFFER_HEIGHT * CONTENT_ASPECT_RATIO_X / CONTENT_ASPECT_RATIO_Y);
@@ -27,6 +29,7 @@ static const float CONTENT_OFFSET_X = root_clamp((BUFFER_WIDTH - CONTENT_WIDTH) 
 texture2D texColorBuffer : COLOR;
 sampler2D samplerColor {
 	Texture = texColorBuffer;
+
 	MagFilter = NONE;
 	MinFilter = NONE;
 	MipFilter = NONE;
@@ -36,6 +39,8 @@ sampler2D samplerColor {
 texture2D texOutput0 {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGB10A2;
 };
 sampler2D samplerOutput0 { Texture = texOutput0; };
 
@@ -43,6 +48,8 @@ sampler2D samplerOutput0 { Texture = texOutput0; };
 texture2D texOutput1 {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGB10A2;
 };
 sampler2D samplerOutput1 { Texture = texOutput1; };
 
@@ -54,6 +61,8 @@ static const int intermediate_buffer_y = 240;
 texture2D texOutput2 {
 	Width = intermediate_buffer_x;
 	Height = intermediate_buffer_y;
+
+	Format = RGB10A2;
 };
 sampler2D samplerOutput2 { Texture = texOutput2; };
 
@@ -61,6 +70,8 @@ sampler2D samplerOutput2 { Texture = texOutput2; };
 texture2D texOutput3 {
 	Width = intermediate_buffer_x;
 	Height = intermediate_buffer_y;
+
+	Format = RGB10A2;
 };
 sampler2D samplerOutput3 { Texture = texOutput3; };
 
@@ -68,6 +79,8 @@ sampler2D samplerOutput3 { Texture = texOutput3; };
 texture2D texOutput4 {
 	Width = intermediate_buffer_x;
 	Height = intermediate_buffer_y;
+
+	Format = RGB10A2;
 };
 sampler2D samplerOutput4 { Texture = texOutput4; };
 
@@ -82,6 +95,9 @@ sampler2D samplerOutput5 { Texture = texOutput5; };
 texture2D texOutput6 {
 	Width = BUFFER_WIDTH * mask_resize_viewport_scale.x;
 	Height = BUFFER_HEIGHT * mask_resize_viewport_scale.y;
+
+	// Width = BUFFER_WIDTH;
+	// Height = BUFFER_HEIGHT;
 };
 sampler2D samplerOutput6 { Texture = texOutput6; };
 
@@ -89,6 +105,8 @@ sampler2D samplerOutput6 { Texture = texOutput6; };
 texture2D texOutput7 {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGBA16;
 };
 sampler2D samplerOutput7 { Texture = texOutput7; };
 
@@ -96,6 +114,8 @@ sampler2D samplerOutput7 { Texture = texOutput7; };
 texture2D texOutput8 {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGBA16;
 };
 sampler2D samplerOutput8 { Texture = texOutput8; };
 
@@ -103,6 +123,8 @@ sampler2D samplerOutput8 { Texture = texOutput8; };
 texture2D texOutput9 {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGBA16;
 };
 sampler2D samplerOutput9 { Texture = texOutput9; };
 
@@ -110,16 +132,10 @@ sampler2D samplerOutput9 { Texture = texOutput9; };
 texture2D texOutput10 {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGBA16;
 };
 sampler2D samplerOutput10 { Texture = texOutput10; };
-
-
-// Pass 11 Buffer
-// texture2D texOutput11 {
-// 	Width = BUFFER_WIDTH;
-// 	Height = BUFFER_HEIGHT;
-// };
-// sampler2D samplerOutput11 { Texture = texOutput11; };
 
 
 uniform int frame_count < source = "framecount"; >;

@@ -17,6 +17,7 @@ void vertexShader0(
 	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
     
     const float2 input_video_size = tex2Dsize(samplerColor);
+    
     //  Detect interlacing: 1.0 = true, 0.0 = false.
     interlaced = float(is_interlaced(input_video_size.y));
     v_step = float2(0.0, 1.0 / input_video_size.y);

@@ -36,7 +36,7 @@ void pixelShader8(
     out float4 color : SV_Target
 ) {
     //  Sample the masked scanlines:
-    const float3 intensity_dim = tex2D_linearize(samplerOutput7, texcoord, 1.0).rgb;
+    const float3 intensity_dim = tex2D(samplerOutput7, texcoord).rgb;
     //  Get the full intensity, including auto-undimming, and mask compensation:
     const float auto_dim_factor = levels_autodim_temp;
     const float undim_factor = 1.0/auto_dim_factor;
@@ -46,8 +46,7 @@ void pixelShader8(
     //  Sample BLOOM_APPROX to estimate what a straight blur of masked scanlines
     //  would look like, so we can estimate how much energy we'll receive from
     //  blooming neighbors:
-    const float3 phosphor_blur_approx = levels_contrast * tex2D_linearize(
-        samplerOutput2, texcoord, 1.0).rgb;
+    const float3 phosphor_blur_approx = levels_contrast * tex2D(samplerOutput2, texcoord).rgb;
 
     //  Compute the blur weight for the center texel and the maximum energy we
     //  expect to receive from neighbors:

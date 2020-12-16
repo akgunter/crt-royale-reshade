@@ -307,5 +307,6 @@ void pixelShader2(
     }
     //  Encode and output the blurred image:
     // color = encode_output(float4(tex2D_linearize(samplerOutput0, tex_uv, 1.0)), 1.0);
-    color = tex2D(samplerOutput0, tex_uv);
+    // color = tex2D(samplerOutput0, tex_uv);
+    color = float4(out_color, 1.0);
 }

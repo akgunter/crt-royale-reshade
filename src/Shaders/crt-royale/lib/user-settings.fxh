@@ -360,11 +360,11 @@ static const float border_darkness_static = 2.0;        //  range [0, inf)
 //  the dark border area.
 static const float border_compress_static = 2.5;        //  range [1, inf)
 
-#ifndef PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
-    #define USE_LARGE_TEXTURES true
-#else
-    #define USE_LARGE_TEXTURES false
-#endif
+// #ifndef PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
+//     #define USE_LARGE_TEXTURES true
+// #else
+//     #define USE_LARGE_TEXTURES false
+// #endif
 
 
 #endif  //  _USER_SETTINGS_H
