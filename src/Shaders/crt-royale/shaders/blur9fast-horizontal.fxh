@@ -1,4 +1,4 @@
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/blur-functions.fxh"
 
 #include "shared-objects.fxh"
@@ -36,8 +36,8 @@ void pixelShader4(
 
     out float4 color : SV_Target
 ) {
-    static const float3 blur_color = tex2Dblur9fast(samplerOutput3, texcoord, blur_dxdy, 1.0);
+    static const float3 blur_color = tex2Dblur9fast(samplerOutput3, texcoord, blur_dxdy, get_intermediate_gamma());
     //  Encode and output the blurred image:
     // color = encode_output(float4(blur_color, 1.0), 1.0);
-    color = float4(blur_color, 1.0);
+    color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());
 }

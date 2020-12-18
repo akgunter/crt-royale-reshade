@@ -1,5 +1,5 @@
-#ifndef TEX2DANTIALIAS_H
-#define TEX2DANTIALIAS_H
+#ifndef _TEX2DANTIALIAS_H
+#define _TEX2DANTIALIAS_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -159,7 +159,7 @@
 
 /////////////////////////////  SETTINGS MANAGEMENT  ////////////////////////////
 
-#ifndef ANTIALIAS_OVERRIDE_BASICS
+#if !ANTIALIAS_OVERRIDE_BASICS
     //  The following settings must be static constants:
     static const float aa_level = 12.0;
     static const float aa_filter = 0.0;
@@ -193,7 +193,7 @@
     );
 #endif
 
-#ifndef ANTIALIAS_OVERRIDE_PARAMETERS
+#if !ANTIALIAS_OVERRIDE_PARAMETERS
     //  Users may override these values with their own uniform or static consts.
     //  Cubics: See http://www.imagemagick.org/Usage/filter/#mitchell
     //  1.) "Keys cubics" with B = 1 - 2C are considered the highest quality.
@@ -213,7 +213,7 @@
 
 //////////////////////////////////  INCLUDES  //////////////////////////////////
 
-#include "gamma-management-new.fxh"
+#include "gamma-management.fxh"
 
 
 //////////////////////////////////  CONSTANTS  /////////////////////////////////
@@ -314,7 +314,7 @@ float eval_gaussian_filter(const float dist)
 float eval_cubic_filter(const float dist)
 {
     //  Compute coefficients like assign_aa_cubic_constants(), but statically.
-    #ifndef RUNTIME_ANTIALIAS_WEIGHTS
+    #if RUNTIME_ANTIALIAS_WEIGHTS
         //  When runtime weights are used, these values are instead written to
         //  global uniforms at the beginning of each tex2Daa* call.
         const float aa_cubic_b = 1.0 - 2.0*aa_cubic_c;
@@ -1390,4 +1390,4 @@ float3 tex2Daa(const sampler2D tex, const float2 tex_uv,
 }
 
 
-#endif  //  TEX2DANTIALIAS_H
+#endif  //  _TEX2DANTIALIAS_H

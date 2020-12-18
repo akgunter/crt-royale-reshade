@@ -1,13 +1,14 @@
 #ifndef _TEXTURE_SETTINGS
 #define _TEXTURE_SETTINGS
 
+// TODO: Move these #defines around
 #define mask_texture_wrap_mode REPEAT
 #define mask_texture_magmin_filter_type LINEAR
 
 // Mask Textures
-#define USE_LARGE_TEXTURES
+// #define USE_LARGE_TEXTURES
 
-#ifdef USE_LARGE_TEXTURES
+#ifdef PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
     #define mask_grille_texture_path "crt-royale/TileableLinearApertureGrille15Wide8And5d5Spacing.png"
     #define mask_slot_texture_path "crt-royale/TileableLinearSlotMaskTall15Wide9And4d5Horizontal9d14VerticalSpacing.png"
     #define mask_shadow_texture_path "crt-royale/TileableLinearShadowMaskEDP.png"

@@ -2,7 +2,7 @@
 #include "../lib/user-settings.fxh"
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
 #include "../lib/scanline-functions.fxh"
 #include "../lib/bloom-functions.fxh"
@@ -47,17 +47,17 @@ void pixelShader10(
     //  Blur the vertically blurred brightpass horizontally by 9/17/25/43x:
     const float bloom_sigma = get_final_bloom_sigma(bloom_sigma_runtime);
     const float3 blurred_brightpass = tex2DblurNfast(samplerOutput9,
-        texcoord, bloom_dxdy, bloom_sigma, 1.0);
+        texcoord, bloom_dxdy, bloom_sigma, get_intermediate_gamma());
 
     //  Sample the masked scanlines.  Alpha contains the auto-dim factor:
-    const float3 intensity_dim = tex2D_linearize(samplerOutput7, texcoord, 1.0).rgb;
+    const float3 intensity_dim = tex2D_linearize(samplerOutput7, texcoord, get_intermediate_gamma()).rgb;
     const float auto_dim_factor = levels_autodim_temp;
     const float undim_factor = 1.0/auto_dim_factor;
 
     //  Calculate the mask dimpass, add it to the blurred brightpass, and
     //  undim (from scanline auto-dim) and amplify (from mask dim) the result:
     const float mask_amplify = get_mask_amplify();
-    const float3 brightpass = tex2D(samplerOutput8, texcoord).rgb;
+    const float3 brightpass = tex2D_linearize(samplerOutput8, texcoord, get_intermediate_gamma()).rgb;
     const float3 dimpass = intensity_dim - brightpass;
     const float3 phosphor_bloom = (dimpass + blurred_brightpass) *
         mask_amplify * undim_factor * levels_contrast;
@@ -65,9 +65,9 @@ void pixelShader10(
     //  Sample the halation texture, and let some light bleed into refractive
     //  diffusion.  Conceptually this occurs before the phosphor bloom, but
     //  adding it in earlier passes causes black crush in the diffusion colors.
-    const float3 diffusion_color = levels_contrast * tex2D(samplerOutput4, texcoord).rgb;
+    const float3 diffusion_color = levels_contrast * tex2D_linearize(samplerOutput4, texcoord, get_intermediate_gamma()).rgb;
     const float3 final_bloom = lerp(phosphor_bloom, diffusion_color, diffusion_weight);
 
     //  Encode and output the bloomed image:
-    color = float4(final_bloom, 1.0);
+    color = encode_output(float4(final_bloom, 1.0), get_intermediate_gamma());
 }

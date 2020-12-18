@@ -1,5 +1,5 @@
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/scanline-functions.fxh"
 
 #include "shared-objects.fxh"
@@ -52,11 +52,10 @@ void pixelShader0(
         //  Select the correct color, and output the result:
         const float3 selected_color = lerp(curr_line, interpolated_line, wrong_field);
         // color = encode_output(float4(selected_color, 1.0), 1.0);
-        color = float4(selected_color, 1.0);
+        color = encode_output(float4(selected_color, 1.0), get_intermediate_gamma());
     }
     else
     {
-        // color = encode_output(tex2D_linearize(samplerColor, texcoord, get_input_gamma()), 1.0);
-        color = tex2D_linearize(samplerColor, texcoord, get_input_gamma());
+        color = encode_output(tex2D_linearize(samplerColor, texcoord, get_input_gamma()), get_intermediate_gamma());
     }
 }

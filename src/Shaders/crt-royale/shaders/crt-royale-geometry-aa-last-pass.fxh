@@ -2,27 +2,28 @@
 #include "../lib/user-settings.fxh"
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/tex2Dantialias.fxh"
 #include "../lib/geometry-functions.fxh"
 
-// USE GET_OUTPUT_GAMMA
+// Disabled in the ReShade port because I don't know a good way to make these
+// static AND global AND defined with sin(), cos(), or pow().
 
-#ifndef RUNTIME_GEOMETRY_TILT
-    //  Create a local-to-global rotation matrix for the CRT's coordinate frame
-    //  and its global-to-local inverse.  See the vertex shader for details.
-    //  It's faster to compute these statically if possible.
-    static const float2 sin_tilt = sin(geom_tilt_angle_static);
-    static const float2 cos_tilt = cos(geom_tilt_angle_static);
-    static const float3x3 geom_local_to_global_static = float3x3(
-        cos_tilt.x, sin_tilt.y*sin_tilt.x, cos_tilt.y*sin_tilt.x,
-        0.0, cos_tilt.y, -sin_tilt.y,
-        -sin_tilt.x, sin_tilt.y*cos_tilt.x, cos_tilt.y*cos_tilt.x);
-    static const float3x3 geom_global_to_local_static = float3x3(
-        cos_tilt.x, 0.0, -sin_tilt.x,
-        sin_tilt.y*sin_tilt.x, cos_tilt.y, sin_tilt.y*cos_tilt.x,
-        cos_tilt.y*sin_tilt.x, -sin_tilt.y, cos_tilt.y*cos_tilt.x);
-#endif
+// #if !_RUNTIME_GEOMETRY_TILT
+//     //  Create a local-to-global rotation matrix for the CRT's coordinate frame
+//     //  and its global-to-local inverse.  See the vertex shader for details.
+//     //  It's faster to compute these statically if possible.
+//     static const float2 sin_tilt = sin(geom_tilt_angle_static);
+//     static const float2 cos_tilt = cos(geom_tilt_angle_static);
+//     static const float3x3 geom_local_to_global_static = float3x3(
+//         cos_tilt.x, sin_tilt.y*sin_tilt.x, cos_tilt.y*sin_tilt.x,
+//         0.0, cos_tilt.y, -sin_tilt.y,
+//         -sin_tilt.x, sin_tilt.y*cos_tilt.x, cos_tilt.y*cos_tilt.x);
+//     static const float3x3 geom_global_to_local_static = float3x3(
+//         cos_tilt.x, 0.0, -sin_tilt.x,
+//         sin_tilt.y*sin_tilt.x, cos_tilt.y, sin_tilt.y*cos_tilt.x,
+//         cos_tilt.y*sin_tilt.x, -sin_tilt.y, cos_tilt.y*cos_tilt.x);
+// #endif
 
 float2x2 mul_scale(float2 scale, float2x2 mtrx)
 {
@@ -55,7 +56,7 @@ void vertexShader11(
     const float2 geom_overscan = get_geom_overscan_vector();
     geom_aspect_and_overscan = float4(geom_aspect, geom_overscan);
 
-    #ifdef RUNTIME_GEOMETRY_TILT
+    #if _RUNTIME_GEOMETRY_TILT
         //  Create a local-to-global rotation matrix for the CRT's coordinate
         //  frame and its global-to-local inverse.  Rotate around the x axis
         //  first (pitch) and then the y axis (yaw) with yucky Euler angles.
@@ -97,7 +98,7 @@ void vertexShader11(
 
     //  Get an optimal eye position based on geom_view_dist, viewport_aspect,
     //  and CRT radius/rotation:
-    #ifdef RUNTIME_GEOMETRY_MODE
+    #if RUNTIME_GEOMETRY_MODE
         const float geom_mode = geom_mode_runtime;
     #else
         static const float geom_mode = geom_mode_static;
@@ -121,13 +122,13 @@ void pixelShader11(
     //  Localize some parameters:
     const float2 geom_aspect = geom_aspect_and_overscan.xy;
     const float2 geom_overscan = geom_aspect_and_overscan.zw;
-    #ifdef RUNTIME_GEOMETRY_TILT
+    #if _RUNTIME_GEOMETRY_TILT
         const float3x3 global_to_local = float3x3(global_to_local_row0,
             global_to_local_row1, global_to_local_row2);
     #else
         static const float3x3 global_to_local = geom_global_to_local_static;
     #endif
-    #ifdef RUNTIME_GEOMETRY_MODE
+    #if RUNTIME_GEOMETRY_MODE
         const float geom_mode = geom_mode_runtime;
     #else
         static const float geom_mode = geom_mode_static;
@@ -174,18 +175,18 @@ void pixelShader11(
     if(aa_level > 0.5 && (geom_mode > 0.5 || any(bool2((geom_overscan.x != 1.0), (geom_overscan.y != 1.0)))))
     {
         //  Sample the input with antialiasing (due to sharp phosphors, etc.):
-        raw_color = tex2Daa(samplerOutput10, tex_uv, pixel_to_tex_uv, float(frame_count), 1.0);
+        raw_color = tex2Daa(samplerOutput10, tex_uv, pixel_to_tex_uv, float(frame_count), get_intermediate_gamma());
     }
 
     else if(aa_level > 0.5 && need_subpixel_aa)
     {
         //  Sample at each subpixel location:
         raw_color = tex2Daa_subpixel_weights_only(
-            samplerOutput10, tex_uv, pixel_to_tex_uv, 1.0);
+            samplerOutput10, tex_uv, pixel_to_tex_uv, get_intermediate_gamma());
     }
     else
     {
-        raw_color = tex2D(samplerOutput10, tex_uv).rgb;
+        raw_color = tex2D_linearize(samplerOutput10, tex_uv, get_intermediate_gamma()).rgb;
     }
 
     //  Dim borders and output the final result:

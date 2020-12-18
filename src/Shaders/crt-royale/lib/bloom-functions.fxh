@@ -98,7 +98,7 @@ float get_absolute_scale_blur_sigma(const float thresh)
 float get_center_weight(const float sigma)
 {
     //  Given a Gaussian blur sigma, get the blur weight for the center texel.
-    #ifdef RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #if RUNTIME_PHOSPHOR_BLOOM_SIGMA
         return get_fast_gaussian_weight_sum_inv(sigma);
     #else
         const float denom_inv = 0.5/(sigma*sigma);
@@ -130,34 +130,34 @@ float get_center_weight(const float sigma)
         //  Then again, if the implementation uses a larger blur than the max
         //  "allowed" because of dynamic branching, the center weight could be
         //  underestimated, which is more of a problem...consider always using
-        #ifdef PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS
+        #if PHOSPHOR_BLOOM_TRIAD_SIZE_MODE >= _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS
             //  43x blur:
             const float weight_sum_inv = 1.0 /
                 (w0 + 2.0 * (w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8 + w9 + w10 +
                 w11 + w12 + w13 + w14 + w15 + w16 + w17 + w18 + w19 + w20 + w21));
         #else
-        #ifdef PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS
+        #if PHOSPHOR_BLOOM_TRIAD_SIZE_MODE >= _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS
             //  31x blur:
             const float weight_sum_inv = 1.0 /
                 (w0 + 2.0 * (w1 + w2 + w3 + w4 + w5 + w6 + w7 +
                 w8 + w9 + w10 + w11 + w12 + w13 + w14 + w15));
         #else
-        #ifdef PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS
+        #if PHOSPHOR_BLOOM_TRIAD_SIZE_MODE >= _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS
             //  25x blur:
             const float weight_sum_inv = 1.0 / (w0 + 2.0 * (
                 w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8 + w9 + w10 + w11 + w12));
         #else
-        #ifdef PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
+        #if PHOSPHOR_BLOOM_TRIAD_SIZE_MODE >= _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
             //  17x blur:
             const float weight_sum_inv = 1.0 / (w0 + 2.0 * (
                 w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8));
         #else
             //  9x blur:
             const float weight_sum_inv = 1.0 / (w0 + 2.0 * (w1 + w2 + w3 + w4));
-        #endif  //  PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
-        #endif  //  PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS
-        #endif  //  PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS
-        #endif  //  PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS
+        #endif  //  _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
+        #endif  //  _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS
+        #endif  //  _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS
+        #endif  //  _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS
         const float center_weight = weight_sum_inv * weight_sum_inv;
         return center_weight;
     #endif
@@ -170,13 +170,13 @@ float3 tex2DblurNfast(const sampler2D tex, const float2 tex_uv,
     //  If sigma is static, we can safely branch and use the smallest blur
     //  that's big enough.  Ignore #define hints, because we'll only use a
     //  large blur if we actually need it, and the branches cost nothing.
-    #ifndef RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #if !RUNTIME_PHOSPHOR_BLOOM_SIGMA
         #define PHOSPHOR_BLOOM_BRANCH_FOR_BLUR_SIZE
     #else
         //  It's still worth branching if the profile supports dynamic branches:
         //  It's much faster than using a hugely excessive blur, but each branch
         //  eats ~1% FPS.
-        #ifdef DRIVERS_ALLOW_DYNAMIC_BRANCHES
+        #if DRIVERS_ALLOW_DYNAMIC_BRANCHES
             #define PHOSPHOR_BLOOM_BRANCH_FOR_BLUR_SIZE
         #endif
     #endif
@@ -219,7 +219,7 @@ float3 tex2DblurNfast(const sampler2D tex, const float2 tex_uv,
         #ifdef PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS
             return tex2Dblur25fast(tex, tex_uv, dxdy, sigma, input_gamma);
         #else
-        #ifdef PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
+        #if PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
             return tex2Dblur17fast(tex, tex_uv, dxdy, sigma, input_gamma);
         #else
             return tex2Dblur9fast(tex, tex_uv, dxdy, sigma, input_gamma);
@@ -307,7 +307,7 @@ float get_final_bloom_sigma(const float bloom_sigma_runtime)
     //              so static sigmas can be constant-folded!
     const float bloom_sigma_optimistic = get_min_sigma_to_blur_triad(
         mask_triad_size_desired_static, bloom_diff_thresh);
-    #ifdef RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #if RUNTIME_PHOSPHOR_BLOOM_SIGMA
         return bloom_sigma_runtime;
     #else
         //  Overblurring looks as bad as underblurring, so assume average-size

@@ -1,5 +1,5 @@
-#ifndef GEOMETRY_FUNCTIONS_H
-#define GEOMETRY_FUNCTIONS_H
+#ifndef _GEOMETRY_FUNCTIONS_H
+#define _GEOMETRY_FUNCTIONS_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -615,7 +615,7 @@ float2 get_curved_video_uv_coords_and_tangent_matrix(
     const float2 video_uv = centered_uv + float2(0.5, 0.5);
     //  Get a pixel-to-tangent-video-uv matrix.  The caller could deal with
     //  all but one of these cases, but that would be more complicated.
-    #ifdef DRIVERS_ALLOW_DERIVATIVES
+    #if DRIVERS_ALLOW_DERIVATIVES
         //  Derivatives obtain a matrix very fast, but the direction of pixel-
         //  space +y seems to depend on the pass.  Enforce the correct direction
         //  on a best-effort basis (but it shouldn't matter for antialiasing).
@@ -687,7 +687,7 @@ float get_border_dim_factor(const float2 video_uv, const float2 geom_aspect)
 
 
 
-#endif  //  GEOMETRY_FUNCTIONS_H
+#endif  //  _GEOMETRY_FUNCTIONS_H
 
 
 

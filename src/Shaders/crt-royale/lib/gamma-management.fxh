@@ -45,7 +45,7 @@
 //  limitation, we need to define derived constants using functions.
 
 //  Set device gamma constants, but allow users to override them:
-#ifdef OVERRIDE_DEVICE_GAMMA
+#if OVERRIDE_DEVICE_GAMMA
     //  The user promises to globally define the appropriate constants:
     float get_crt_gamma()    {   return crt_gamma;   }
     float get_gba_gamma()    {   return gba_gamma;   }
@@ -65,29 +65,31 @@
 #else
     //  If we gamma-correct every pass, always use ntsc_gamma between passes to
     //  ensure middle passes don't need to care if anything is being simulated:
-    float get_intermediate_gamma()   {   return ntsc_gamma;          }
-    #ifdef SIMULATE_CRT_ON_LCD
+    // float get_intermediate_gamma()   {   return ntsc_gamma;          }
+    float get_intermediate_gamma()   {   return 1.0;                 }
+    
+    #if GAMMA_SIMULATION_MODE == _SIMULATE_CRT_ON_LCD
         float get_input_gamma()      {   return get_crt_gamma();     }
         float get_output_gamma()     {   return get_lcd_gamma();     }
     #else
-    #ifdef SIMULATE_GBA_ON_LCD
+    #if GAMMA_SIMULATION_MODE == _SIMULATE_GBA_ON_LCD
         float get_input_gamma()      {   return get_gba_gamma();     }
         float get_output_gamma()     {   return get_lcd_gamma();     }
     #else
-    #ifdef SIMULATE_LCD_ON_CRT
+    #if GAMMA_SIMULATION_MODE == _SIMULATE_LCD_ON_CRT
         float get_input_gamma()      {   return get_lcd_gamma();     }
         float get_output_gamma()     {   return get_crt_gamma();     }
     #else
-    #ifdef SIMULATE_GBA_ON_CRT
+    #if GAMMA_SIMULATION_MODE == _SIMULATE_GBA_ON_CRT
         float get_input_gamma()      {   return get_gba_gamma();     }
         float get_output_gamma()     {   return get_crt_gamma();     }
     #else   //  Don't simulate anything:
         float get_input_gamma()      {   return ntsc_gamma;          }
         float get_output_gamma()     {   return ntsc_gamma;          }
-    #endif  //  SIMULATE_GBA_ON_CRT
-    #endif  //  SIMULATE_LCD_ON_CRT
-    #endif  //  SIMULATE_GBA_ON_LCD
-    #endif  //  SIMULATE_CRT_ON_LCD
+    #endif  //  _SIMULATE_GBA_ON_CRT
+    #endif  //  _SIMULATE_LCD_ON_CRT
+    #endif  //  _SIMULATE_GBA_ON_LCD
+    #endif  //  _SIMULATE_CRT_ON_LCD
 #endif  //  OVERRIDE_FINAL_GAMMA
 
 

@@ -1,7 +1,7 @@
 #include "../lib/user-settings.fxh"
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
 #include "../lib/scanline-functions.fxh"
 #include "../lib/bloom-functions.fxh"
@@ -36,7 +36,7 @@ void pixelShader8(
     out float4 color : SV_Target
 ) {
     //  Sample the masked scanlines:
-    const float3 intensity_dim = tex2D(samplerOutput7, texcoord).rgb;
+    const float3 intensity_dim = tex2D_linearize(samplerOutput7, texcoord, get_intermediate_gamma()).rgb;
     //  Get the full intensity, including auto-undimming, and mask compensation:
     const float auto_dim_factor = levels_autodim_temp;
     const float undim_factor = 1.0/auto_dim_factor;
@@ -46,7 +46,7 @@ void pixelShader8(
     //  Sample BLOOM_APPROX to estimate what a straight blur of masked scanlines
     //  would look like, so we can estimate how much energy we'll receive from
     //  blooming neighbors:
-    const float3 phosphor_blur_approx = levels_contrast * tex2D(samplerOutput2, texcoord).rgb;
+    const float3 phosphor_blur_approx = levels_contrast * tex2D_linearize(samplerOutput2, texcoord, get_intermediate_gamma()).rgb;
 
     //  Compute the blur weight for the center texel and the maximum energy we
     //  expect to receive from neighbors:
@@ -81,5 +81,5 @@ void pixelShader8(
     const float3 brightpass = intensity_dim *
         lerp(blur_ratio, float3(1.0, 1.0, 1.0), bloom_excess);
     
-    color = float4(brightpass, 1.0);
+    color = encode_output(float4(brightpass, 1.0), get_intermediate_gamma());
 }

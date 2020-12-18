@@ -32,11 +32,11 @@
     //  Dynamic loops not allowed: Use a flat static loop.
     //  Dynamic loops accomodated: Coarsely branch around static loops.
     //  Dynamic loops assumed allowed: Use a flat dynamic loop.
-    #ifndef DRIVERS_ALLOW_DYNAMIC_BRANCHES
-        #ifdef ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
+    #if !DRIVERS_ALLOW_DYNAMIC_BRANCHES
+        #if ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
             #define BREAK_LOOPS_INTO_PIECES
         #else
-            #define USE_SINGLE_STATIC_LOOP
+            #define _USE_SINGLE_STATIC_LOOP
         #endif
     #endif  //  No else needed: Dynamic loops assumed.
 
@@ -72,7 +72,7 @@
         //  minimum number of input samples needed.
         const float min_samples_float = 2.0 * mask_sinc_lobes / magnification_scale;
         const float min_samples_m4 = ceil(min_samples_float * 0.25) * 4.0;
-        #ifdef DRIVERS_ALLOW_DYNAMIC_BRANCHES
+        #if DRIVERS_ALLOW_DYNAMIC_BRANCHES
             const float max_samples_m4 = max_sinc_resize_samples_m4;
         #else   // ifdef BREAK_LOOPS_INTO_PIECES
             //  Simulating loops with branches imposes a 128-sample limit.
@@ -130,7 +130,7 @@
     {
         //  Mipmapping and anisotropic filtering get confused by sinc-resampling.
         //  One [slow] workaround is to select the lowest mip level:
-        #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+        #if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
             return textureLod(tex, float4(tex_uv, 0.0, 0.0).xy);
         #else
             #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DBIAS
@@ -167,7 +167,7 @@
                 first_texel_tile_uv_rrrr + true_i * tile_dr);                      \
             const float4 tex_uv_r = tile_uv_r * tile_size_uv_r;
 
-        #ifdef PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW
+        #if PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW
             #define CALCULATE_SINC_RESAMPLE_WEIGHTS                                \
                 const float4 pi_dist_over_lobes = pi_over_lobes * dist;            \
                 const float4 weights = min(sin(pi_dist) * sin(pi_dist_over_lobes) /\
@@ -235,7 +235,7 @@
         //              generic use, eliminate the "static" in the parameters.)
         //  The "r" in "dr," "tile_size_uv_r," etc. refers to the dimension
         //  we're resizing along, e.g. "dy" in this case.
-        #ifdef USE_SINGLE_STATIC_LOOP
+        #ifdef _USE_SINGLE_STATIC_LOOP
             //  A static loop can be faster, but it might blur too much from using
             //  more samples than it should.
             static const int samples = int(max_sinc_resize_samples_m4);
@@ -342,7 +342,7 @@
         //      assignment in the inner loop at runtime!
         //  The "r" in "dr," "tile_size_uv_r," etc. refers to the dimension
         //  we're resizing along, e.g. "dx" in this case.
-        #ifdef USE_SINGLE_STATIC_LOOP
+        #ifdef _USE_SINGLE_STATIC_LOOP
             //  If we have to load all samples, we might as well use them.
             static const int samples = int(max_sinc_resize_samples_m4);
         #else
@@ -647,12 +647,12 @@
             //  First get fractional tile_uv coords.  Using frac/fmod on coords
             //  confuses anisotropic filtering; fix it as user options dictate.
             //  derived-settings-and-constants.h disables incompatible options.
-            #ifdef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+            #if ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
                 float2 tile_uv = frac(tile_uv_wrap * 0.5) * 2.0;
             #else
                 float2 tile_uv = frac(tile_uv_wrap);
             #endif
-            #ifdef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+            #if ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
                 const float2 tile_uv_dx = ddx(tile_uv);
                 const float2 tile_uv_dy = ddy(tile_uv);
                 tile_uv = fix_tiling_discontinuities_normalized(tile_uv,

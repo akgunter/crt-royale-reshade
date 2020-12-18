@@ -207,7 +207,7 @@
 //#include "gamma-management.h"
 
 
-#include "gamma-management-new.fxh"
+#include "gamma-management.fxh"
 #include "quad-pixel-communication.fxh"
 #include "special-functions.fxh"
 

@@ -19,13 +19,15 @@
 //  with curved manually tiled phosphor mask coords.  Related errors:
 //  error C3004: function "float2 ddx(float2);" not supported in this profile
 //  error C3004: function "float2 ddy(float2);" not supported in this profile
-    //#define DRIVERS_ALLOW_DERIVATIVES
+#ifndef DRIVERS_ALLOW_DERIVATIVES
+    #define DRIVERS_ALLOW_DERIVATIVES 0
+#endif
 
 //  Fine derivatives: Unsupported on older ATI cards.
 //  Fine derivatives enable 2x2 fragment block communication, letting us perform
 //  fast single-pass blur operations.  If your card uses coarse derivatives and
 //  these are enabled, blurs could look broken.  Derivatives are a prerequisite.
-#ifdef DRIVERS_ALLOW_DERIVATIVES
+#if DRIVERS_ALLOW_DERIVATIVES
     #define DRIVERS_ALLOW_FINE_DERIVATIVES
 #endif
 
@@ -33,7 +35,9 @@
 //  This makes phosphor mask resampling faster in some cases.  Related errors:
 //  error C5013: profile does not support "for" statements and "for" could not
 //  be unrolled
-    //#define DRIVERS_ALLOW_DYNAMIC_BRANCHES
+#ifndef DRIVERS_ALLOW_DYNAMIC_BRANCHES
+    #define DRIVERS_ALLOW_DYNAMIC_BRANCHES 0
+#endif
 
 //  Without DRIVERS_ALLOW_DYNAMIC_BRANCHES, we need to use unrollable loops.
 //  Using one static loop avoids overhead if the user is right, but if the user
@@ -41,19 +45,25 @@
 //  binary search can potentially save some iterations.  However, it may fail:
 //  error C6001: Temporary register limit of 32 exceeded; 35 registers
 //  needed to compile program
-    //#define ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
+#ifndef ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
+    #define ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS 0
+#endif
 
 //  tex2Dlod: Requires an fp40 or newer profile.  This can be used to disable
 //  anisotropic filtering, thereby fixing related artifacts.  Related errors:
 //  error C3004: function "float4 tex2Dlod(sampler2D, float4);" not supported in
 //  this profile
-    //#define DRIVERS_ALLOW_TEX2DLOD
+#ifndef DRIVERS_ALLOW_TEX2DLOD
+    #define DRIVERS_ALLOW_TEX2DLOD 0
+#endif
 
 //  tex2Dbias: Requires an fp30 or newer profile.  This can be used to alleviate
 //  artifacts from anisotropic filtering and mipmapping.  Related errors:
 //  error C3004: function "float4 tex2Dbias(sampler2D, float4);" not supported
 //  in this profile
-    //#define DRIVERS_ALLOW_TEX2DBIAS
+#ifndef DRIVERS_ALLOW_TEX2DBIAS
+    #define DRIVERS_ALLOW_TEX2DBIAS 0
+#endif
 
 //  Integrated graphics compatibility: Integrated graphics like Intel HD 4000
 //  impose stricter limitations on register counts and instructions.  Enable
@@ -65,7 +75,9 @@
 //      (This may be reenabled in a later release.)
 //  2.) RUNTIME_GEOMETRY_MODE
 //  3.) The high-quality 4x4 Gaussian resize for the bloom approximation
-    //#define INTEGRATED_GRAPHICS_COMPATIBILITY_MODE
+#ifndef INTEGRATED_GRAPHICS_COMPATIBILITY_MODE
+    #define INTEGRATED_GRAPHICS_COMPATIBILITY_MODE 0
+#endif
 
 
 ////////////////////////////  USER CODEPATH OPTIONS  ///////////////////////////
@@ -76,40 +88,70 @@
 //  Enable runtime shader parameters in the Retroarch (etc.) GUI?  They override
 //  many of the options in this file and allow real-time tuning, but many of
 //  them are slower.  Disabling them and using this text file will boost FPS.
-#define RUNTIME_SHADER_PARAMS_ENABLE
+#ifndef RUNTIME_SHADER_PARAMS_ENABLE
+    #define RUNTIME_SHADER_PARAMS_ENABLE 1
+#endif
 //  Specify the phosphor bloom sigma at runtime?  This option is 10% slower, but
 //  it's the only way to do a wide-enough full bloom with a runtime dot pitch.
-#define RUNTIME_PHOSPHOR_BLOOM_SIGMA
+#ifndef RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #define RUNTIME_PHOSPHOR_BLOOM_SIGMA 1
+#endif
 //  Specify antialiasing weight parameters at runtime?  (Costs ~20% with cubics)
-#define RUNTIME_ANTIALIAS_WEIGHTS
+#ifndef RUNTIME_ANTIALIAS_WEIGHTS
+    #define RUNTIME_ANTIALIAS_WEIGHTS 1
+#endif
 //  Specify subpixel offsets at runtime? (WARNING: EXTREMELY EXPENSIVE!)
-//#define RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+#ifndef RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+    #define RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS 0
+#endif
 //  Make beam_horiz_filter and beam_horiz_linear_rgb_weight into runtime shader
 //  parameters?  This will require more math or dynamic branching.
-#define RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+#ifndef RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+    #define RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE 1
+#endif
 //  Specify the tilt at runtime?  This makes things about 3% slower.
-#define RUNTIME_GEOMETRY_TILT
+//    akgunter:
+//    This is used in crt-royale-geometry-aa-last-pass.fxh.
+//    I've hard-coded it to 1 and hidden it from the UI in the ReShade version because
+//    I don't know a good way to port that logic. If anyone ever does figure that
+//    out, we can uncomment and port that logic and then unhide this definition.
+#define _RUNTIME_GEOMETRY_TILT 1
+
 //  Specify the geometry mode at runtime?
-#define RUNTIME_GEOMETRY_MODE
+#ifndef RUNTIME_GEOMETRY_MODE
+    #define RUNTIME_GEOMETRY_MODE 1
+#endif
 //  Specify the phosphor mask type (aperture grille, slot mask, shadow mask) and
 //  mode (Lanczos-resize, hardware resize, or tile 1:1) at runtime, even without
 //  dynamic branches?  This is cheap if mask_resize_viewport_scale is small.
-#define FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+#ifndef FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+    #define FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT 1
+#endif
 
 //  PHOSPHOR MASK:
 //  Manually resize the phosphor mask for best results (slower)?  Disabling this
 //  removes the option to do so, but it may be faster without dynamic branches.
-#define PHOSPHOR_MASK_MANUALLY_RESIZE
+#ifndef PHOSPHOR_MASK_MANUALLY_RESIZE
+    #define PHOSPHOR_MASK_MANUALLY_RESIZE 1
+#endif
 //  If we sinc-resize the mask, should we Lanczos-window it (slower but better)?
-#define PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW
+#ifndef PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW
+    #define PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW 1
+#endif
 //  Larger blurs are expensive, but we need them to blur larger triads.  We can
 //  detect the right blur if the triad size is static or our profile allows
 //  dynamic branches, but otherwise we use the largest blur the user indicates
 //  they might need:
-#define PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
-//#define PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS
-//#define PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS
-//#define PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS
+
+#define _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS 1
+#define _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_6_PIXELS 2
+#define _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS 3
+#define _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS 4
+
+#ifndef PHOSPHOR_BLOOM_TRIAD_SIZE_MODE
+    #define PHOSPHOR_BLOOM_TRIAD_SIZE_MODE _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS
+#endif
+
 //  Here's a helpful chart:
 //  MaxTriadSize    BlurSize    MinTriadCountsByResolution
 //  3.0             9.0         480/640/960/1920 triads at 1080p/1440p/2160p/4320p, 4:3 aspect
@@ -117,7 +159,6 @@
 //  9.0             25.0        160/213/320/640 triads at 1080p/1440p/2160p/4320p, 4:3 aspect
 //  12.0            31.0        120/160/240/480 triads at 1080p/1440p/2160p/4320p, 4:3 aspect
 //  18.0            43.0        80/107/160/320 triads at 1080p/1440p/2160p/4320p, 4:3 aspect
-
 
 ///////////////////////////////  USER PARAMETERS  //////////////////////////////
 
@@ -162,6 +203,10 @@ static const float bloom_excess_static = 0.0;               //  range [0, 1]
 //  2.) True 4x4 Gaussian resize: Slowest, technically correct.
 //  These options are more pronounced for the fast, unbloomed shader version.
 #ifndef RADEON_FIX
+    #define RADEON_FIX 0
+#endif
+
+#if !RADEON_FIX
     static const float bloom_approx_filter_static = 2.0;
 #else
     static const float bloom_approx_filter_static = 1.0;
@@ -359,12 +404,5 @@ static const float border_darkness_static = 2.0;        //  range [0, inf)
 //  Border compression: High numbers compress border transitions, narrowing
 //  the dark border area.
 static const float border_compress_static = 2.5;        //  range [1, inf)
-
-// #ifndef PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
-//     #define USE_LARGE_TEXTURES true
-// #else
-//     #define USE_LARGE_TEXTURES false
-// #endif
-
 
 #endif  //  _USER_SETTINGS_H

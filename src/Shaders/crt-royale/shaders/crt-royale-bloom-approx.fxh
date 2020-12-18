@@ -1,5 +1,5 @@
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/scanline-functions.fxh"
 #include "../lib/blur-functions.fxh"
 #include "../lib/bloom-functions.fxh"
@@ -247,19 +247,19 @@ void pixelShader2(
         {
             out_color_r = tex2Dresize_gaussian4x4(samplerOutput0, tex_uv_r,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, 1.0);
+                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
             out_color_g = tex2Dresize_gaussian4x4(samplerOutput0, tex_uv_g,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, 1.0);
+                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
             out_color_b = tex2Dresize_gaussian4x4(samplerOutput0, tex_uv_b,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, 1.0);
+                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
         }
         else
         {
             out_color = tex2Dresize_gaussian4x4(samplerOutput0, tex_uv,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, 1.0);
+                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
         }
     }
     else if(bloom_approx_filter > 0.5)
@@ -270,15 +270,15 @@ void pixelShader2(
         if(beam_misconvergence)
         {
             out_color_r = tex2Dblur3x3resize(samplerOutput0, tex_uv_r,
-                blur_dxdy, bloom_approx_sigma, 1.0);
+                blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
             out_color_g = tex2Dblur3x3resize(samplerOutput0, tex_uv_g,
-                blur_dxdy, bloom_approx_sigma, 1.0);
+                blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
             out_color_b = tex2Dblur3x3resize(samplerOutput0, tex_uv_b,
-                blur_dxdy, bloom_approx_sigma, 1.0);
+                blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
         }
         else
         {
-            out_color = tex2Dblur3x3resize(samplerOutput0, tex_uv, blur_dxdy, 1.0);
+            out_color = tex2Dblur3x3resize(samplerOutput0, tex_uv, blur_dxdy, get_intermediate_gamma());
         }
     }
     else
@@ -291,13 +291,13 @@ void pixelShader2(
         //  keep bloom_approx_scale_x/min_allowed_viewport_triads < ~1.1658025.)
         if(beam_misconvergence)
         {
-            out_color_r = tex2D(samplerOutput0, tex_uv_r).rgb;
-            out_color_g = tex2D(samplerOutput0, tex_uv_g).rgb;
-            out_color_b = tex2D(samplerOutput0, tex_uv_b).rgb;
+            out_color_r = tex2D_linearize(samplerOutput0, tex_uv_r, get_intermediate_gamma()).rgb;
+            out_color_g = tex2D_linearize(samplerOutput0, tex_uv_g, get_intermediate_gamma()).rgb;
+            out_color_b = tex2D_linearize(samplerOutput0, tex_uv_b, get_intermediate_gamma()).rgb;
         }
         else
         {
-            out_color = tex2D(samplerOutput0, tex_uv).rgb;
+            out_color = tex2D_linearize(samplerOutput0, tex_uv, get_intermediate_gamma()).rgb;
         }
     }
     //  Pack the colors from the red/green/blue beams into a single vector:
@@ -306,7 +306,7 @@ void pixelShader2(
         out_color = float3(out_color_r.r, out_color_g.g, out_color_b.b);
     }
     //  Encode and output the blurred image:
-    // color = encode_output(float4(tex2D_linearize(samplerOutput0, tex_uv, 1.0)), 1.0);
+    // color = encode_output(float4(tex2D_linearize(samplerOutput0, tex_uv, get_intermediate_gamma())), get_intermediate_gamma());
     // color = tex2D(samplerOutput0, tex_uv);
-    color = float4(out_color, 1.0);
+    color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());
 }

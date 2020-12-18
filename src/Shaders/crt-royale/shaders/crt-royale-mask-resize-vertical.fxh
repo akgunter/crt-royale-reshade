@@ -50,7 +50,7 @@ void pixelShader5(
     //  minimizes the total number of taps required.  We output a number of
     //  resized tiles >= mask_resize_num_tiles for easier tiled sampling later.
     //const float2 src_tex_uv_wrap = src_tex_uv_wrap;
-    #ifdef PHOSPHOR_MASK_MANUALLY_RESIZE
+    #if PHOSPHOR_MASK_MANUALLY_RESIZE
         //  Discard unneeded fragments in case our profile allows real branches.
         // const float2 tile_uv_wrap = src_tex_uv_wrap;
         if(get_mask_sample_mode() < 0.5 &&

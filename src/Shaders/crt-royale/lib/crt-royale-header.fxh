@@ -1,6 +1,5 @@
 #ifndef _CRT_ROYALE_HEADER_H
 #define _CRT_ROYALE_HEADER_H
-//#define __VERSION__ 130
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -20,27 +19,14 @@
 //  this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 //  Place, Suite 330, Boston, MA 02111-1307 USA
 
-// Disable mediump because ReShade doesn't support minimum precision types
-#define COMPAT_PRECISION
-
-// #if __VERSION__ >= 130
-//     #define COMPAT_TEXTURE texture
-// #else
-//     #define COMPAT_TEXTURE texture2D
-// #endif
-
-// Disable texture2D because we're basing this strictly on crt-reshade v130
-#define COMPAT_TEXTURE tex2D
-
 /////////////////////////////  SETTINGS MANAGEMENT  ////////////////////////////
 
 //  PASS SETTINGS:
 //  gamma-management.h needs to know what kind of pipeline we're using and
 //  what pass this is in that pipeline.  This will become obsolete if/when we
 //  can #define things like this in the .cgp preset file.
-// #define FIRST_PASS
-#define SIMULATE_CRT_ON_LCD
 
+// TODO: Move this somewhere else
 float fmod(float x, float y)
 {
     return x - y * floor(x/y);

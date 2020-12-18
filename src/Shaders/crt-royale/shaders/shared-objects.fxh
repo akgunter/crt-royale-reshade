@@ -12,14 +12,10 @@
 	#define CONTENT_ASPECT_RATIO_Y 3.0
 #endif
 
-#ifndef INTERNAL_BUFFER_FORMAT
-	// The libretro version uses R8G8B8A8_SRGB.
-	// The closest thing ReShade has to this is RGB10A2, but that format has
-	// issues with Passes 7 and 8 crushing blacks. RGBA16 is the smallest
-	// nonlinear format available that does not have crushing issues.
-	// TODO: Figure out which passes can safely use RGB10A2
-	#define INTERNAL_BUFFER_FORMAT RGBA16
-#endif
+// The libretro version uses R8G8B8A8_SRGB.
+// The closest thing ReShade has to this is RGB10A2, but that format has
+// issues with Passes 7 and 8 crushing shadows. RGBA16 is the smallest
+// nonlinear format available that does not have crushing issues.
 
 static const float CONTENT_WIDTH = root_ceil(BUFFER_HEIGHT * CONTENT_ASPECT_RATIO_X / CONTENT_ASPECT_RATIO_Y);
 static const float CONTENT_OFFSET_X = root_clamp((BUFFER_WIDTH - CONTENT_WIDTH) / 2.0 / BUFFER_WIDTH, 0, 0.5);
@@ -95,9 +91,6 @@ sampler2D samplerOutput5 { Texture = texOutput5; };
 texture2D texOutput6 {
 	Width = BUFFER_WIDTH * mask_resize_viewport_scale.x;
 	Height = BUFFER_HEIGHT * mask_resize_viewport_scale.y;
-
-	// Width = BUFFER_WIDTH;
-	// Height = BUFFER_HEIGHT;
 };
 sampler2D samplerOutput6 { Texture = texOutput6; };
 

@@ -1,5 +1,5 @@
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
 
 #include "../lib/texture-settings.fxh"
@@ -10,8 +10,8 @@ float4 tex2Dtiled_mask_linearize(const sampler2D tex,
 {
     //  If we're manually tiling a texture, anisotropic filtering can get
     //  confused.  One workaround is to just select the lowest mip level:
-    #ifdef PHOSPHOR_MASK_MANUALLY_RESIZE
-        #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+    #if PHOSPHOR_MASK_MANUALLY_RESIZE
+        #if ANISOTROPIC_TILING_COMPAT_TEX2DLOD
             //  TODO: Use tex2Dlod_linearize with a calculated mip level.
             return tex2Dlod_linearize(tex, float4(tex_uv, 0.0, 0.0), input_gamma);
         #else
@@ -39,7 +39,7 @@ void vertexShader7(
 	texcoord.y = (id == 1) ? 2.0 : 0.0;
 	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
     
-    #ifdef PHOSPHOR_MASK_MANUALLY_RESIZE
+    #if PHOSPHOR_MASK_MANUALLY_RESIZE
         const float2 mask_resized_texsize = tex2Dsize(samplerOutput6);
         const float mask_sample_mode = get_mask_sample_mode();
         const float2 mask_resize_texture_size = mask_sample_mode < 0.5 ?
@@ -89,7 +89,7 @@ void pixelShader7(
         tile_uv_wrap, mask_tile_start_uv_and_size);
 
     float3 phosphor_mask_sample;
-    #ifdef PHOSPHOR_MASK_MANUALLY_RESIZE
+    #if PHOSPHOR_MASK_MANUALLY_RESIZE
         const bool sample_orig_luts = get_mask_sample_mode() > 0.5;
     #else
         static const bool sample_orig_luts = true;
@@ -119,7 +119,7 @@ void pixelShader7(
     //  Sample the halation texture (auto-dim to match the scanlines), and
     //  account for both horizontal and vertical convergence offsets, given
     //  in units of texels horizontally and same-field scanlines vertically:
-    const float3 halation_color = tex2D(samplerOutput4, texcoord).rgb;
+    const float3 halation_color = tex2D_linearize(samplerOutput4, texcoord, get_intermediate_gamma()).rgb;
 
     //  Apply halation: Halation models electrons flying around under the glass
     //  and hitting the wrong phosphors (of any color).  It desaturates, so
@@ -155,7 +155,7 @@ void pixelShader7(
         //  Get a phosphor blur estimate, accounting for convergence offsets:
         const float3 electron_intensity = electron_intensity_dim * undim_factor;
         const float3 phosphor_blur_approx_soft = tex2D_linearize(
-            samplerOutput2, texcoord).rgb;
+            samplerOutput2, texcoord, get_intermediate_gamma()).rgb;
         const float3 phosphor_blur_approx = lerp(phosphor_blur_approx_soft,
             electron_intensity, 0.1) * blur_contrast;
         //  We could blend between phosphor_emission and phosphor_blur_approx,
@@ -215,5 +215,5 @@ void pixelShader7(
         const float3 pixel_color = phosphor_emission_dim;
     #endif
     //  Encode if necessary, and output.
-    color = float4(pixel_color, 1.0);
+    color = encode_output(float4(pixel_color, 1.0), get_intermediate_gamma());
 }

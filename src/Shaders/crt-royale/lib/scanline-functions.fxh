@@ -23,7 +23,7 @@
 ///////////////////////////////  BEGIN INCLUDES  ///////////////////////////////
 
 #include "bind-shader-params.fxh"
-#include "gamma-management-new.fxh"
+#include "gamma-management.fxh"
 #include "special-functions.fxh"
 
 ////////////////////////////////  END INCLUDES  ////////////////////////////////
@@ -342,10 +342,10 @@ float3 get_interpolated_linear_color(const float3 color0, const float3 color1,
     const float inv_intermediate_gamma = 1.0 / intermediate_gamma;
     //  Branch if beam_horiz_linear_rgb_weight is static (for free) or if the
     //  profile allows dynamic branches (faster than computing extra pows):
-    #ifndef RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+    #if !RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
         #define SCANLINES_BRANCH_FOR_LINEAR_RGB_WEIGHT
     #else
-        #ifdef DRIVERS_ALLOW_DYNAMIC_BRANCHES
+        #if DRIVERS_ALLOW_DYNAMIC_BRANCHES
             #define SCANLINES_BRANCH_FOR_LINEAR_RGB_WEIGHT
         #endif
     #endif
@@ -434,14 +434,14 @@ float3 get_scanline_color(const sampler2D tex, const float2 scanline_uv,
     //              nearby texels, according to weights and the conventions of
     //              get_interpolated_linear_color().
     //  We can ignore the outside texture lookups for Quilez resampling.
-    const float3 color1 = COMPAT_TEXTURE(tex, scanline_uv).rgb;
-    const float3 color2 = COMPAT_TEXTURE(tex, scanline_uv + uv_step_x).rgb;
+    const float3 color1 = tex2D(tex, scanline_uv).rgb;
+    const float3 color2 = tex2D(tex, scanline_uv + uv_step_x).rgb;
     float3 color0 = float3(0.0, 0.0, 0.0);
     float3 color3 = float3(0.0, 0.0, 0.0);
     if(beam_horiz_filter > 0.5)
     {
-        color0 = COMPAT_TEXTURE(tex, scanline_uv - uv_step_x).rgb;
-        color3 = COMPAT_TEXTURE(tex, scanline_uv + 2.0 * uv_step_x).rgb;
+        color0 = tex2D(tex, scanline_uv - uv_step_x).rgb;
+        color3 = tex2D(tex, scanline_uv + 2.0 * uv_step_x).rgb;
     }
     //  Sample the texture as-is, whether it's linear or gamma-encoded:
     //  get_interpolated_linear_color() will handle the difference.

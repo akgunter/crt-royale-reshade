@@ -51,6 +51,10 @@
     //  Copy the absolute scale_x for BLOOM_APPROX.  There are two major versions of
     //  this shader: One does a viewport-scale bloom, and the other skips it.  The
     //  latter benefits from a higher bloom_approx_scale_x, so save both separately:
+    static const float bloom_approx_scale_x = 4.0 / 3.0;
+    static const float max_viewport_size_x = 1080.0*1024.0*(4.0/3.0);
+    static const float bloom_diff_thresh_ = 1.0/256.0;
+
     static const float bloom_approx_size_x = 320.0;
     static const float bloom_approx_size_x_for_fake = 400.0;
     //  Copy the viewport-relative scales of the phosphor mask resize passes
@@ -73,7 +77,9 @@
     //  masks included with the shader.  Update the value for any LUT texture you
     //  change.  [Un]comment "#define PHOSPHOR_MASK_GRILLE14" depending on whether
     //  the loaded aperture grille uses 14-pixel or 15-pixel stripes (default 15).
-    //#define PHOSPHOR_MASK_GRILLE14
+    #ifndef PHOSPHOR_MASK_GRILLE14
+        #define PHOSPHOR_MASK_GRILLE14 0
+    #endif
     static const float mask_grille14_avg_color = 50.6666666/255.0;
         //  TileableLinearApertureGrille14Wide7d33Spacing*.png
         //  TileableLinearApertureGrille14Wide10And6Spacing*.png
@@ -87,7 +93,7 @@
         //  TileableLinearShadowMask*.png
         //  TileableLinearShadowMaskEDP*.png
 
-    #ifdef PHOSPHOR_MASK_GRILLE14
+    #if PHOSPHOR_MASK_GRILLE14
         static const float mask_grille_avg_color = mask_grille14_avg_color;
     #else
         static const float mask_grille_avg_color = mask_grille15_avg_color;
@@ -105,9 +111,15 @@
 //  Avoid dividing by zero; using a macro overloads for float, float2, etc.:
 #define FIX_ZERO(c) (root_max(root_abs(c), 0.0000152587890625))   //  2^-16
 
+
+#define _SIMULATE_CRT_ON_LCD 1
+#define _SIMULATE_GBA_ON_LCD 2
+#define _SIMULATE_LCD_ON_CRT 3
+#define _SIMULATE_GBA_ON_CRT 4
+
 //  Ensure the first pass decodes CRT gamma and the last encodes LCD gamma.
-#ifndef SIMULATE_CRT_ON_LCD
-    #define SIMULATE_CRT_ON_LCD
+#ifndef GAMMA_SIMULATION_MODE
+    #define GAMMA_SIMULATION_MODE _SIMULATE_CRT_ON_LCD
 #endif
 
 //  Manually tiling a manually resized texture creates texture coord derivative
@@ -123,14 +135,22 @@
 //      border padding to the resized mask FBO, but it works with same-pass
 //      curvature.  It's disabled without DRIVERS_ALLOW_DERIVATIVES #defined.
 //  Precedence: a, then, b, then c (if multiple strategies are #defined).
-#define ANISOTROPIC_TILING_COMPAT_TEX2DLOD              //  129.7 FPS, 4x, flat; 101.8 at fullscreen
-#define ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE       //  128.1 FPS, 4x, flat; 101.5 at fullscreen
-#define ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES   //  124.4 FPS, 4x, flat; 97.4 at fullscreen
+#ifndef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+    #define ANISOTROPIC_TILING_COMPAT_TEX2DLOD 1              //  129.7 FPS, 4x, flat; 101.8 at fullscreen
+#endif
+#ifndef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+    #define ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE 1       //  128.1 FPS, 4x, flat; 101.5 at fullscreen
+#endif
+#ifndef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+    #define ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES 1   //  124.4 FPS, 4x, flat; 97.4 at fullscreen
+#endif
 //  Also, manually resampling the phosphor mask is slightly blurrier with
 //  anisotropic filtering.  (Resampling with mipmapping is even worse: It
 //  creates artifacts, but only with the fully bloomed shader.)  The difference
 //  is subtle with small triads, but you can fix it for a small cost.
-    //#define ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+#ifndef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+    #define ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD 0
+#endif
 
 
 //////////////////////////////  DERIVED SETTINGS  //////////////////////////////
@@ -140,12 +160,14 @@
 //  incompatible settings ASAP.  (INTEGRATED_GRAPHICS_COMPATIBILITY_MODE may be
 //  #defined by either user-settings.h or a wrapper .cg that #includes the
 //  current .cg pass.)
-#ifdef INTEGRATED_GRAPHICS_COMPATIBILITY_MODE
-    #ifdef PHOSPHOR_MASK_MANUALLY_RESIZE
+#if INTEGRATED_GRAPHICS_COMPATIBILITY_MODE
+    #if PHOSPHOR_MASK_MANUALLY_RESIZE
         #undef PHOSPHOR_MASK_MANUALLY_RESIZE
+        #define PHOSPHOR_MASK_MANUALLY_RESIZE 0
     #endif
-    #ifdef RUNTIME_GEOMETRY_MODE
+    #if RUNTIME_GEOMETRY_MODE
         #undef RUNTIME_GEOMETRY_MODE
+        #define RUNTIME_GEOMETRY_MODE 0
     #endif
     //  Mode 2 (4x4 Gaussian resize) won't work, and mode 1 (3x3 blur) is
     //  inferior in most cases, so replace 2.0 with 0.0:
@@ -157,55 +179,65 @@
 
 //  Disable slow runtime paths if static parameters are used.  Most of these
 //  won't be a problem anyway once the params are disabled, but some will.
-#ifndef RUNTIME_SHADER_PARAMS_ENABLE
-    #ifdef RUNTIME_PHOSPHOR_BLOOM_SIGMA
+#if !RUNTIME_SHADER_PARAMS_ENABLE
+    #if RUNTIME_PHOSPHOR_BLOOM_SIGMA
         #undef RUNTIME_PHOSPHOR_BLOOM_SIGMA
+        #define RUNTIME_PHOSPHOR_BLOOM_SIGMA 0
     #endif
-    #ifdef RUNTIME_ANTIALIAS_WEIGHTS
+    #if RUNTIME_ANTIALIAS_WEIGHTS
         #undef RUNTIME_ANTIALIAS_WEIGHTS
+        #define RUNTIME_ANTIALIAS_WEIGHTS 0
     #endif
-    #ifdef RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+    #if RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
         #undef RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+        #define RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS 0
     #endif
-    #ifdef RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+    #if RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
         #undef RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+        #define RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE 0
     #endif
-    #ifdef RUNTIME_GEOMETRY_TILT
-        #undef RUNTIME_GEOMETRY_TILT
+    #if _RUNTIME_GEOMETRY_TILT
+        #undef _RUNTIME_GEOMETRY_TILT
+        #define _RUNTIME_GEOMETRY_TILT 0
     #endif
-    #ifdef RUNTIME_GEOMETRY_MODE
+    #if RUNTIME_GEOMETRY_MODE
         #undef RUNTIME_GEOMETRY_MODE
+        #define RUNTIME_GEOMETRY_MODE 0
     #endif
-    #ifdef FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+    #if FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
         #undef FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+        #define FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT 0
     #endif
 #endif
 
 //  Make tex2Dbias a backup for tex2Dlod for wider compatibility.
-#ifdef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+#if ANISOTROPIC_TILING_COMPAT_TEX2DLOD
     #define ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
 #endif
-#ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+#if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
     #define ANISOTROPIC_RESAMPLING_COMPAT_TEX2DBIAS
 #endif
 //  Rule out unavailable anisotropic compatibility strategies:
-#ifndef DRIVERS_ALLOW_DERIVATIVES
-    #ifdef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+#if !DRIVERS_ALLOW_DERIVATIVES
+    #if ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
         #undef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+        #define ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES 0
     #endif
 #endif
-#ifndef DRIVERS_ALLOW_TEX2DLOD
-    #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+#if !DRIVERS_ALLOW_TEX2DLOD
+    #if ANISOTROPIC_TILING_COMPAT_TEX2DLOD
         #undef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+        #define ANISOTROPIC_TILING_COMPAT_TEX2DLOD 0
     #endif
-    #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+    #if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
         #undef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+        #define ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD 0
     #endif
     #ifdef ANTIALIAS_DISABLE_ANISOTROPIC
         #undef ANTIALIAS_DISABLE_ANISOTROPIC
     #endif
 #endif
-#ifndef DRIVERS_ALLOW_TEX2DBIAS
+#if !DRIVERS_ALLOW_TEX2DBIAS
     #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
         #undef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
     #endif
@@ -215,44 +247,49 @@
 #endif
 //  Prioritize anisotropic tiling compatibility strategies by performance and
 //  disable unused strategies.  This concentrates all the nesting in one place.
-#ifdef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+#if ANISOTROPIC_TILING_COMPAT_TEX2DLOD
     #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
         #undef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
     #endif
-    #ifdef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+    #if ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
         #undef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+        #define ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE 0
     #endif
-    #ifdef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+    #if ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
         #undef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+        #define ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES 0
     #endif
 #else
     #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
-        #ifdef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+        #if ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
             #undef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+            #define ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE 0
         #endif
-        #ifdef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+        #if ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
             #undef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+            #define ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES 0
         #endif
     #else
         //  ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE is only compatible with
         //  flat texture coords in the same pass, but that's all we use.
-        #ifdef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
-            #ifdef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+        #if ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+            #if ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
                 #undef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+                #define ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES 0
             #endif
         #endif
     #endif
 #endif
 //  The tex2Dlod and tex2Dbias strategies share a lot in common, and we can
 //  reduce some #ifdef nesting in the next section by essentially OR'ing them:
-#ifdef ANISOTROPIC_TILING_COMPAT_TEX2DLOD
+#if ANISOTROPIC_TILING_COMPAT_TEX2DLOD
     #define ANISOTROPIC_TILING_COMPAT_TEX2DLOD_FAMILY
 #endif
 #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
     #define ANISOTROPIC_TILING_COMPAT_TEX2DLOD_FAMILY
 #endif
 //  Prioritize anisotropic resampling compatibility strategies the same way:
-#ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+#if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
     #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DBIAS
         #undef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DBIAS
     #endif
@@ -263,7 +300,7 @@
 
 //  If we can use the large mipmapped LUT without mipmapping artifacts, we
 //  should: It gives us more options for using fewer samples.
-#ifdef DRIVERS_ALLOW_TEX2DLOD
+#if DRIVERS_ALLOW_TEX2DLOD
     #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
         //  TODO: Take advantage of this!
         #define PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
@@ -290,11 +327,11 @@
 //  dynamic branches, we have to process every branch for every fragment...which
 //  is slower.  Runtime sampling mode selection is slower without dynamic
 //  branches as well.  Let the user's static #defines decide if it's worth it.
-#ifdef DRIVERS_ALLOW_DYNAMIC_BRANCHES
-    #define RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+#if DRIVERS_ALLOW_DYNAMIC_BRANCHES
+    #define _RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
 #else
-    #ifdef FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
-        #define RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+    #if FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+        #define _RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
     #endif
 #endif
 
@@ -319,7 +356,7 @@
     static const float max_aniso_pixel_border = max_aa_base_pixel_border;
 #endif
 //  Fixing discontinuities adds 1.0 more to the pixel border:
-#ifdef ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
+#if ANISOTROPIC_TILING_COMPAT_FIX_DISCONTINUITIES
     static const float max_tiled_pixel_border = max_aniso_pixel_border + 1.0;
 #else
     static const float max_tiled_pixel_border = max_aniso_pixel_border;
@@ -338,7 +375,7 @@ static const float max_mask_tile_border = max_mask_texel_border/
 //  Finally, set the number of resized tiles to render to MASK_RESIZE, and set
 //  the starting texel (inside borders) for sampling it.
 #ifndef GEOMETRY_EARLY
-    #ifdef ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
+    #if ANISOTROPIC_TILING_COMPAT_TILE_FLAT_TWICE
         //  Special case: Render two tiles without borders.  Anisotropic
         //  filtering doesn't seem to be a problem here.
         static const float mask_resize_num_tiles = 1.0 + 1.0;

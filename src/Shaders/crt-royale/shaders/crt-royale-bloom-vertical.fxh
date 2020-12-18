@@ -2,7 +2,7 @@
 #include "../lib/user-settings.fxh"
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/gamma-management-new.fxh"
+#include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
 #include "../lib/bloom-functions.fxh"
 
@@ -48,8 +48,8 @@ void pixelShader9(
     //  Blur the brightpass horizontally with a 9/17/25/43x blur:
     const float bloom_sigma = get_final_bloom_sigma(bloom_sigma_runtime);
     const float3 color3 = tex2DblurNfast(samplerOutput8, texcoord,
-        bloom_dxdy, bloom_sigma, 1.0);
+        bloom_dxdy, bloom_sigma, get_intermediate_gamma());
 
     //  Encode and output the blurred image:
-    color = float4(color3, 1.0);
+    color = encode_output(float4(color3, 1.0), get_intermediate_gamma());
 }
