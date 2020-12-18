@@ -1,7 +1,6 @@
 #ifndef _TEXTURE_SETTINGS
 #define _TEXTURE_SETTINGS
 
-// TODO: Move these #defines around
 #define mask_texture_wrap_mode REPEAT
 #define mask_texture_magmin_filter_type LINEAR
 

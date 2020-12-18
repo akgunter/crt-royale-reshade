@@ -65,6 +65,11 @@
 #else
     //  If we gamma-correct every pass, always use ntsc_gamma between passes to
     //  ensure middle passes don't need to care if anything is being simulated:
+
+    // TODO: Figure out the correct way to configure this now that intermediate
+    //   FBOs all use get_intermediate_gamma() directly. Also refer to the
+    //   original code to confirm when a shader uses ntsc_gamma despite
+    //   GAMMA_ENCODE_EVERY_FBO being undefined.
     // float get_intermediate_gamma()   {   return ntsc_gamma;          }
     float get_intermediate_gamma()   {   return 1.0;                 }
     
