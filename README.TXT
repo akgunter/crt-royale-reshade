@@ -44,6 +44,9 @@ that logic uses sin() and cos() to define global static constants, which
 ReShade doesn't like; and I don't know a good way to port that math without
 making them hard-coded runtime values (which would defeat the point).
 
+GAMMA_ENCODE_EVERY_FBO is currently disabled. For now, intermediate buffers
+always use gamma 1.0 and never ntsc_gamma. I plan on fixing that.
+
 PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS and its siblings are still there,
 but instead of defining one of them, you set PHOSPHOR_BLOOM_TRIAD_SIZE_MODE
 to a value in range [0 - 4]. See user-settings.fxh for details.
