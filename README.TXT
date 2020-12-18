@@ -54,8 +54,8 @@ derived-settings-and-constants.fxh for details.
 
 And finally, for now the library always behaves as if
 RUNTIME_SHADER_PARAMS_ENABLE is defined/true. That was mainly for my sanity
-while porting the code, although I don't have a clue how it'll interact
-with ReShade's UI.
+while porting the code, although I don't have a clue how ReShade's UI would
+respond to hiding all of the uniforms. I haven't tried that yet.
 
 
 
