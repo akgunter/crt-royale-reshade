@@ -30,6 +30,9 @@ debugging tools. Those features made this project orders of magnitude easier.
     blow up and fuss at you. ReShade's git repository has instructions for
     building an installer from source: https://github.com/crosire/reshade
 
+    Once you have that working, paste the contents of my src/ directory into
+    your reshade-shaders/ directory.
+
 2)  The libretro verson of crt-royale has the luxury of having the game's true
     viewport passed directly to it. The ReShade version by nature does not.
     This means the ReShade version by default grabs any letterboxing as part
