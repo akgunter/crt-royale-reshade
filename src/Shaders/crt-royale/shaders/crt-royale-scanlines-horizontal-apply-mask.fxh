@@ -48,7 +48,7 @@ void vertexShader7(
             mask_resized_texsize : mask_size;
     #else
         const float2 mask_resize_texture_size = mask_size;
-        const float2 mask_resize_video_size = fmask_size;
+        const float2 mask_resize_video_size = mask_size;
     #endif
 
     //  Compute mask tile dimensions, starting points, etc.:

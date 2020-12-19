@@ -171,8 +171,11 @@
     #endif
     //  Mode 2 (4x4 Gaussian resize) won't work, and mode 1 (3x3 blur) is
     //  inferior in most cases, so replace 2.0 with 0.0:
-    static const float bloom_approx_filter =
-        bloom_approx_filter_static > 1.5 ? 0.0 : bloom_approx_filter_static;
+    static const float bloom_approx_filter = root_cond(
+        bloom_approx_filter_static > 1.5,
+        0.0,
+        bloom_approx_filter_static
+    );
 #else
     static const float bloom_approx_filter = bloom_approx_filter_static;
 #endif

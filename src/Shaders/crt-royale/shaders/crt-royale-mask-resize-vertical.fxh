@@ -86,6 +86,6 @@ void pixelShader5(
         }
     #else
         discard;
-        color = float4(1.0, 1.0, 1.0, 1.0);
+        // color = float4(1.0, 1.0, 1.0, 1.0);
     #endif
 }
