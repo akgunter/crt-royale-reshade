@@ -3,6 +3,7 @@ ReShade 4.8.3+.
 
 
 ################# CREDIT #################
+
 The vast majority of the code here is copy/pasted from the current libretro
 shader repositories, so the vast majority of the credit goes to those authors.
 
