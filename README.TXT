@@ -70,7 +70,7 @@ preprocessor definitions by setting them to integer values rather than
 just defining them. This is to let users set them from ReShade's UI
 instead of editing the source code.
 
-There are a couple notable differences:
+There are a handful of notable differences:
 1)  PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS and its siblings are still
     present, but instead of defining one of them at a time, you set
     PHOSPHOR_BLOOM_TRIAD_SIZE_MODE to a value in range [0 - 4].
@@ -92,6 +92,10 @@ There are a couple notable differences:
 4)  For now I've changed the default Mask Sample Mode from 0 to 1 because
     it makes images too green, at least for me.
 
+5)  I figured out that the default anti-aliasing setting was way too strong,
+    so I turned it into a preprocessor definition aa_level and defaulted it
+    to 0. See user-settings.fxh for details.
+
 
 ################# QUALITATIVE DIFFERENCES #################
 
@@ -105,10 +109,6 @@ I've also noticed that the bloom is more pronounced in this version. It might
 be because of a tweak I made to the write-operation at the end of
 crt-royale-bloom-approx.fxh, but that's just a guess.
 
-Enabling screen curvature makes the image a chunk blurrier in the ReShade
-version than it did in the libretro version. My first guess is it being a
-side effect of the phosphor mask tiling, but I honestly have no idea right
-now.
 
 ###############################################################################
 

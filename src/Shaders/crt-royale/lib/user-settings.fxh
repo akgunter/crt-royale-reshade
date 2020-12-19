@@ -284,7 +284,11 @@ static const bool interlace_bff_static = false;
 //  What AA level do you want for curvature/overscan/subpixels?  Options:
 //  0x (none), 1x (sample subpixels), 4x, 5x, 6x, 7x, 8x, 12x, 16x, 20x, 24x
 //  (Static option only for now)
-static const float aa_level = 12.0;                     //  range [0, 24]
+#ifndef aa_level
+    #define aa_level 0.0;
+#endif
+// static const float aa_level = 12.0;                     //  range [0, 24]
+// static const float aa_level = 0.0;                     //  range [0, 24]
 //  What antialiasing filter do you want (static option only)?  Options:
 //  0: Box (separable), 1: Box (cylindrical),
 //  2: Tent (separable), 3: Tent (cylindrical),
