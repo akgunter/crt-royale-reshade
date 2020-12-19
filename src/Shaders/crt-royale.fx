@@ -1,20 +1,28 @@
 #include "ReShade.fxh"
 
-#include "crt-royale/shaders/content-box.fxh"
-#include "crt-royale/shaders/content-crop.fxh"
 
-#include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
-#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
-#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
-#include "crt-royale/shaders/blur9fast-vertical.fxh"
-#include "crt-royale/shaders/blur9fast-horizontal.fxh"
-#include "crt-royale/shaders/crt-royale-mask-resize-vertical.fxh"
-#include "crt-royale/shaders/crt-royale-mask-resize-horizontal.fxh"
-#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
-#include "crt-royale/shaders/crt-royale-brightpass.fxh"
-#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
-#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
-#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
+// Enable or disable the shader
+#ifndef CONTENT_BOX_VISIBLE
+	#define CONTENT_BOX_VISIBLE 0
+#endif
+
+#if !CONTENT_BOX_VISIBLE
+	#include "crt-royale/shaders/content-crop.fxh"
+	#include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
+	#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
+	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
+	#include "crt-royale/shaders/blur9fast-vertical.fxh"
+	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
+	#include "crt-royale/shaders/crt-royale-mask-resize-vertical.fxh"
+	#include "crt-royale/shaders/crt-royale-mask-resize-horizontal.fxh"
+	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
+	#include "crt-royale/shaders/crt-royale-brightpass.fxh"
+	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
+	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
+	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
+#else
+	#include "crt-royale/shaders/content-box.fxh"
+#endif
 
 technique CRT_Royale
 {

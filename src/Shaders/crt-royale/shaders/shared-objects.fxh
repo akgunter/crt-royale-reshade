@@ -25,12 +25,12 @@
 
 static const float2 buffer_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
 static const float2 content_size = float2(CONTENT_WIDTH, CONTENT_HEIGHT);
-static const float pixel_dx = 1.0 / BUFFER_WIDTH;
-static const float pixel_dy = 1.0 / BUFFER_HEIGHT;
-static const float content_center_x = CONTENT_CENTER_X * pixel_dx + 0.5;
-static const float content_center_y = CONTENT_CENTER_Y * pixel_dy + 0.5;
-static const float content_radius_x = CONTENT_WIDTH * pixel_dx / 2.0;
-static const float content_radius_y = CONTENT_HEIGHT * pixel_dy / 2.0;
+static const float orig_pixel_dx = 1.0 / BUFFER_WIDTH;
+static const float orig_pixel_dy = 1.0 / BUFFER_HEIGHT;
+static const float content_center_x = CONTENT_CENTER_X * orig_pixel_dx + 0.5;
+static const float content_center_y = CONTENT_CENTER_Y * orig_pixel_dy + 0.5;
+static const float content_radius_x = CONTENT_WIDTH * orig_pixel_dx / 2.0;
+static const float content_radius_y = CONTENT_HEIGHT * orig_pixel_dy / 2.0;
 
 
 // Initial Color Buffer

@@ -13,10 +13,10 @@ void pixelShader5(
     //  First estimate the viewport size (the user will get the wrong number of
     //  triads if it's wrong and mask_specify_num_triads is 1.0/true).
     const float2 output_size = tex2Dsize(samplerOutput5);
-    const float viewport_y = BUFFER_HEIGHT;
+    const float viewport_y = CONTENT_HEIGHT;
     const float aspect_ratio = geom_aspect_ratio_x / geom_aspect_ratio_y;
     // const float2 estimated_viewport_size = float2(viewport_y * aspect_ratio, viewport_y);
-    const float2 estimated_viewport_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
+    const float2 estimated_viewport_size = content_size;
     //  Estimate the output size of MASK_RESIZE (the next pass).  The estimated
     //  x component shouldn't matter, because we're not using the x result, and
     //  we're not swearing it's correct (if we did, the x result would influence

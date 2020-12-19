@@ -48,7 +48,7 @@ void vertexShader11(
 	texcoord.y = (id == 1) ? 2.0 : 0.0;
 	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 
-    output_size_inv = 1.0 / float2(BUFFER_WIDTH, BUFFER_HEIGHT);
+    output_size_inv = 1.0 / content_size;
 
     //  Get aspect/overscan vectors from scalar parameters (likely uniforms):
     const float viewport_aspect_ratio =  output_size_inv.y / output_size_inv.x;

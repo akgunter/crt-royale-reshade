@@ -16,7 +16,7 @@ void vertexShader0(
 	texcoord.y = (id == 1) ? 2.0 : 0.0;
 	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
     
-    const float2 input_video_size = tex2Dsize(samplerColor);
+    const float2 input_video_size = content_size;
     
     //  Detect interlacing: 1.0 = true, 0.0 = false.
     interlaced = float(is_interlaced(input_video_size.y));
@@ -45,7 +45,7 @@ void pixelShader0(
         //  If we're interlacing, determine which field curr_line is in:
         const float modulus = interlaced + 1.0;
         const float field_offset = fmod(frame_count + interlace_bff, modulus);
-        const float curr_line_texel = texcoord.y * tex2Dsize(samplerCrop).y;
+        const float curr_line_texel = texcoord.y * content_size.y;
         //  Use under_half to fix a rounding bug around exact texel locations.
         const float line_num_last = floor(curr_line_texel - under_half);
         const float wrong_field = fmod(line_num_last + field_offset, modulus);

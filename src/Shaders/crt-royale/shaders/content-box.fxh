@@ -1,11 +1,6 @@
 #include "shared-objects.fxh"
 
 
-// Enable or disable the shader
-#ifndef CONTENT_BOX_VISIBLE
-	#define CONTENT_BOX_VISIBLE 0
-#endif
-
 #ifndef CONTENT_BOX_INSCRIBED
     #define CONTENT_BOX_INSCRIBED 1
 #endif
@@ -14,17 +9,23 @@
     #define CONTENT_BOX_THICKNESS 5
 #endif
 
-#define _CONTENT_BOX_COLOR_R 1.0
-#define _CONTENT_BOX_COLOR_G 0.0
-#define _CONTENT_BOX_COLOR_B 0.0
+#ifndef CONTENT_BOX_COLOR_R
+    #define CONTENT_BOX_COLOR_R 1.0
+#endif
+#ifndef CONTENT_BOX_COLOR_G
+    #define CONTENT_BOX_COLOR_G 0.0
+#endif
+#ifndef CONTENT_BOX_COLOR_B
+    #define CONTENT_BOX_COLOR_B 0.0
+#endif
 
-static const float vert_line_thickness = CONTENT_BOX_THICKNESS * pixel_dx;
-static const float horiz_line_thickness = CONTENT_BOX_THICKNESS * pixel_dy;
+static const float vert_line_thickness = CONTENT_BOX_THICKNESS * orig_pixel_dx;
+static const float horiz_line_thickness = CONTENT_BOX_THICKNESS * orig_pixel_dy;
 
 static const float4 box_color = float4(
-    _CONTENT_BOX_COLOR_R,
-    _CONTENT_BOX_COLOR_G,
-    _CONTENT_BOX_COLOR_B,
+    CONTENT_BOX_COLOR_R,
+    CONTENT_BOX_COLOR_G,
+    CONTENT_BOX_COLOR_B,
     1.0
 );
 

@@ -28,7 +28,7 @@ void vertexShader9(
     bloom_dxdy = float2(0.0, dxdy.y);
 
     //  Calculate a runtime bloom_sigma in case it's needed:
-    const float2 estimated_viewport_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
+    const float2 estimated_viewport_size = content_size;
     const float2 estimated_mask_resize_output_size = tex2Dsize(samplerOutput6);
     const float mask_tile_size_x = get_resized_mask_tile_size(estimated_viewport_size, estimated_mask_resize_output_size, true).x;
 

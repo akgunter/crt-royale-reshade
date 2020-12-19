@@ -14,7 +14,7 @@ void pixelShader6(
     const float2 input_size = tex2Dsize(samplerOutput5);
     const float2 output_size = tex2Dsize(samplerOutput6);
     // const float2 estimated_viewport_size = output_size / mask_resize_viewport_scale;
-    const float2 estimated_viewport_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
+    const float2 estimated_viewport_size = content_size;
     //  Find the final size of our resized phosphor mask tiles.  We probably
     //  estimated the viewport size and MASK_RESIZE output size differently last
     //  pass, so do not swear they were the same. ;)

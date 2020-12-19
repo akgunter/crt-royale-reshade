@@ -131,7 +131,6 @@ void pixelShader2(
 
     out float4 color : SV_Target
 ) {
-    const float2 orig_color_size = tex2Dsize(samplerColor);
     const float2 orig_linearized_size = tex2Dsize(samplerOutput0);
     const float2 vertical_scanlines_size = tex2Dsize(samplerOutput1);
     const float2 output_size = tex2Dsize(samplerOutput2);

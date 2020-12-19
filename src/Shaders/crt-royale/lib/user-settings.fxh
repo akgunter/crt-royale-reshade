@@ -319,7 +319,7 @@ static const float mask_type_static = 1.0;                  //  range [0, 2]
 //      (pretty/fast/inflexible).  Each input LUT has a fixed dot pitch.
 //      This mode reuses the same masks, so triads will be enormous unless
 //      you change the mask LUT filenames in your .cgp file.
-static const float mask_sample_mode_static = 0.0;           //  range [0, 2]
+static const float mask_sample_mode_static = 1.0;           //  range [0, 2]
 //  Prefer setting the triad size (0.0) or number on the screen (1.0)?
 //  If RUNTIME_PHOSPHOR_BLOOM_SIGMA isn't #defined, the specified triad size
 //  will always be used to calculate the full bloom sigma statically.
