@@ -102,6 +102,10 @@ I've also noticed that the bloom is more pronounced in this version. It might
 be because of a tweak I made to the write-operation at the end of
 crt-royale-bloom-approx.fxh, but that's just a guess.
 
+Enabling screen curvature makes the image a chunk blurrier in the ReShade
+version than it did in the libretro version. My first guess is it being a
+side effect of the phosphor mask tiling, but I honestly have no idea right
+now.
 
 ###############################################################################
 
