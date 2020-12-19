@@ -43,7 +43,7 @@
 //                          0.0, xy_to_uv_scale.y);
 //  Optional:   To set basic AA settings, #define ANTIALIAS_OVERRIDE_BASICS and:
 //              1.) Set an antialiasing level:
-//                      static const float aa_level = {0 (none),
+//                      static const float antialias_level = {0 (none),
 //                          1 (sample subpixels), 4, 5, 6, 7, 8, 12, 16, 20, 24}
 //              2.) Set a filter type:
 //                      static const float aa_filter = {
@@ -161,7 +161,7 @@
 
 #if !ANTIALIAS_OVERRIDE_BASICS
     //  The following settings must be static constants:
-    static const float aa_level = 12.0;
+    static const float antialias_level = 12.0;
     static const float aa_filter = 0.0;
     static const bool aa_temporal = false;
 #endif
@@ -1372,19 +1372,19 @@ float3 tex2Daa(const sampler2D tex, const float2 tex_uv,
     const float2x2 pixel_to_tex_uv, const float frame, const float input_gamma)
 {
     //  Statically switch between antialiasing modes/levels:
-    return (aa_level < 0.5) ? tex2D_linearize(tex, tex_uv, input_gamma).rgb :
-        (aa_level < 3.5) ? tex2Daa_subpixel_weights_only(
+    return (antialias_level < 0.5) ? tex2D_linearize(tex, tex_uv, input_gamma).rgb :
+        (antialias_level < 3.5) ? tex2Daa_subpixel_weights_only(
             tex, tex_uv, pixel_to_tex_uv, input_gamma) :
-        (aa_level < 4.5) ? tex2Daa4x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 5.5) ? tex2Daa5x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 6.5) ? tex2Daa6x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 7.5) ? tex2Daa7x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 11.5) ? tex2Daa8x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 15.5) ? tex2Daa12x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 19.5) ? tex2Daa16x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 23.5) ? tex2Daa20x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 253.5) ? tex2Daa24x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
-        (aa_level < 254.5) ? tex2Daa_debug_16x_regular(
+        (antialias_level < 4.5) ? tex2Daa4x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 5.5) ? tex2Daa5x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 6.5) ? tex2Daa6x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 7.5) ? tex2Daa7x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 11.5) ? tex2Daa8x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 15.5) ? tex2Daa12x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 19.5) ? tex2Daa16x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 23.5) ? tex2Daa20x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 253.5) ? tex2Daa24x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 254.5) ? tex2Daa_debug_16x_regular(
             tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         tex2Daa_debug_dynamic(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma);
 }

@@ -163,7 +163,7 @@ void pixelShader11(
     const float2x2 pixel_to_tex_uv =
         mul_scale(1.0 / geom_overscan, pixel_to_video_uv);
 
-    //  Sample!  Skip antialiasing if aa_level < 0.5 or both of these hold:
+    //  Sample!  Skip antialiasing if antialias_level < 0.5 or both of these hold:
     //  1.) Geometry/curvature isn't used
     //  2.) Overscan == float2(1.0, 1.0)
     //  Skipping AA is sharper, but it's only faster with dynamic branches.
@@ -172,13 +172,13 @@ void pixelShader11(
     const bool need_subpixel_aa = false;//abs_aa_r_offset.x + abs_aa_r_offset.y > 0.0;
     float3 raw_color;
 
-    if(aa_level > 0.5 && (geom_mode > 0.5 || any(bool2((geom_overscan.x != 1.0), (geom_overscan.y != 1.0)))))
+    if(antialias_level > 0.5 && (geom_mode > 0.5 || any(bool2((geom_overscan.x != 1.0), (geom_overscan.y != 1.0)))))
     {
         //  Sample the input with antialiasing (due to sharp phosphors, etc.):
         raw_color = tex2Daa(samplerOutput10, tex_uv, pixel_to_tex_uv, float(frame_count), get_intermediate_gamma());
     }
 
-    else if(aa_level > 0.5 && need_subpixel_aa)
+    else if(antialias_level > 0.5 && need_subpixel_aa)
     {
         //  Sample at each subpixel location:
         raw_color = tex2Daa_subpixel_weights_only(

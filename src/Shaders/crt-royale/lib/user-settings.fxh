@@ -284,8 +284,8 @@ static const bool interlace_bff_static = false;
 //  What AA level do you want for curvature/overscan/subpixels?  Options:
 //  0x (none), 1x (sample subpixels), 4x, 5x, 6x, 7x, 8x, 12x, 16x, 20x, 24x
 //  (Static option only for now)
-#ifndef aa_level
-    #define aa_level 0.0;
+#ifndef antialias_level
+    #define antialias_level 0.0
 #endif
 // static const float aa_level = 12.0;                     //  range [0, 24]
 // static const float aa_level = 0.0;                     //  range [0, 24]
@@ -323,7 +323,7 @@ static const float mask_type_static = 1.0;                  //  range [0, 2]
 //      (pretty/fast/inflexible).  Each input LUT has a fixed dot pitch.
 //      This mode reuses the same masks, so triads will be enormous unless
 //      you change the mask LUT filenames in your .cgp file.
-static const float mask_sample_mode_static = 1.0;           //  range [0, 2]
+static const float mask_sample_mode_static = 0.0;           //  range [0, 2]
 //  Prefer setting the triad size (0.0) or number on the screen (1.0)?
 //  If RUNTIME_PHOSPHOR_BLOOM_SIGMA isn't #defined, the specified triad size
 //  will always be used to calculate the full bloom sigma statically.

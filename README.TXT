@@ -89,21 +89,19 @@ There are a handful of notable differences:
     buffers use gamma 1.0 and never ntsc_gamma. RUNTIME_SHADER_PARAMS_ENABLE
     required a ton more copy/pasting that I haven't felt like doing yet.
 
-4)  For now I've changed the default Mask Sample Mode from 0 to 1 because
-    it makes images too green, at least for me.
-
-5)  I figured out that the default anti-aliasing setting was way too strong,
-    so I turned it into a preprocessor definition aa_level and defaulted it
+4)  I figured out that the default anti-aliasing setting was way too strong,
+    so I turned it into a preprocessor definition antialias_level and defaulted it
     to 0. See user-settings.fxh for details.
 
 
 ################# QUALITATIVE DIFFERENCES #################
 
-The biggest change for me was that setting Mask Sample Mode to 0 is too green,
-while 1 looks a ton better. Meanwhile setting it to 1 in the libretro version
-was too purple. It seems to be caused by a difference in how ReShade and
-RetroArch are tiling the phosphor mask in
-crt-royale-scanlines-horizontal-apply-mask.fxh.
+The biggest change for me is the phosphor mask - it tiles differently in
+ReShade for some odd reason, although I think it looks better now. The side
+effect is that setting Mask Sample Mode to 1 was too purple in the libretro
+version while it's too white now. Previously using mode 0 in this ReShade
+version was too green, but that mysteriously fixed itself. Maybe I
+accidentally fixed something while improving UI configuration support.
 
 I've also noticed that the bloom is more pronounced in this version. It might
 be because of a tweak I made to the write-operation at the end of
