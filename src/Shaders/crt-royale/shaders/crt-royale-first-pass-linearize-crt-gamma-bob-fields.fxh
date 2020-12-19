@@ -38,14 +38,14 @@ void pixelShader0(
     {
         //  Sample the current line and an average of the previous/next line;
         //  tex2D_linearize will decode CRT gamma.  Don't bother branching:
-        const float3 curr_line = tex2D_linearize(samplerColor, texcoord, get_input_gamma()).rgb;
-        const float3 last_line = tex2D_linearize(samplerColor, texcoord - v_step, get_input_gamma()).rgb;
-        const float3 next_line = tex2D_linearize(samplerColor, texcoord + v_step, get_input_gamma()).rgb;
+        const float3 curr_line = tex2D_linearize(samplerCrop, texcoord, get_input_gamma()).rgb;
+        const float3 last_line = tex2D_linearize(samplerCrop, texcoord - v_step, get_input_gamma()).rgb;
+        const float3 next_line = tex2D_linearize(samplerCrop, texcoord + v_step, get_input_gamma()).rgb;
         const float3 interpolated_line = 0.5 * (last_line + next_line);
         //  If we're interlacing, determine which field curr_line is in:
         const float modulus = interlaced + 1.0;
         const float field_offset = fmod(frame_count + interlace_bff, modulus);
-        const float curr_line_texel = texcoord.y * tex2Dsize(samplerColor).y;
+        const float curr_line_texel = texcoord.y * tex2Dsize(samplerCrop).y;
         //  Use under_half to fix a rounding bug around exact texel locations.
         const float line_num_last = floor(curr_line_texel - under_half);
         const float wrong_field = fmod(line_num_last + field_offset, modulus);
@@ -56,6 +56,6 @@ void pixelShader0(
     }
     else
     {
-        color = encode_output(tex2D_linearize(samplerColor, texcoord, get_input_gamma()), get_intermediate_gamma());
+        color = encode_output(tex2D_linearize(samplerCrop, texcoord, get_input_gamma()), get_intermediate_gamma());
     }
 }
