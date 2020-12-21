@@ -155,7 +155,7 @@
 //  of conditional moves, so it's prohibitively slow for the minor benefit.
 
 
-#include "root-level-functions.fxh"
+#include "helper-functions-and-macros.fxh"
 
 /////////////////////////////  SETTINGS MANAGEMENT  ////////////////////////////
 

@@ -1,14 +1,16 @@
 #ifndef _DERIVED_SETTINGS_AND_CONSTANTS_H
 #define _DERIVED_SETTINGS_AND_CONSTANTS_H
 
-#include "crt-royale-header.fxh"
-#include "root-level-functions.fxh"
+#include "helper-functions-and-macros.fxh"
 #include "user-settings.fxh"
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale: A full-featured CRT shader, with cheese.
 //  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
+//
+//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
+//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -400,5 +402,20 @@ static const float max_mask_tile_border = max_mask_texel_border/
 static const float mask_resize_num_triads = mask_resize_num_tiles * mask_triads_per_tile;
 static const float2 min_allowed_viewport_triads =
     float2(mask_resize_num_triads, mask_resize_num_triads) / mask_resize_viewport_scale;
+
+
+////////////////////////  COMMON MATHEMATICAL CONSTANTS  ///////////////////////
+
+static const float pi = 3.141592653589;
+//  We often want to find the location of the previous texel, e.g.:
+//      const float2 curr_texel = uv * texture_size;
+//      const float2 prev_texel = floor(curr_texel - float2(0.5)) + float2(0.5);
+//      const float2 prev_texel_uv = prev_texel / texture_size;
+//  However, many GPU drivers round incorrectly around exact texel locations.
+//  We need to subtract a little less than 0.5 before flooring, and some GPU's
+//  require this value to be farther from 0.5 than others; define it here.
+//      const float2 prev_texel =
+//          floor(curr_texel - float2(under_half)) + float2(0.5);
+static const float under_half = 0.4995;
 
 #endif  //  _DERIVED_SETTINGS_AND_CONSTANTS_H

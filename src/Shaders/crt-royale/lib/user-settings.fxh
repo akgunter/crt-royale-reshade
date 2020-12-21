@@ -1,8 +1,6 @@
 #ifndef _USER_SETTINGS_H
 #define _USER_SETTINGS_H
 
-#include "crt-royale-header.fxh"
-
 /////////////////////////////  DRIVER CAPABILITIES  ////////////////////////////
 
 //  The Cg compiler uses different "profiles" with different capabilities.

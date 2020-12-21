@@ -6,6 +6,9 @@
 //  crt-royale: A full-featured CRT shader, with cheese.
 //  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
 //
+//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
+//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
+//
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
 //  Software Foundation; either version 2 of the License, or any later version.
@@ -23,8 +26,7 @@
 /////////////////////////////  SETTINGS MANAGEMENT  ////////////////////////////
 
 ///////////////////////////////  BEGIN INCLUDES  ///////////////////////////////
-#include "crt-royale-header.fxh"
-#include "root-level-functions.fxh"
+#include "helper-functions-and-macros.fxh"
 #include "user-settings.fxh"
 #include "derived-settings-and-constants.fxh"
 
