@@ -66,6 +66,8 @@ sampler2D samplerColor {
 texture2D texCrop {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
+
+	Format = RGBA16;
 };
 sampler2D samplerCrop { Texture = texCrop; };
 
@@ -74,7 +76,7 @@ texture2D texOutput0 {
 	Width = CONTENT_WIDTH;
 	Height = CONTENT_HEIGHT;
 
-	Format = RGB10A2;
+	Format = RGBA16;
 };
 sampler2D samplerOutput0 { Texture = texOutput0; };
 
@@ -83,7 +85,7 @@ texture2D texOutput1 {
 	Width = CONTENT_WIDTH;
 	Height = CONTENT_HEIGHT;
 
-	Format = RGB10A2;
+	Format = RGBA16;
 };
 sampler2D samplerOutput1 { Texture = texOutput1; };
 
@@ -96,7 +98,7 @@ texture2D texOutput2 {
 	Width = intermediate_buffer_x;
 	Height = intermediate_buffer_y;
 
-	Format = RGB10A2;
+	Format = RGBA16;
 };
 sampler2D samplerOutput2 { Texture = texOutput2; };
 
@@ -105,7 +107,7 @@ texture2D texOutput3 {
 	Width = intermediate_buffer_x;
 	Height = intermediate_buffer_y;
 
-	Format = RGB10A2;
+	Format = RGBA16;
 };
 sampler2D samplerOutput3 { Texture = texOutput3; };
 
@@ -114,7 +116,7 @@ texture2D texOutput4 {
 	Width = intermediate_buffer_x;
 	Height = intermediate_buffer_y;
 
-	Format = RGB10A2;
+	Format = RGBA16;
 };
 sampler2D samplerOutput4 { Texture = texOutput4; };
 

@@ -28,8 +28,8 @@ static const float content_upper = content_center_y - content_radius_y;
 static const float content_lower = content_center_y + content_radius_y;
 
 void cropContentPixelShader(
-    in float4 pos : SV_Position,
-    in float2 texcoord : TEXCOORD0,
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {
@@ -38,8 +38,8 @@ void cropContentPixelShader(
 }
 
 void uncropContentPixelShader(
-    in float4 pos : SV_Position,
-    in float2 texcoord : TEXCOORD0,
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {

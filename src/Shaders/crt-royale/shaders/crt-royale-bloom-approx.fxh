@@ -148,8 +148,8 @@ float3 tex2Dresize_gaussian4x4(sampler2D tex, float2 tex_uv, float2 dxdy, float2
 
 
 void pixelShader2(
-    in float4 pos : SV_Position,
-    in float2 texcoord : TEXCOORD0,
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {
