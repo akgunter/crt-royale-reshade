@@ -206,17 +206,17 @@ float4 tex2D_linearize(const sampler2D tex, const float2 tex_coords, const float
 float4 tex2D_linearize(const sampler2D tex, const float3 tex_coords, const float gamma)
 {   return decode_input(tex2D(tex, tex_coords.xy), gamma);   }
 
-float4 tex2D_linearize(const sampler2D tex, const float2 tex_coords, const int texel_off, const float gamma)
-{   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), texel_off), gamma);    }
+// float4 tex2D_linearize(const sampler2D tex, const float2 tex_coords, const int texel_off, const float gamma)
+// {   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), texel_off), gamma);    }
 
-float4 tex2D_linearize(const sampler2D tex, const float3 tex_coords, const int texel_off, const float gamma)
-{   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), texel_off), gamma);    }
+// float4 tex2D_linearize(const sampler2D tex, const float3 tex_coords, const int texel_off, const float gamma)
+// {   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), texel_off), gamma);    }
 
 //  tex2Dlod:
 float4 tex2Dlod_linearize(const sampler2D tex, const float4 tex_coords, const float gamma)
 {   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), 0.0), gamma);    }
 
-float4 tex2Dlod_linearize(const sampler2D tex, const float4 tex_coords, const int texel_off, const float gamma)
-{   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), texel_off), gamma);     }
+// float4 tex2Dlod_linearize(const sampler2D tex, const float4 tex_coords, const int texel_off, const float gamma)
+// {   return decode_input(tex2Dlod(tex, float4(tex_coords.x, tex_coords.y, 0, 0), texel_off), gamma);     }
 
 #endif  //  _GAMMA_MANAGEMENT_H
