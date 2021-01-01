@@ -62,6 +62,11 @@ sampler2D samplerColor {
 	MipFilter = NONE;
 };
 
+// Yes, the WIDTH/HEIGHT/SIZE defines are kinda weird.
+// Yes, we have to have them or something similar. This is for D3D11 which
+// returns (0, 0) when you call tex2Dsize() on the pass's output texture.
+
+
 // Crop pass
 #define TEX_CROP_WIDTH BUFFER_WIDTH
 #define TEX_CROP_HEIGHT BUFFER_HEIGHT

@@ -18,8 +18,8 @@ debugging tools. Those features made this project orders of magnitude easier.
 
 ################# SETUP #################
 
-0)  So far I've gotten this shader working in D3D11, D3D12, and OpenGL. I don't
-    know about D3D10 or Vulkan yet. It currently does NOT work in D3D9.
+0)  Currently the shader works with D3D10/11/12 and OpenGL. It does NOT work
+    with D3D9 or Vulkan.
 
 1)  As of this writing, ReShade 4.8.3 isn't actually released yet. So you'll
     have to build it, install it, and install the base shader repo.
