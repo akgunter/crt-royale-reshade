@@ -41,6 +41,15 @@
 	#include "crt-royale/shaders/content-box.fxh"
 #endif
 
+void dummyShader1(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+	color = float4(1, 1, 1, 1);
+}
+
 technique CRT_Royale
 {
 	// Toggle the content box to help users configure it
@@ -66,7 +75,7 @@ technique CRT_Royale
 			VertexShader = vertexShader0;
 			PixelShader = pixelShader0;
 
-			RenderTarget = texOutput0;
+			RenderTarget = texOrigLinearized;
 		}
 		// crt-royale-scanlines-vertical-interlacing.fxh
 		pass p1
@@ -74,7 +83,7 @@ technique CRT_Royale
 			VertexShader = vertexShader1;
 			PixelShader = pixelShader1;
 
-			RenderTarget = texOutput1;
+			RenderTarget = texVerticalScanlines;
 		}
 		// crt-royale-bloom-approx.fxh
 		pass p2
@@ -82,7 +91,7 @@ technique CRT_Royale
 			VertexShader = PostProcessVS;
 			PixelShader = pixelShader2;
 			
-			RenderTarget = texOutput2;
+			RenderTarget = texBloomApprox;
 		}
 		// blur9fast-vertical.fxh
 		pass p3
@@ -90,7 +99,7 @@ technique CRT_Royale
 			VertexShader = vertexShader3;
 			PixelShader = pixelShader3;
 			
-			RenderTarget = texOutput3;
+			RenderTarget = texBlurVertical;
 		}
 		// blur9fast-horizontal.fxh
 		pass p4
@@ -98,7 +107,7 @@ technique CRT_Royale
 			VertexShader = vertexShader4;
 			PixelShader = pixelShader4;
 			
-			RenderTarget = texOutput4;
+			RenderTarget = texBlurHorizontal;
 		}
 		// crt-royale-mask-resize-vertical.fxh
 		pass p5
@@ -106,7 +115,7 @@ technique CRT_Royale
 			VertexShader = PostProcessVS;
 			PixelShader = pixelShader5;
 			
-			RenderTarget = texOutput5;
+			RenderTarget = texMaskResizeVertical;
 		}
 		// crt-royale-mask-resize-horizontal.fxh
 		pass p6
@@ -114,7 +123,7 @@ technique CRT_Royale
 			VertexShader = PostProcessVS;
 			PixelShader = pixelShader6;
 			
-			RenderTarget = texOutput6;
+			RenderTarget = texMaskResizeHorizontal;
 		}
 		// crt-royale-scanlines-horizontal-apply-mask.fxh
 		pass p7
@@ -122,7 +131,7 @@ technique CRT_Royale
 			VertexShader = vertexShader7;
 			PixelShader = pixelShader7;
 			
-			RenderTarget = texOutput7;
+			RenderTarget = texMaskedScanlines;
 		}
 		// crt-royale-brightpass.fxh
 		pass p8
@@ -130,7 +139,7 @@ technique CRT_Royale
 			VertexShader = vertexShader8;
 			PixelShader = pixelShader8;
 			
-			RenderTarget = texOutput8;
+			RenderTarget = texBrightpass;
 		}
 		// crt-royale-bloom-vertical.fxh
 		pass p9
@@ -138,7 +147,7 @@ technique CRT_Royale
 			VertexShader = vertexShader9;
 			PixelShader = pixelShader9;
 			
-			RenderTarget = texOutput9;
+			RenderTarget = texBloomVertical;
 		}
 		// crt-royale-bloom-horizontal-reconstitute.fxh
 		pass p10
@@ -146,7 +155,7 @@ technique CRT_Royale
 			VertexShader = vertexShader10;
 			PixelShader = pixelShader10;
 			
-			RenderTarget = texOutput10;
+			RenderTarget = texBloomHorizontal;
 		}
 		// crt-royale-geometry-aa-last-pass.fxh
 		pass p11
@@ -154,7 +163,7 @@ technique CRT_Royale
 			VertexShader = vertexShader11;
 			PixelShader = pixelShader11;
 
-			RenderTarget = texOutput11;
+			RenderTarget = texGeometry;
 		}
 		// content-crop.fxh
 		pass uncrop

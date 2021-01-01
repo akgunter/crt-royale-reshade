@@ -40,7 +40,7 @@ void vertexShader1(
 
     //  Detect interlacing: il_step_multiple indicates the step multiple between
     //  lines: 1 is for progressive sources, and 2 is for interlaced sources.
-    const float2 orig_linearized_size = tex2Dsize(samplerOutput0);
+    const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
     const float y_step = 1.0 + float(is_interlaced(orig_linearized_size.y));
 
     il_step_multiple = float2(1.0, y_step);
@@ -48,7 +48,8 @@ void vertexShader1(
     uv_step = il_step_multiple / orig_linearized_size;
     
     //  We need the pixel height in scanlines for antialiased/integral sampling:
-    pixel_height_in_scanlines = (orig_linearized_size.y / tex2Dsize(samplerOutput1).y) / il_step_multiple.y;
+    pixel_height_in_scanlines = (orig_linearized_size.y / TEX_VERTICALSCANLINES_SIZE.y) / il_step_multiple.y;
+    // pixel_height_in_scanlines = 1.0 / il_step_multiple.y;
 }
 
 void pixelShader1(
@@ -64,7 +65,7 @@ void pixelShader1(
     //  vertical resolution.  Temporarily auto-dim the output to avoid clipping.
 
     //  Read some attributes into local variables:
-    const float2 orig_linearized_size = tex2Dsize(samplerOutput0);
+    const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
     const float2 orig_linearized_size_inv = 1.0/orig_linearized_size;
 
     // frame_count comes from shared-objects.fxh
@@ -84,36 +85,36 @@ void pixelShader1(
     //  NOTE: Anisotropic filtering creates interlacing artifacts, which is why
     //  ORIG_LINEARIZED bobbed any interlaced input before this pass.
     const float2 v_step = float2(0.0, uv_step.y);
-    const float3 scanline2_color = tex2D_linearize(samplerOutput0, scanline_uv, get_intermediate_gamma()).rgb;
-    const float3 scanline3_color = tex2D_linearize(samplerOutput0, scanline_uv + v_step, get_intermediate_gamma()).rgb;
+    const float3 scanline2_color = tex2D_linearize(samplerOrigLinearized, scanline_uv, get_intermediate_gamma()).rgb;
+    const float3 scanline3_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + v_step, get_intermediate_gamma()).rgb;
     float3 scanline0_color, scanline1_color, scanline4_color, scanline5_color,
         scanline_outside_color;
     float dist_round;
     //  Use scanlines 0, 1, 4, and 5 for a total of 6 scanlines:
     if(beam_num_scanlines > 5.5)
     {
-        scanline1_color = tex2D_linearize(samplerOutput0, scanline_uv - v_step, get_intermediate_gamma()).rgb;
-        scanline4_color = tex2D_linearize(samplerOutput0, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
-        scanline0_color = tex2D_linearize(samplerOutput0, scanline_uv - 2.0 * v_step, get_intermediate_gamma()).rgb;
-        scanline5_color = tex2D_linearize(samplerOutput0, scanline_uv + 3.0 * v_step, get_intermediate_gamma()).rgb;
+        scanline1_color = tex2D_linearize(samplerOrigLinearized, scanline_uv - v_step, get_intermediate_gamma()).rgb;
+        scanline4_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
+        scanline0_color = tex2D_linearize(samplerOrigLinearized, scanline_uv - 2.0 * v_step, get_intermediate_gamma()).rgb;
+        scanline5_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 3.0 * v_step, get_intermediate_gamma()).rgb;
     }
     //  Use scanlines 1, 4, and either 0 or 5 for a total of 5 scanlines:
     else if(beam_num_scanlines > 4.5)
     {
-        scanline1_color = tex2D_linearize(samplerOutput0, scanline_uv - v_step, get_intermediate_gamma()).rgb;
-        scanline4_color = tex2D_linearize(samplerOutput0, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
+        scanline1_color = tex2D_linearize(samplerOrigLinearized, scanline_uv - v_step, get_intermediate_gamma()).rgb;
+        scanline4_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
         //  dist is in [0, 1]
         dist_round = round(dist);
         const float2 sample_0_or_5_uv_off = lerp(-2.0 * v_step, 3.0 * v_step, dist_round);
         //  Call this "scanline_outside_color" to cope with the conditional
         //  scanline number:
-        scanline_outside_color = tex2D_linearize(samplerOutput0, scanline_uv + sample_0_or_5_uv_off, get_intermediate_gamma()).rgb;
+        scanline_outside_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + sample_0_or_5_uv_off, get_intermediate_gamma()).rgb;
     }
     //  Use scanlines 1 and 4 for a total of 4 scanlines:
     else if(beam_num_scanlines > 3.5)
     {
-        scanline1_color = tex2D_linearize(samplerOutput0, scanline_uv - v_step, get_intermediate_gamma()).rgb;
-        scanline4_color = tex2D_linearize(samplerOutput0, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
+        scanline1_color = tex2D_linearize(samplerOrigLinearized, scanline_uv - v_step, get_intermediate_gamma()).rgb;
+        scanline4_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
     }
     //  Use scanline 1 or 4 for a total of 3 scanlines:
     else if(beam_num_scanlines > 2.5)
@@ -121,7 +122,7 @@ void pixelShader1(
         //  dist is in [0, 1]
         dist_round = round(dist);
         const float2 sample_1or4_uv_off = lerp(-v_step, 2.0 * v_step, dist_round);
-        scanline_outside_color = tex2D_linearize(samplerOutput0, scanline_uv + sample_1or4_uv_off, get_intermediate_gamma()).rgb;
+        scanline_outside_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + sample_1or4_uv_off, get_intermediate_gamma()).rgb;
     }
     
     //  Compute scanline contributions, accounting for vertical convergence.

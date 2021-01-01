@@ -33,8 +33,9 @@ void pixelShader6(
     float2 tex_uv = texcoord;
     //  First estimate the viewport size (the user will get the wrong number of
     //  triads if it's wrong and mask_specify_num_triads is 1.0/true).
-    const float2 input_size = tex2Dsize(samplerOutput5);
-    const float2 output_size = tex2Dsize(samplerOutput6);
+    const float2 input_size = tex2Dsize(samplerMaskResizeVertical);
+    // const float2 output_size = tex2Dsize(samplerMaskResizeHorizontal);
+    const float2 output_size = TEX_MASKHORIZONTAL_SIZE;
     // const float2 estimated_viewport_size = output_size / mask_resize_viewport_scale;
     const float2 estimated_viewport_size = content_size;
     //  Find the final size of our resized phosphor mask tiles.  We probably
@@ -81,7 +82,7 @@ void pixelShader6(
             max(tile_uv_wrap.x, tile_uv_wrap.y) <= mask_resize_num_tiles)
         {
             const float2 src_tex_uv = frac(src_tex_uv_wrap);
-            const float3 pixel_color = downsample_horizontal_sinc_tiled(samplerOutput5,
+            const float3 pixel_color = downsample_horizontal_sinc_tiled(samplerMaskResizeVertical,
                 src_tex_uv, input_size, src_dxdy.x,
                 resize_magnification_scale.x, tile_size_uv.x);
             //  The input LUT was linear RGB, and so is our output:

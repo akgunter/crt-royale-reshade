@@ -38,8 +38,8 @@ void vertexShader9(
 	texcoord.y = (id == 1) ? 2.0 : 0.0;
 	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
    
-    float2 input_size = tex2Dsize(samplerOutput8);
-    float2 output_size =  tex2Dsize(samplerOutput9);
+    float2 input_size = tex2Dsize(samplerBrightpass);
+    float2 output_size = TEX_BLOOMVERTICAL_SIZE;
 
 	//  Get the uv sample distance between output pixels.  Calculate dxdy like
     //  blurs/vertex-shader-blur-fast-vertical.h.
@@ -49,7 +49,7 @@ void vertexShader9(
 
     //  Calculate a runtime bloom_sigma in case it's needed:
     const float2 estimated_viewport_size = content_size;
-    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerOutput6);
+    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
     const float mask_tile_size_x = get_resized_mask_tile_size(estimated_viewport_size, estimated_mask_resize_output_size, true).x;
 
     bloom_sigma_runtime = get_min_sigma_to_blur_triad(
@@ -67,7 +67,7 @@ void pixelShader9(
 ) {
     //  Blur the brightpass horizontally with a 9/17/25/43x blur:
     const float bloom_sigma = get_final_bloom_sigma(bloom_sigma_runtime);
-    const float3 color3 = tex2DblurNfast(samplerOutput8, texcoord,
+    const float3 color3 = tex2DblurNfast(samplerBrightpass, texcoord,
         bloom_dxdy, bloom_sigma, get_intermediate_gamma());
 
     //  Encode and output the blurred image:

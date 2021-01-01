@@ -18,14 +18,13 @@ debugging tools. Those features made this project orders of magnitude easier.
 
 ################# SETUP #################
 
-0)  For now, this shader only works for OpenGL and D3D12 applications. D3D9
-    doesn't permit enough registers, and D3D11 just shows a black screen for
-    some reason. I haven't tested a D3D10 application yet, but it probably
-    doesn't work either.
+0)  So far I've gotten this shader working in D3D11, D3D12, and OpenGL. I don't
+    know about D3D10 or Vulkan yet. It currently does NOT work in D3D9.
 
 1)  As of this writing, ReShade 4.8.3 isn't actually released yet. So you'll
     have to build it, install it, and install the base shader repo.
-    Remember to edit/replace version.h in the ReShade source, so your
+    Remember to clone the repo with --recurse-submodules. Also remember
+    to edit/replace version.h in the ReShade source, so your
     executable thinks it's at least version 4. Otherwise ReShade.fxh will
     blow up and fuss at you. ReShade's git repository has instructions for
     building an installer from source: https://github.com/crosire/reshade
@@ -53,8 +52,13 @@ debugging tools. Those features made this project orders of magnitude easier.
     Once you've got the box aligned, you can switch off CONTENT_BOX_VISIBLE;
     and the main pipeline will use your settings to draw everything correctly.
 
-    Be aware that, if you resize the game's viewport, you'll have to readjust
-    these settings.
+    Be aware that, if you resize the game's viewport, you'll probably have to
+    readjust these settings. You can mitigate this by defining CONTENT_WIDTH
+    and CONTENT_HEIGHT algebraically in terms of BUFFER_WIDTH and
+    BUFFER_HEIGHT, but you'll have to figure out the expressions for that on a
+    case by case basis. As an example, if you know the content has a 4:3
+    aspect ratio and fills the screen vertically, you can define CONTENT_HEIGHT
+    as BUFFER_HEIGHT and CONTENT_WIDTH as CONTENT_HEIGHT * 4.0 / 3.0.
 
 
 ################# CONFIGURATION #################

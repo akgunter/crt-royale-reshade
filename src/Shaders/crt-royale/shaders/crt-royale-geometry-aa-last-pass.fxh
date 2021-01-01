@@ -196,18 +196,18 @@ void pixelShader11(
     if(antialias_level > 0.5 && (geom_mode > 0.5 || any(bool2((geom_overscan.x != 1.0), (geom_overscan.y != 1.0)))))
     {
         //  Sample the input with antialiasing (due to sharp phosphors, etc.):
-        raw_color = tex2Daa(samplerOutput10, tex_uv, pixel_to_tex_uv, float(frame_count), get_intermediate_gamma());
+        raw_color = tex2Daa(samplerBloomHorizontal, tex_uv, pixel_to_tex_uv, float(frame_count), get_intermediate_gamma());
     }
 
     else if(antialias_level > 0.5 && need_subpixel_aa)
     {
         //  Sample at each subpixel location:
         raw_color = tex2Daa_subpixel_weights_only(
-            samplerOutput10, tex_uv, pixel_to_tex_uv, get_intermediate_gamma());
+            samplerBloomHorizontal, tex_uv, pixel_to_tex_uv, get_intermediate_gamma());
     }
     else
     {
-        raw_color = tex2D_linearize(samplerOutput10, tex_uv, get_intermediate_gamma()).rgb;
+        raw_color = tex2D_linearize(samplerBloomHorizontal, tex_uv, get_intermediate_gamma()).rgb;
     }
 
     //  Dim borders and output the final result:

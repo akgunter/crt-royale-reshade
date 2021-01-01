@@ -63,121 +63,160 @@ sampler2D samplerColor {
 };
 
 // Crop pass
+#define TEX_CROP_WIDTH BUFFER_WIDTH
+#define TEX_CROP_HEIGHT BUFFER_HEIGHT
+#define TEX_CROP_SIZE int2(TEX_CROP_WIDTH, TEX_CROP_HEIGHT)
 texture2D texCrop {
-	Width = BUFFER_WIDTH;
-	Height = BUFFER_HEIGHT;
+	Width = TEX_CROP_WIDTH;
+	Height = TEX_CROP_HEIGHT;
 
 	Format = RGBA16;
 };
 sampler2D samplerCrop { Texture = texCrop; };
 
 // Pass 0 Buffer (ORIG_LINEARIZED)
-texture2D texOutput0 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+#define TEX_ORIGLINEARIZED_WIDTH CONTENT_WIDTH
+#define TEX_ORIGLINEARIZED_HEIGHT CONTENT_HEIGHT
+#define TEX_ORIGLINEARIZED_SIZE int2(TEX_ORIGLINEARIZED_WIDTH, TEX_ORIGLINEARIZED_HEIGHT)
+texture2D texOrigLinearized {
+	Width = TEX_ORIGLINEARIZED_WIDTH;
+	Height = TEX_ORIGLINEARIZED_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput0 { Texture = texOutput0; };
+sampler2D samplerOrigLinearized { Texture = texOrigLinearized; };
 
-// Pass 1 Buffer  (VERTICAL_SCANLINES)
-texture2D texOutput1 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+// Pass 1 Buffer (VERTICAL_SCANLINES)
+#define TEX_VERTICALSCANLINES_WIDTH CONTENT_WIDTH
+#define TEX_VERTICALSCANLINES_HEIGHT CONTENT_HEIGHT
+#define TEX_VERTICALSCANLINES_SIZE int2(TEX_VERTICALSCANLINES_WIDTH, TEX_VERTICALSCANLINES_HEIGHT)
+texture2D texVerticalScanlines {
+	Width = TEX_VERTICALSCANLINES_WIDTH;
+	Height = TEX_VERTICALSCANLINES_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput1 { Texture = texOutput1; };
+sampler2D samplerVerticalScanlines { Texture = texVerticalScanlines; };
 
 static const int intermediate_buffer_x = 320;
 static const int intermediate_buffer_y = 240;
 
 
 // Pass 2 Buffer (BLOOM_APPROX)
-texture2D texOutput2 {
-	Width = intermediate_buffer_x;
-	Height = intermediate_buffer_y;
+#define TEX_BLOOMAPPROX_WIDTH 320
+#define TEX_BLOOMAPPROX_HEIGHT 240
+#define TEX_BLOOMAPPROX_SIZE int2(TEX_BLOOMAPPROX_WIDTH, TEX_BLOOMAPPROX_HEIGHT)
+texture2D texBloomApprox {
+	Width = TEX_BLOOMAPPROX_WIDTH;
+	Height = TEX_BLOOMAPPROX_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput2 { Texture = texOutput2; };
+sampler2D samplerBloomApprox { Texture = texBloomApprox; };
 
 // Pass 3 Buffer
-texture2D texOutput3 {
-	Width = intermediate_buffer_x;
-	Height = intermediate_buffer_y;
+#define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROX_WIDTH
+#define TEX_BLURVERTICAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
+#define TEX_BLURVERTICAL_SIZE int2(TEX_BLURVERTICAL_WIDTH, TEX_BLURVERTICAL_HEIGHT)
+texture2D texBlurVertical {
+	Width = TEX_BLURVERTICAL_WIDTH;
+	Height = TEX_BLURVERTICAL_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput3 { Texture = texOutput3; };
+sampler2D samplerBlurVertical { Texture = texBlurVertical; };
 
 // Pass 4 Buffer (HALATION_BLUR)
-texture2D texOutput4 {
-	Width = intermediate_buffer_x;
-	Height = intermediate_buffer_y;
+#define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROX_WIDTH
+#define TEX_BLURHORIZONTAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
+#define TEX_BLURHORIZONTAL_SIZE int2(TEX_BLURHORIZONTAL_WIDTH, TEX_BLURHORIZONTAL_HEIGHT)
+texture2D texBlurHorizontal {
+	Width = TEX_BLURHORIZONTAL_WIDTH;
+	Height = TEX_BLURHORIZONTAL_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput4 { Texture = texOutput4; };
+sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
 
 // Pass 5 Mask Texture
-texture2D texOutput5 {
-	Width = 64;
-	Height = CONTENT_HEIGHT * mask_resize_viewport_scale.y;
+#define TEX_MASKVERTICAL_WIDTH 64
+#define TEX_MASKVERTICAL_HEIGHT int(CONTENT_HEIGHT * mask_resize_viewport_scale.y)
+#define TEX_MASKVERTICAL_SIZE int2(TEX_MASKVERTICAL_WIDTH, TEX_MASKVERTICAL_HEIGHT)
+texture2D texMaskResizeVertical {
+	Width = TEX_MASKVERTICAL_WIDTH;
+	Height = TEX_MASKVERTICAL_HEIGHT;
 };
-sampler2D samplerOutput5 { Texture = texOutput5; };
+sampler2D samplerMaskResizeVertical { Texture = texMaskResizeVertical; };
 
 // Pass 6 Mask Texture (MASK_RESIZE)
-texture2D texOutput6 {
-	Width = CONTENT_WIDTH * mask_resize_viewport_scale.x;
-	Height = CONTENT_HEIGHT * mask_resize_viewport_scale.y;
+#define TEX_MASKHORIZONTAL_WIDTH int(CONTENT_WIDTH * mask_resize_viewport_scale.x)
+#define TEX_MASKHORIZONTAL_HEIGHT int(CONTENT_HEIGHT * mask_resize_viewport_scale.y)
+#define TEX_MASKHORIZONTAL_SIZE int2(TEX_MASKHORIZONTAL_WIDTH, TEX_MASKHORIZONTAL_HEIGHT)
+texture2D texMaskResizeHorizontal {
+	Width = TEX_MASKHORIZONTAL_WIDTH;
+	Height = TEX_MASKHORIZONTAL_HEIGHT;
 };
-sampler2D samplerOutput6 { Texture = texOutput6; };
+sampler2D samplerMaskResizeHorizontal { Texture = texMaskResizeHorizontal; };
 
 // Pass 7 Buffer (MASKED_SCANLINES)
-texture2D texOutput7 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+#define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH
+#define TEX_MASKEDSCANLINES_HEIGHT CONTENT_HEIGHT
+#define TEX_MASKEDSCANLINES_SIZE int2(TEX_MASKEDSCANLINES_WIDTH, TEX_MASKEDSCANLINES_HEIGHT)
+texture2D texMaskedScanlines {
+	Width = TEX_MASKEDSCANLINES_WIDTH;
+	Height = TEX_MASKEDSCANLINES_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput7 { Texture = texOutput7; };
+sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
 
 // Pass 8 Buffer (BRIGHTPASS)
-texture2D texOutput8 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+#define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH
+#define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT
+#define TEX_BRIGHTPASS_SIZE int2(TEX_BRIGHTPASS_WIDTH, TEX_BRIGHTPASS_HEIGHT)
+texture2D texBrightpass {
+	Width = TEX_BRIGHTPASS_WIDTH;
+	Height = TEX_BRIGHTPASS_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput8 { Texture = texOutput8; };
+sampler2D samplerBrightpass { Texture = texBrightpass; };
 
 // Pass 9 Buffer
-texture2D texOutput9 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+#define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH
+#define TEX_BLOOMVERTICAL_HEIGHT CONTENT_HEIGHT
+#define TEX_BLOOMVERTICAL_SIZE int2(TEX_BLOOMVERTICAL_WIDTH, TEX_BLOOMVERTICAL_HEIGHT)
+texture2D texBloomVertical {
+	Width = TEX_BLOOMVERTICAL_WIDTH;
+	Height = TEX_BLOOMVERTICAL_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput9 { Texture = texOutput9; };
+sampler2D samplerBloomVertical { Texture = texBloomVertical; };
 
 // Pass 10 Buffer
-texture2D texOutput10 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+#define TEX_BLOOMHORIZONTAL_WIDTH CONTENT_WIDTH
+#define TEX_BLOOMHORIZONTAL_HEIGHT CONTENT_HEIGHT
+#define TEX_BLOOMHORIZONTAL_SIZE int2(TEX_BLOOMHORIZONTAL_WIDTH, TEX_BLOOMHORIZONTAL_HEIGHT)
+texture2D texBloomHorizontal {
+	Width = TEX_BLOOMHORIZONTAL_WIDTH;
+	Height = TEX_BLOOMHORIZONTAL_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput10 { Texture = texOutput10; };
+sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 
 // Pass 11 Buffer
-texture2D texOutput11 {
-	Width = CONTENT_WIDTH;
-	Height = CONTENT_HEIGHT;
+#define TEX_GEOMETRY_WIDTH CONTENT_WIDTH
+#define TEX_GEOMETRY_HEIGHT CONTENT_HEIGHT
+#define TEX_GEOMETRY_SIZE int2(TEX_GEOMETRY_WIDTH, TEX_GEOMETRY_HEIGHT)
+texture2D texGeometry {
+	Width = TEX_GEOMETRY_WIDTH;
+	Height = TEX_GEOMETRY_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOutput11 { Texture = texOutput11; };
+sampler2D samplerGeometry { Texture = texGeometry; };
 
 uniform int frame_count < source = "framecount"; >;
 

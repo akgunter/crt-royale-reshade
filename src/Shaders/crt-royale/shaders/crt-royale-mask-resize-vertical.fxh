@@ -33,7 +33,8 @@ void pixelShader5(
     float2 tex_uv = texcoord.xy;
     //  First estimate the viewport size (the user will get the wrong number of
     //  triads if it's wrong and mask_specify_num_triads is 1.0/true).
-    const float2 output_size = tex2Dsize(samplerOutput5);
+    // const float2 output_size = tex2Dsize(samplerMaskResizeVertical);
+    const float2 output_size = TEX_MASKVERTICAL_SIZE;
     const float viewport_y = CONTENT_HEIGHT;
     const float aspect_ratio = geom_aspect_ratio_x / geom_aspect_ratio_y;
     // const float2 estimated_viewport_size = float2(viewport_y * aspect_ratio, viewport_y);
@@ -43,7 +44,7 @@ void pixelShader5(
     //  we're not swearing it's correct (if we did, the x result would influence
     //  the y result to maintain the tile aspect ratio).
     // const float2 estimated_mask_resize_output_size = float2(output_size.y * aspect_ratio, output_size.y);
-    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerOutput6);
+    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
     //  Find the final intended [y] size of our resized phosphor mask tiles,
     //  then the tile size for the current pass (resize y only):
     const float2 mask_resize_tile_size = get_resized_mask_tile_size(estimated_viewport_size, estimated_mask_resize_output_size, true);

@@ -41,10 +41,10 @@ void vertexShader8(
 	texcoord.y = (id == 1) ? 2.0 : 0.0;
 	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 
-    float2 output_size = tex2Dsize(samplerOutput8);
+    float2 output_size = TEX_BRIGHTPASS_SIZE;
     //  Calculate a runtime bloom_sigma in case it's needed:
     const float2 estimated_viewport_size = content_size;
-    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerOutput6);
+    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
     const float mask_tile_size_x = get_resized_mask_tile_size(estimated_viewport_size, estimated_mask_resize_output_size, true).x;
     bloom_sigma_runtime = get_min_sigma_to_blur_triad(
         mask_tile_size_x / mask_triads_per_tile, bloom_diff_thresh_);
@@ -58,7 +58,7 @@ void pixelShader8(
     out float4 color : SV_Target
 ) {
     //  Sample the masked scanlines:
-    const float3 intensity_dim = tex2D_linearize(samplerOutput7, texcoord, get_intermediate_gamma()).rgb;
+    const float3 intensity_dim = tex2D_linearize(samplerMaskedScanlines, texcoord, get_intermediate_gamma()).rgb;
     //  Get the full intensity, including auto-undimming, and mask compensation:
     const float auto_dim_factor = levels_autodim_temp;
     const float undim_factor = 1.0/auto_dim_factor;
@@ -68,7 +68,7 @@ void pixelShader8(
     //  Sample BLOOM_APPROX to estimate what a straight blur of masked scanlines
     //  would look like, so we can estimate how much energy we'll receive from
     //  blooming neighbors:
-    const float3 phosphor_blur_approx = levels_contrast * tex2D_linearize(samplerOutput2, texcoord, get_intermediate_gamma()).rgb;
+    const float3 phosphor_blur_approx = levels_contrast * tex2D_linearize(samplerBloomApprox, texcoord, get_intermediate_gamma()).rgb;
 
     //  Compute the blur weight for the center texel and the maximum energy we
     //  expect to receive from neighbors:

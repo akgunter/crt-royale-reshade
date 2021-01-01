@@ -69,7 +69,7 @@ void vertexShader4(
     //  (not output pixels), but we avoid this and consistently blur at the
     //  destination size.  Otherwise, combining statically calculated weights
     //  with bilinear sample exploitation would result in terrible artifacts.
-    static const float2 output_size = tex2Dsize(samplerOutput4);
+    static const float2 output_size = TEX_BLURHORIZONTAL_SIZE;
     static const float2 dxdy = 1.0 / output_size;
     //  This blur is vertical-only, so zero out the horizontal offset:
     blur_dxdy = float2(dxdy.x, 0.0);
@@ -82,7 +82,7 @@ void pixelShader4(
 
     out float4 color : SV_Target
 ) {
-    static const float3 blur_color = tex2Dblur9fast(samplerOutput3, texcoord, blur_dxdy, get_intermediate_gamma());
+    static const float3 blur_color = tex2Dblur9fast(samplerBlurVertical, texcoord, blur_dxdy, get_intermediate_gamma());
     //  Encode and output the blurred image:
     // color = encode_output(float4(blur_color, 1.0), 1.0);
     color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());

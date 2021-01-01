@@ -49,6 +49,6 @@ void uncropContentPixelShader(
         texcoord_uncropped.y >= content_upper && texcoord_uncropped.y <= content_lower
     );
 
-    if (is_in_boundary) color = tex2D(samplerOutput11, texcoord_uncropped);
+    if (is_in_boundary) color = tex2D(samplerGeometry, texcoord_uncropped);
     else color = float4(0, 0, 0, 1);
 }
