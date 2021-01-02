@@ -57,3 +57,5 @@ I've also noticed that the bloom is more pronounced in this implementation. It m
 #### REPORTING DISCREPANCIES
 
 My goal was to replicate crt-royale with the only discrepancies being improvements, but I only use a narrow range of configurations; and crt-royale has a stupendous number of settings that can all break in weird ways. It's pretty much guaranteed some configurations don't work correctly. If you try to port your RetroArch crt-royale config to this implementation, let me know if you find any significant differences. I especially want to know about any configs that work correctly in RetroArch but crash in ReShade, or are performant in RetroArch but unplayable in ReShade.
+
+Please bear in mind that, if the discrepancy involves dark colors getting crushed, I can't promise anything. The libretro implementation uses an 8-bit SRGB encoding that, as far as I can tell, isn't currently available in ReShade. I've tried to compensate with a 16-bit UNORM encoding, but that isn't perfect.
