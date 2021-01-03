@@ -302,18 +302,24 @@ float3 get_raw_interpolated_color(const float3 color0,
     const float4 weights)
 {
     //  Use max to avoid bizarre artifacts from negative colors:
-    // return max(
-    //     float3(
-    //         dot(weights, float4(color0.x, color1.x, color2.x, color3.x)),
-    //         dot(weights, float4(color0.y, color1.y, color2.y, color3.y)),
-    //         dot(weights, float4(color0.z, color1.z, color2.z, color3.z))
-    //     ),
-    //     0.0
-    // );
 
-    const float4x3 mtrx = float4x3(color0, color1, color2, color3);
-    const float3 m = mul(weights, mtrx);
-    return max(m, 0.0);
+    // Original Slang implementation
+    // return max(mul(weights, float4x3(color0, color1, color2, color3)), 0.0);
+
+    // ReShade implementation that avoids rectangular matrices
+    return max(
+        float3(
+            dot(weights, float4(color0.x, color1.x, color2.x, color3.x)),
+            dot(weights, float4(color0.y, color1.y, color2.y, color3.y)),
+            dot(weights, float4(color0.z, color1.z, color2.z, color3.z))
+        ),
+        0.0
+    );
+
+    // ReShade implementation that uses rectangular matrices (broken in Vulkan?)
+    // const float4x3 mtrx = float4x3(color0, color1, color2, color3);
+    // const float3 m = mul(weights, mtrx);
+    // return max(m, 0.0);
 }
 
 float3 get_interpolated_linear_color(const float3 color0, const float3 color1,

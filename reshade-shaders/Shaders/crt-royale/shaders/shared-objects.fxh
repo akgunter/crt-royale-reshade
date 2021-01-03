@@ -33,6 +33,11 @@
 	#define CONTENT_HEIGHT BUFFER_HEIGHT
 #endif
 
+// Wrap the content size in parenthesis for internal use, so the
+// user doesn't have to
+#define CONTENT_WIDTH_INTERNAL (CONTENT_WIDTH)
+#define CONTENT_HEIGHT_INTERNAL (CONTENT_HEIGHT)
+
 // Offset the center of the game's content (horizontal)
 #ifndef CONTENT_CENTER_X
 	#define CONTENT_CENTER_X 0
@@ -43,13 +48,13 @@
 #endif
 
 static const float2 buffer_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
-static const float2 content_size = float2(CONTENT_WIDTH, CONTENT_HEIGHT);
+static const float2 content_size = float2(CONTENT_WIDTH_INTERNAL, CONTENT_HEIGHT_INTERNAL);
 static const float orig_pixel_dx = 1.0 / BUFFER_WIDTH;
 static const float orig_pixel_dy = 1.0 / BUFFER_HEIGHT;
 static const float content_center_x = CONTENT_CENTER_X * orig_pixel_dx + 0.5;
 static const float content_center_y = CONTENT_CENTER_Y * orig_pixel_dy + 0.5;
-static const float content_radius_x = (CONTENT_WIDTH) * orig_pixel_dx / 2.0;
-static const float content_radius_y = (CONTENT_HEIGHT) * orig_pixel_dy / 2.0;
+static const float content_radius_x = (CONTENT_WIDTH_INTERNAL) * orig_pixel_dx / 2.0;
+static const float content_radius_y = (CONTENT_HEIGHT_INTERNAL) * orig_pixel_dy / 2.0;
 
 
 // Initial Color Buffer
@@ -80,8 +85,8 @@ texture2D texCrop {
 sampler2D samplerCrop { Texture = texCrop; };
 
 // Pass 0 Buffer (ORIG_LINEARIZED)
-#define TEX_ORIGLINEARIZED_WIDTH CONTENT_WIDTH
-#define TEX_ORIGLINEARIZED_HEIGHT CONTENT_HEIGHT
+#define TEX_ORIGLINEARIZED_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_ORIGLINEARIZED_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_ORIGLINEARIZED_SIZE int2(TEX_ORIGLINEARIZED_WIDTH, TEX_ORIGLINEARIZED_HEIGHT)
 texture2D texOrigLinearized {
 	Width = TEX_ORIGLINEARIZED_WIDTH;
@@ -92,8 +97,8 @@ texture2D texOrigLinearized {
 sampler2D samplerOrigLinearized { Texture = texOrigLinearized; };
 
 // Pass 1 Buffer (VERTICAL_SCANLINES)
-#define TEX_VERTICALSCANLINES_WIDTH CONTENT_WIDTH
-#define TEX_VERTICALSCANLINES_HEIGHT CONTENT_HEIGHT
+#define TEX_VERTICALSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_VERTICALSCANLINES_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_VERTICALSCANLINES_SIZE int2(TEX_VERTICALSCANLINES_WIDTH, TEX_VERTICALSCANLINES_HEIGHT)
 texture2D texVerticalScanlines {
 	Width = TEX_VERTICALSCANLINES_WIDTH;
@@ -145,7 +150,7 @@ sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
 
 // Pass 5 Mask Texture
 #define TEX_MASKVERTICAL_WIDTH 64
-#define TEX_MASKVERTICAL_HEIGHT int(CONTENT_HEIGHT * mask_resize_viewport_scale.y)
+#define TEX_MASKVERTICAL_HEIGHT int(CONTENT_HEIGHT_INTERNAL * mask_resize_viewport_scale.y)
 #define TEX_MASKVERTICAL_SIZE int2(TEX_MASKVERTICAL_WIDTH, TEX_MASKVERTICAL_HEIGHT)
 texture2D texMaskResizeVertical {
 	Width = TEX_MASKVERTICAL_WIDTH;
@@ -154,8 +159,8 @@ texture2D texMaskResizeVertical {
 sampler2D samplerMaskResizeVertical { Texture = texMaskResizeVertical; };
 
 // Pass 6 Mask Texture (MASK_RESIZE)
-#define TEX_MASKHORIZONTAL_WIDTH int(CONTENT_WIDTH * mask_resize_viewport_scale.x)
-#define TEX_MASKHORIZONTAL_HEIGHT int(CONTENT_HEIGHT * mask_resize_viewport_scale.y)
+#define TEX_MASKHORIZONTAL_WIDTH int(CONTENT_WIDTH_INTERNAL * mask_resize_viewport_scale.x)
+#define TEX_MASKHORIZONTAL_HEIGHT int(CONTENT_HEIGHT_INTERNAL * mask_resize_viewport_scale.y)
 #define TEX_MASKHORIZONTAL_SIZE int2(TEX_MASKHORIZONTAL_WIDTH, TEX_MASKHORIZONTAL_HEIGHT)
 texture2D texMaskResizeHorizontal {
 	Width = TEX_MASKHORIZONTAL_WIDTH;
@@ -164,8 +169,8 @@ texture2D texMaskResizeHorizontal {
 sampler2D samplerMaskResizeHorizontal { Texture = texMaskResizeHorizontal; };
 
 // Pass 7 Buffer (MASKED_SCANLINES)
-#define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH
-#define TEX_MASKEDSCANLINES_HEIGHT CONTENT_HEIGHT
+#define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_MASKEDSCANLINES_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_MASKEDSCANLINES_SIZE int2(TEX_MASKEDSCANLINES_WIDTH, TEX_MASKEDSCANLINES_HEIGHT)
 texture2D texMaskedScanlines {
 	Width = TEX_MASKEDSCANLINES_WIDTH;
@@ -176,8 +181,8 @@ texture2D texMaskedScanlines {
 sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
 
 // Pass 8 Buffer (BRIGHTPASS)
-#define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH
-#define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT
+#define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BRIGHTPASS_SIZE int2(TEX_BRIGHTPASS_WIDTH, TEX_BRIGHTPASS_HEIGHT)
 texture2D texBrightpass {
 	Width = TEX_BRIGHTPASS_WIDTH;
@@ -188,8 +193,8 @@ texture2D texBrightpass {
 sampler2D samplerBrightpass { Texture = texBrightpass; };
 
 // Pass 9 Buffer
-#define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH
-#define TEX_BLOOMVERTICAL_HEIGHT CONTENT_HEIGHT
+#define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BLOOMVERTICAL_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BLOOMVERTICAL_SIZE int2(TEX_BLOOMVERTICAL_WIDTH, TEX_BLOOMVERTICAL_HEIGHT)
 texture2D texBloomVertical {
 	Width = TEX_BLOOMVERTICAL_WIDTH;
@@ -200,8 +205,8 @@ texture2D texBloomVertical {
 sampler2D samplerBloomVertical { Texture = texBloomVertical; };
 
 // Pass 10 Buffer
-#define TEX_BLOOMHORIZONTAL_WIDTH CONTENT_WIDTH
-#define TEX_BLOOMHORIZONTAL_HEIGHT CONTENT_HEIGHT
+#define TEX_BLOOMHORIZONTAL_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BLOOMHORIZONTAL_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BLOOMHORIZONTAL_SIZE int2(TEX_BLOOMHORIZONTAL_WIDTH, TEX_BLOOMHORIZONTAL_HEIGHT)
 texture2D texBloomHorizontal {
 	Width = TEX_BLOOMHORIZONTAL_WIDTH;
@@ -212,8 +217,8 @@ texture2D texBloomHorizontal {
 sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 
 // Pass 11 Buffer
-#define TEX_GEOMETRY_WIDTH CONTENT_WIDTH
-#define TEX_GEOMETRY_HEIGHT CONTENT_HEIGHT
+#define TEX_GEOMETRY_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_GEOMETRY_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_GEOMETRY_SIZE int2(TEX_GEOMETRY_WIDTH, TEX_GEOMETRY_HEIGHT)
 texture2D texGeometry {
 	Width = TEX_GEOMETRY_WIDTH;

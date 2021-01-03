@@ -145,7 +145,7 @@ uniform float beam_horiz_filter <
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 2.0;
-    ui_step    = 0.01;
+    ui_step    = 1.0;
 > = beam_horiz_filter_static;
 uniform float beam_horiz_linear_rgb_weight <
     ui_label   = "Beam Horiz Linear RGB Weight";
