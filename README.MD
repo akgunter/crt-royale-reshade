@@ -12,9 +12,9 @@ Special thanks goes to crosire and co. for their work on ReShade, particularly f
 
 
 #### API SUPPORT
-This shader works with DX9, DX10/11/12, and OpenGL. Please report any issues with those APIs because they shouldn't be there.
+This shader works with DX10/11/12, and OpenGL. Please report any issues with those APIs because they shouldn't be there.
 
-The blur effects might be slightly wonky with Vulkan. I'm still debugging some matrix multiplication weirdness with that API.
+DX9 sometimes doesn't tile the phosphor mask correctly for some viewport sizes, and Vulkan has stability issues in some emulators (namely Dolphin 5.0).
 
 
 #### SETUP

@@ -122,7 +122,7 @@ uniform float beam_min_shape <
     ui_step    = 0.01;
 > = beam_min_shape_static;
 uniform float beam_max_shape <
-    ui_label   = "Beam Max Sigma";
+    ui_label   = "Beam Max Shape";
     ui_tooltip = "Must be >= Beam Min Shape";
     ui_type    = "drag";
     ui_min     = 0.0;

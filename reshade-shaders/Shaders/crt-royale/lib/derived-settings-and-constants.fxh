@@ -306,7 +306,7 @@
 //  If we can use the large mipmapped LUT without mipmapping artifacts, we
 //  should: It gives us more options for using fewer samples.
 #if DRIVERS_ALLOW_TEX2DLOD
-    #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
+    #if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
         //  TODO: Take advantage of this!
         #define PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
         static const float2 mask_resize_src_lut_size = mask_texture_large_size;

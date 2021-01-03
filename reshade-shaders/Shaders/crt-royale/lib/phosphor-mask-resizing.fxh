@@ -131,10 +131,10 @@ float4 tex2Dlod0try(const sampler2D tex, const float2 tex_uv)
     //  Mipmapping and anisotropic filtering get confused by sinc-resampling.
     //  One [slow] workaround is to select the lowest mip level:
     #if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
-        return textureLod(tex, float4(tex_uv, 0.0, 0.0).xy);
+        return tex2Dlod(tex, float4(tex_uv, 0.0, 0.0));
     #else
         #ifdef ANISOTROPIC_RESAMPLING_COMPAT_TEX2DBIAS
-            return tex2Dbias(tex, float4(tex_uv, 0.0, -16.0));
+            return tex2Dlod(tex, float4(tex_uv, 0.0, -16.0));
         #else
             return tex2D(tex, tex_uv);
         #endif
