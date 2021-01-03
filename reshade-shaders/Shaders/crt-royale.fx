@@ -37,17 +37,45 @@
 	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
 	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
+	
+	#include "crt-royale/lib/new-phosphor-mask-resizing.fxh"
+
 #else
 	#include "crt-royale/shaders/content-box.fxh"
 #endif
 
-void dummyShader1(
+static const float downsizing_factor = mask_size.x / (3.0 * 8);
+static const int num_sinc_lobes = 2;
+
+
+void dummyShader2(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {
-	color = float4(1, 1, 1, 1);
+    const float2 tex_size = tex2Dsize(samplerMaskSlot);
+    const float2 tex_size_inv = 1.0 / tex_size;
+
+    color = lanczos_downsample_horiz(
+        samplerMaskSlot, tex_size_inv,
+        texcoord, downsizing_factor, num_sinc_lobes
+    );
+}
+
+void dummyShader3(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+    const float2 tex_size = tex2Dsize(samplerMaskResizeVertical);
+    const float2 tex_size_inv = 1.0 / tex_size;
+
+    color = lanczos_downsample_vert(
+        samplerMaskResizeVertical, tex_size_inv,
+        texcoord, downsizing_factor, num_sinc_lobes
+    );
 }
 
 technique CRT_Royale
@@ -113,7 +141,7 @@ technique CRT_Royale
 		pass p5
 		{
 			VertexShader = PostProcessVS;
-			PixelShader = pixelShader5;
+			PixelShader = dummyShader2;
 			
 			RenderTarget = texMaskResizeVertical;
 		}
@@ -121,7 +149,7 @@ technique CRT_Royale
 		pass p6
 		{
 			VertexShader = PostProcessVS;
-			PixelShader = pixelShader6;
+			PixelShader = dummyShader3;
 			
 			RenderTarget = texMaskResizeHorizontal;
 		}

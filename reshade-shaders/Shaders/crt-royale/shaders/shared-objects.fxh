@@ -149,24 +149,36 @@ texture2D texBlurHorizontal {
 sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
 
 // Pass 5 Mask Texture
-#define TEX_MASKVERTICAL_WIDTH 64
-#define TEX_MASKVERTICAL_HEIGHT int(CONTENT_HEIGHT_INTERNAL * mask_resize_viewport_scale.y)
-#define TEX_MASKVERTICAL_SIZE int2(TEX_MASKVERTICAL_WIDTH, TEX_MASKVERTICAL_HEIGHT)
+#define TEX_MASKVERTICAL_WIDTH mask_size_xy
+#define TEX_MASKVERTICAL_HEIGHT mask_size_xy
+#define TEX_MASKVERTICAL_SIZE int2(mask_size_xy, mask_size_xy)
 texture2D texMaskResizeVertical {
 	Width = TEX_MASKVERTICAL_WIDTH;
 	Height = TEX_MASKVERTICAL_HEIGHT;
 };
-sampler2D samplerMaskResizeVertical { Texture = texMaskResizeVertical; };
+sampler2D samplerMaskResizeVertical {
+	Texture = texMaskResizeVertical;
+
+    AddressU = mask_texture_wrap_mode;
+    AddressV = mask_texture_wrap_mode;
+    AddressW = mask_texture_wrap_mode;
+};
 
 // Pass 6 Mask Texture (MASK_RESIZE)
-#define TEX_MASKHORIZONTAL_WIDTH int(CONTENT_WIDTH_INTERNAL * mask_resize_viewport_scale.x)
-#define TEX_MASKHORIZONTAL_HEIGHT int(CONTENT_HEIGHT_INTERNAL * mask_resize_viewport_scale.y)
-#define TEX_MASKHORIZONTAL_SIZE int2(TEX_MASKHORIZONTAL_WIDTH, TEX_MASKHORIZONTAL_HEIGHT)
+#define TEX_MASKHORIZONTAL_WIDTH mask_size_xy
+#define TEX_MASKHORIZONTAL_HEIGHT mask_size_xy
+#define TEX_MASKHORIZONTAL_SIZE int2(mask_size_xy, mask_size_xy)
 texture2D texMaskResizeHorizontal {
 	Width = TEX_MASKHORIZONTAL_WIDTH;
 	Height = TEX_MASKHORIZONTAL_HEIGHT;
 };
-sampler2D samplerMaskResizeHorizontal { Texture = texMaskResizeHorizontal; };
+sampler2D samplerMaskResizeHorizontal {
+	Texture = texMaskResizeHorizontal;
+    
+    AddressU = mask_texture_wrap_mode;
+    AddressV = mask_texture_wrap_mode;
+    AddressW = mask_texture_wrap_mode;
+};
 
 // Pass 7 Buffer (MASKED_SCANLINES)
 #define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL

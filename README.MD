@@ -14,14 +14,12 @@ Special thanks goes to crosire and co. for their work on ReShade, particularly f
 #### API SUPPORT
 This shader works with DX10/11/12, and OpenGL. Please report any issues with those APIs because they shouldn't be there.
 
-DX9 sometimes doesn't tile the phosphor mask correctly for some viewport sizes, and Vulkan has stability issues in some emulators (namely Dolphin 5.0).
+DX9 sometimes doesn't tile the phosphor mask correctly for some viewport sizes, and Vulkan has stability issues in some emulators (e.g. Dolphin 5.0).
 
 
 #### SETUP
 
-1)  As of this writing, ReShade 4.8.3 isn't actually released yet. So you'll have to build it, install it, and install the base shader repository. Remember to clone ReShade's repository with `--recurse-submodules`. Also remember to edit `version.h` in the ReShade source, so your executable thinks it's at least version 4. Otherwise ReShade.fxh will blow up and fuss at you. [ReShade's git repository](https://github.com/crosire/reshade) has instructions for building an installer from source.
-
-	Once you have that working, paste the contents of my `reshade-shaders/` directory into your installation's `reshade-shaders/` directory.
+1)  This shader requires ReShade 4.9+. It requires rectangular matrix multiplication that Crosire added in 4.9.
 
 2)  The libretro implementation of crt-royale has the luxury of having the game's true viewport passed directly to it. The ReShade implementation by nature does not. This means the ReShade version by default grabs any letter-boxing as part of its input, and that throws off its geometry and phosphor calculations.
 
@@ -34,8 +32,7 @@ DX9 sometimes doesn't tile the phosphor mask correctly for some viewport sizes, 
 
 #### CONFIGURATION
 
-For the most part, configuring this implementation of crt-royale should be the same as configuring the libretro versions, so refer to any past experience or to the existing documentation for help with that. I've left almost all of the code's comments
-intact, so you can also scroll through that for descriptions of the various preprocessor definitions. You should be able to find all of them in `user-settings.fxh`, `derived-settings-and-constants.fxh`, `bind-shader-params.fxh`, and `shared-objects.fxh`. The main difference is that you configure many preprocessor definitions by setting them to integer values rather than just defining them. This is to let users set them from ReShade's UI instead of editing the source code.
+For the most part, configuring this implementation of crt-royale should be the same as configuring the libretro versions, so refer to any past experience or to the existing documentation for help with that. I've left almost all of the code's comments intact, so you can also scroll through that for descriptions of the various preprocessor definitions. You should be able to find all of them in `user-settings.fxh`, `derived-settings-and-constants.fxh`, `bind-shader-params.fxh`, and `shared-objects.fxh`. The main difference is that you configure many preprocessor definitions by setting them to integer values rather than just defining them. This is to let users set them from ReShade's UI instead of editing the source code.
 
 There are a handful of notable differences:
 1)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present, but instead of defining one of them at a time, you set `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
