@@ -196,13 +196,21 @@ uniform float convergence_offset_y_b <
     ui_max     = 4.0;
     ui_step    = 0.01;
 > = convergence_offsets_b_static.y;
-uniform float mask_type <
-    ui_label   = "Mask Type";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 2.0;
-    ui_step    = 1.0;
-> = mask_type_static;
+#if __RENDERER__ != 0x9000
+    uniform float mask_type <
+        ui_label   = "Mask Type";
+        ui_type    = "slider";
+        ui_min     = 0.0;
+        ui_max     = 2.0;
+        ui_step    = 1.0;
+    > = mask_type_static;
+#else
+    #ifndef phosphor_mask_type
+        #define phosphor_mask_type 1
+    #endif
+    
+    #define mask_type phosphor_mask_type
+#endif
 uniform float mask_sample_mode_desired <
     ui_label   = "Mask Sample Mode";
     ui_type    = "slider";

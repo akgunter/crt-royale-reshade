@@ -166,21 +166,43 @@ float3 sphere_uv_to_xyz(const float2 video_uv, const float2 geom_aspect)
     //              inverse of sphere_xyz_to_uv().
     //  Expand video_uv by the aspect ratio to get proportionate x/y lengths,
     //  then calculate an xyz position for the spherical mapping above.
-    const float2 square_uv = video_uv * geom_aspect;
-    //  Using length or sqrt here butchers the framerate on my 8800GTS if
-    //  this function is called too many times, and so does taking the max
-    //  component of square_uv/square_uv_unit (program length threshold?).
-    //float arc_len = length(square_uv);
-    const float2 square_uv_unit = normalize(square_uv);
-    const float arc_len = square_uv.y/square_uv_unit.y;
-    const float angle_from_image_center = arc_len / geom_radius;
-    const float xy_dist_from_sphere_center =
-        sin(angle_from_image_center) * geom_radius;
-    //float2 xy_pos = xy_dist_from_sphere_center * (square_uv/FIX_ZERO(arc_len));
-    const float2 xy_pos = xy_dist_from_sphere_center * square_uv_unit;
-    const float z_pos = cos(angle_from_image_center) * geom_radius;
-    const float3 intersection_pos_local = float3(xy_pos.x, -xy_pos.y, z_pos);
-    return intersection_pos_local;
+    if (video_uv.x != 0 && video_uv.y != 0) {
+        const float2 square_uv = video_uv * geom_aspect;
+        //  Using length or sqrt here butchers the framerate on my 8800GTS if
+        //  this function is called too many times, and so does taking the max
+        //  component of square_uv/square_uv_unit (program length threshold?).
+        //float arc_len = length(square_uv);
+        const float2 square_uv_unit = normalize(square_uv);
+        const float arc_len = square_uv.y/square_uv_unit.y;
+        const float angle_from_image_center = arc_len / geom_radius;
+        const float xy_dist_from_sphere_center =
+            sin(angle_from_image_center) * geom_radius;
+        //float2 xy_pos = xy_dist_from_sphere_center * (square_uv/FIX_ZERO(arc_len));
+        const float2 xy_pos = xy_dist_from_sphere_center * square_uv_unit;
+        const float z_pos = cos(angle_from_image_center) * geom_radius;
+        const float3 intersection_pos_local = float3(xy_pos.x, -xy_pos.y, z_pos);
+        return intersection_pos_local;
+    }
+    else if (video_uv.x != 0) {
+        const float2 square_uv = video_uv * geom_aspect;
+        //  Using length or sqrt here butchers the framerate on my 8800GTS if
+        //  this function is called too many times, and so does taking the max
+        //  component of square_uv/square_uv_unit (program length threshold?).
+        //float arc_len = length(square_uv);
+        const float2 square_uv_unit = normalize(square_uv);
+        const float angle_from_image_center = 0;
+        const float xy_dist_from_sphere_center = sin(angle_from_image_center) * geom_radius;
+        const float2 xy_pos = xy_dist_from_sphere_center * square_uv_unit;
+        const float z_pos = cos(angle_from_image_center) * geom_radius;
+        const float3 intersection_pos_local = float3(xy_pos.x, -xy_pos.y, z_pos);
+        return intersection_pos_local;
+    }
+    else {
+        const float2 xy_pos = float2(0, 0);
+        const float z_pos = geom_radius;
+        const float3 intersection_pos_local = float3(xy_pos.x, -xy_pos.y, z_pos);
+        return intersection_pos_local;
+    }
 }
 
 float2 sphere_alt_xyz_to_uv(const float3 intersection_pos_local,

@@ -12,9 +12,9 @@ Special thanks goes to crosire and co. for their work on ReShade, particularly f
 
 
 #### API SUPPORT
-This shader works with D3D10, D3D11, D3D12, and OpenGL. Please report any issues with those APIs because they shouldn't be there.
+This shader works with DX9, DX10/11/12, and OpenGL. Please report any issues with those APIs because they shouldn't be there.
 
-This shader currently does not support D3D9 or Vulkan. D3D9 doesn't permit enough registers or something, while Vulkan crashes and does some of the math incorrectly. I'm still debugging these issues and can't promise anything with them.
+The blur effects might be slightly wonky with Vulkan. I'm still debugging some matrix multiplication weirdness with that API.
 
 
 #### SETUP
@@ -46,6 +46,7 @@ There are a handful of notable differences:
 
 4)  I figured out that the default anti-aliasing setting was way too strong, so I turned it into a preprocessor definition antialias_level and defaulted it to 0. This is defined in `user-settings.fxh`.
 
+5)  If you're using the DX9 API, then the Mask Type slider won't be available. Instead you'll find a `phosphor_mask_type` preprocessor definition that you can set to 0, 1, or 2. It's a bit gross, but it works without rewriting a whole bunch of stuff.
 
 #### QUALITATIVE DIFFERENCES
 

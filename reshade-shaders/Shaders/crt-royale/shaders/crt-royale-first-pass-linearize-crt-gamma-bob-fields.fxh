@@ -53,6 +53,9 @@ void pixelShader0(
 
     out float4 color : SV_Target
 ) {
+    // const float2 texcoord_cropped = texcoord * content_size / buffer_size + offset;
+    // color = tex2D(samplerColor, texcoord_cropped);
+
     //  Linearize the input based on CRT gamma and bob interlaced fields.
     //  Bobbing ensures we can immediately blur without getting artifacts.
     //  Note: TFF/BFF won't matter for sources that double-weave or similar.

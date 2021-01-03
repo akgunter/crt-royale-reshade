@@ -73,8 +73,8 @@ sampler2D samplerColor {
 
 
 // Crop pass
-#define TEX_CROP_WIDTH BUFFER_WIDTH
-#define TEX_CROP_HEIGHT BUFFER_HEIGHT
+#define TEX_CROP_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_CROP_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_CROP_SIZE int2(TEX_CROP_WIDTH, TEX_CROP_HEIGHT)
 texture2D texCrop {
 	Width = TEX_CROP_WIDTH;
@@ -220,13 +220,19 @@ sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 #define TEX_GEOMETRY_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_GEOMETRY_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_GEOMETRY_SIZE int2(TEX_GEOMETRY_WIDTH, TEX_GEOMETRY_HEIGHT)
-texture2D texGeometry {
-	Width = TEX_GEOMETRY_WIDTH;
-	Height = TEX_GEOMETRY_HEIGHT;
 
-	Format = RGBA16;
-};
-sampler2D samplerGeometry { Texture = texGeometry; };
+#if __RENDERER__ != 0x9000
+	texture2D texGeometry {
+		Width = TEX_GEOMETRY_WIDTH;
+		Height = TEX_GEOMETRY_HEIGHT;
+
+		Format = RGBA16;
+	};
+	sampler2D samplerGeometry { Texture = texGeometry; };
+#else
+	#define texGeometry texOrigLinearized
+	#define samplerGeometry samplerOrigLinearized
+#endif
 
 uniform int frame_count < source = "framecount"; >;
 
