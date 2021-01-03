@@ -45,7 +45,7 @@
 
 static const float2 mask_size = float2(mask_size_xy, mask_size_xy);
 
-// #if __RENDERER__ != 0x9000
+#if __RENDERER__ != 0x9000
 	texture2D texMaskGrille < source = mask_grille_texture_path; > {
 		Width = mask_size.x;
 		Height = mask_size.y;
@@ -93,39 +93,39 @@ static const float2 mask_size = float2(mask_size_xy, mask_size_xy);
 		MinFilter = mask_texture_magmin_filter_type;
 		MipFilter = mask_texture_mip_filter_type;
 	};
-// #else
-// 	// Use preprocessor sorcery to drop all three textures to one
-// 	//   without having to refactor the entire phosphor codebase
-// 	#if phosphor_mask_type == 0
-// 		#define source_path mask_grille_texture_path
-// 	#elif phosphor_mask_type == 1
-// 		#define source_path mask_slot_texture_path
-// 	#else
-// 		#define source_path mask_shadow_texture_path
-// 	#endif
+#else
+	// Use preprocessor sorcery to drop all three textures to one
+	//   without having to refactor the entire phosphor codebase
+	#if phosphor_mask_type == 0
+		#define source_path mask_grille_texture_path
+	#elif phosphor_mask_type == 1
+		#define source_path mask_slot_texture_path
+	#else
+		#define source_path mask_shadow_texture_path
+	#endif
 
-// 	texture2D texMask < source = source_path; > {
-// 		Width = mask_size.x;
-// 		Height = mask_size.y;
-// 	};
-// 	sampler2D samplerMask {
-// 		Texture = texMask;
+	texture2D texMask < source = source_path; > {
+		Width = mask_size.x;
+		Height = mask_size.y;
+	};
+	sampler2D samplerMask {
+		Texture = texMask;
 
-// 		AddressU = mask_texture_wrap_mode;
-// 		AddressV = mask_texture_wrap_mode;
-// 		AddressW = mask_texture_wrap_mode;
+		AddressU = mask_texture_wrap_mode;
+		AddressV = mask_texture_wrap_mode;
+		AddressW = mask_texture_wrap_mode;
 		
-// 		MagFilter = mask_texture_magmin_filter_type;
-// 		MinFilter = mask_texture_magmin_filter_type;
-// 		MipFilter = mask_texture_mip_filter_type;
-// 	};
+		MagFilter = mask_texture_magmin_filter_type;
+		MinFilter = mask_texture_magmin_filter_type;
+		MipFilter = mask_texture_mip_filter_type;
+	};
 
-// 	#define texMaskGrille texMask
-// 	#define samplerMaskGrille samplerMask
-// 	#define texMaskSlot texMask
-// 	#define samplerMaskSlot samplerMask
-// 	#define texMaskShadow texMask
-// 	#define samplerMaskShadow samplerMask
-// #endif
+	#define texMaskGrille texMask
+	#define samplerMaskGrille samplerMask
+	#define texMaskSlot texMask
+	#define samplerMaskSlot samplerMask
+	#define texMaskShadow texMask
+	#define samplerMaskShadow samplerMask
+#endif
 
 #endif  // _TEXTURE_SETTINGS
