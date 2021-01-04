@@ -52,7 +52,7 @@
 //  error C3004: function "float4 tex2Dlod(sampler2D, float4);" not supported in
 //  this profile
 #ifndef DRIVERS_ALLOW_TEX2DLOD
-    #define DRIVERS_ALLOW_TEX2DLOD 0
+    #define DRIVERS_ALLOW_TEX2DLOD 1
 #endif
 
 //  tex2Dbias: Requires an fp30 or newer profile.  This can be used to alleviate
