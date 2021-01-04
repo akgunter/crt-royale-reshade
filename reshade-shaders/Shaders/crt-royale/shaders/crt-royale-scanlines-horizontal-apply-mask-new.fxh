@@ -1,24 +1,3 @@
-/////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
-
-//  crt-royale: A full-featured CRT shader, with cheese.
-//  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
-//
-//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
-//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
-//
-//  This program is free software; you can redistribute it and/or modify it
-//  under the terms of the GNU General Public License as published by the Free
-//  Software Foundation; either version 2 of the License, or any later version.
-//
-//  This program is distributed in the hope that it will be useful, but WITHOUT
-//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-//  FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-//  more details.
-//
-//  You should have received a copy of the GNU General Public License along with
-//  this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-//  Place, Suite 330, Boston, MA 02111-1307 USA
-
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
@@ -26,65 +5,11 @@
 #include "../lib/texture-settings.fxh"
 #include "shared-objects.fxh"
 
-float4 tex2Dtiled_mask_linearize(const sampler2D tex,
-    const float2 tex_uv, const float input_gamma)
-{
-    //  If we're manually tiling a texture, anisotropic filtering can get
-    //  confused.  One workaround is to just select the lowest mip level:
-    #if PHOSPHOR_MASK_MANUALLY_RESIZE
-        #if ANISOTROPIC_TILING_COMPAT_TEX2DLOD
-            //  TODO: Use tex2Dlod_linearize with a calculated mip level.
-            return tex2Dlod_linearize(tex, float4(tex_uv, 0.0, 0.0), input_gamma);
-        #else
-            #ifdef ANISOTROPIC_TILING_COMPAT_TEX2DBIAS
-                return tex2Dbias_linearize(tex, float4(tex_uv, 0.0, -16.0), input_gamma);
-            #else
-                return tex2D_linearize(tex, tex_uv, input_gamma);
-            #endif
-        #endif
-    #else
-        return tex2D_linearize(tex, tex_uv, input_gamma);
-    #endif
-}
 
-
-void vertexShader7(
-    in const uint id : SV_VertexID,
-
-    out float4 position : SV_Position,
-    out float2 texcoord : TEXCOORD0,
-    out float4 mask_tile_start_uv_and_size : TEXCOORD1,
-    out float2 mask_tiles_per_screen : TEXCOORD2
-) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
-    
-    #if PHOSPHOR_MASK_MANUALLY_RESIZE
-        const float2 mask_resized_texsize = tex2Dsize(samplerMaskResizeHorizontal);
-        const float mask_sample_mode = get_mask_sample_mode();
-        const float2 mask_resize_texture_size = mask_sample_mode < 0.5 ?
-            mask_resized_texsize : mask_size;
-        const float2 mask_resize_video_size = mask_sample_mode < 0.5 ?
-            mask_resized_texsize : mask_size;
-    #else
-        const float2 mask_resize_texture_size = mask_size;
-        const float2 mask_resize_video_size = mask_size;
-    #endif
-
-    //  Compute mask tile dimensions, starting points, etc.:
-    mask_tile_start_uv_and_size = get_mask_sampling_parameters(
-        mask_resize_texture_size, mask_resize_video_size, TEX_MASKEDSCANLINES_SIZE,
-        mask_tiles_per_screen);
-}
-
-
-void pixelShader7(
+void newPixelShader7(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
-    in const float4 mask_tile_start_uv_and_size : TEXCOORD1,
-    in const float2 mask_tiles_per_screen : TEXCOORD2,
-
+    
     out float4 color : SV_Target
 ) {
     const float2 scanline_texture_size = tex2Dsize(samplerVerticalScanlines);
@@ -106,37 +31,37 @@ void pixelShader7(
         scanline_texture_size, scanline_texture_size_inv);
     const float auto_dim_factor = levels_autodim_temp;
 
-    //  Sample the phosphor mask:
-    const float2 tile_uv_wrap = texcoord * mask_tiles_per_screen;
-    const float2 mask_tex_uv = convert_phosphor_tile_uv_wrap_to_tex_uv(
-        tile_uv_wrap, mask_tile_start_uv_and_size);
+    const float mask_sample_mode = get_mask_sample_mode();
+    const bool sample_orig_luts = get_mask_sample_mode() > 0.5;
+    const float2 true_tile_size = mask_sample_mode < 1.5 ? mask_triad_size_desired * mask_triads_per_tile * float2(1, 1) : mask_size;
+    const float2 tiles_per_screen = ceil(content_size / true_tile_size);
 
     float3 phosphor_mask_sample;
-    #if PHOSPHOR_MASK_MANUALLY_RESIZE
-        const bool sample_orig_luts = get_mask_sample_mode() > 0.5;
-    #else
-        static const bool sample_orig_luts = true;
-    #endif
     if(sample_orig_luts)
     {
+        const float2 tile_uv_wrap = frac(texcoord * tiles_per_screen);
         //  If mask_type is static, this branch will be resolved statically.
         if(mask_type < 0.5)
         {
-            phosphor_mask_sample = tex2D(samplerMaskGrille, mask_tex_uv).rgb;
+            phosphor_mask_sample = tex2D(samplerMaskGrille, tile_uv_wrap).rgb;
         }
         else if(mask_type < 1.5)
         {
-            phosphor_mask_sample = tex2D(samplerMaskSlot, mask_tex_uv).rgb;
+            phosphor_mask_sample = tex2D(samplerMaskSlot, tile_uv_wrap).rgb;
         }
         else
         {
-            phosphor_mask_sample = tex2D(samplerMaskShadow, mask_tex_uv).rgb;
+            phosphor_mask_sample = tex2D(samplerMaskShadow, tile_uv_wrap).rgb;
         }
     }
     else
     {
+        const float2 tile_uv_wrap = frac(texcoord * tiles_per_screen);
+        const float2 tile_uv_crop = tile_uv_wrap * true_tile_size / TEX_MASKHORIZONTAL_SIZE;
+        // const float2 tile_uv_crop = frac(texcoord * ceil(content_size / mask_size));
+
         //  Sample the resized mask, and avoid tiling artifacts:
-        phosphor_mask_sample = tex2D(samplerMaskResizeHorizontal, mask_tex_uv).rgb;
+        phosphor_mask_sample = tex2D(samplerMaskResizeHorizontal, tile_uv_crop).rgb;
     }
 
     //  Sample the halation texture (auto-dim to match the scanlines), and
@@ -238,5 +163,5 @@ void pixelShader7(
         const float3 pixel_color = phosphor_emission_dim;
     #endif
     //  Encode if necessary, and output.
-    color = encode_output(float4(pixel_color, 1.0), get_intermediate_gamma());
+    color = encode_output(float4(phosphor_mask_sample, 1.0), get_intermediate_gamma());
 }

@@ -39,13 +39,12 @@
 	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
 	
 	#include "crt-royale/lib/new-phosphor-mask-resizing.fxh"
-
+	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask-new.fxh"
 #else
 	#include "crt-royale/shaders/content-box.fxh"
 #endif
 
-static const float downsizing_factor = mask_size.x / (3.0 * 8);
-static const int num_sinc_lobes = 2;
+static const int num_sinc_lobes = 3;
 
 
 void dummyShader2(
@@ -54,13 +53,36 @@ void dummyShader2(
 
     out float4 color : SV_Target
 ) {
-    const float2 tex_size = tex2Dsize(samplerMaskSlot);
-    const float2 tex_size_inv = 1.0 / tex_size;
+    const float2 mask_size_inv = 1.0 / mask_size;
+	
+    const float downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
+    const float2 true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
+    // const float2 tiles_per_screen = viewport_size / mask_size;
 
-    color = lanczos_downsample_horiz(
-        samplerMaskSlot, tex_size_inv,
-        texcoord, downsizing_factor, num_sinc_lobes
-    );
+	float4 phosphor_mask_sample;
+	if(mask_type < 0.5)
+	{
+		phosphor_mask_sample = lanczos_downsample_horiz(
+			samplerMaskGrille, mask_size_inv,
+			texcoord, downsizing_factor, num_sinc_lobes
+		);
+	}
+	else if(mask_type < 1.5)
+	{
+		phosphor_mask_sample = lanczos_downsample_horiz(
+			samplerMaskSlot, mask_size_inv,
+			texcoord, downsizing_factor, num_sinc_lobes
+		);
+	}
+	else
+	{
+		phosphor_mask_sample = lanczos_downsample_horiz(
+			samplerMaskShadow, mask_size_inv,
+			texcoord, downsizing_factor, num_sinc_lobes
+		);
+	}
+	if (texcoord.x * mask_size.x >= true_tile_size.x) color = float4(0, 0, 0, 0);
+	else color = phosphor_mask_sample;
 }
 
 void dummyShader3(
@@ -69,13 +91,21 @@ void dummyShader3(
 
     out float4 color : SV_Target
 ) {
-    const float2 tex_size = tex2Dsize(samplerMaskResizeVertical);
-    const float2 tex_size_inv = 1.0 / tex_size;
+    const float2 mask_size_inv = 1.0 / mask_size;
+	
+    const float downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
+    const float2 true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
+    // const float2 tiles_per_screen = viewport_size / mask_size;
 
-    color = lanczos_downsample_vert(
-        samplerMaskResizeVertical, tex_size_inv,
+	const float4 sampled_color = lanczos_downsample_vert(
+        samplerMaskResizeVertical, mask_size_inv,
         texcoord, downsizing_factor, num_sinc_lobes
     );
+	// const float2 texcoord_scaled = frac(texcoord * float2(1, downsizing_factor));
+	// const float4 sampled_color = tex2D(samplerMaskResizeVertical, texcoord_scaled);
+	
+	if (texcoord.y * mask_size.y >= true_tile_size.y) color = float4(0, 0, 0, 0);
+	else color = sampled_color;
 }
 
 technique CRT_Royale
@@ -140,6 +170,8 @@ technique CRT_Royale
 		// crt-royale-mask-resize-vertical.fxh
 		pass p5
 		{
+			// VertexShader = PostProcessVS;
+			// PixelShader = pixelShader5;
 			VertexShader = PostProcessVS;
 			PixelShader = dummyShader2;
 			
@@ -148,6 +180,8 @@ technique CRT_Royale
 		// crt-royale-mask-resize-horizontal.fxh
 		pass p6
 		{
+			// VertexShader = PostProcessVS;
+			// PixelShader = pixelShader6;
 			VertexShader = PostProcessVS;
 			PixelShader = dummyShader3;
 			
@@ -158,8 +192,11 @@ technique CRT_Royale
 		{
 			VertexShader = vertexShader7;
 			PixelShader = pixelShader7;
+			// VertexShader = PostProcessVS;
+			// PixelShader = newPixelShader7;
 			
 			RenderTarget = texMaskedScanlines;
+			// RenderTarget = texGeometry;
 		}
 		// crt-royale-brightpass.fxh
 		pass p8

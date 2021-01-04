@@ -3,8 +3,8 @@
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
-//  crt-royale: A full-featured CRT shader, with cheese.
-//  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
+//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
+//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -26,17 +26,28 @@
 #include "derived-settings-and-constants.fxh"
 #include "bind-shader-params.fxh"
 
+void get_phosphor_mask_parameters(
+    const float2 mask_size,
+    const float2 viewport_size
+) {
+    const float downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
+    const float2 true_tile_size = floor(mask_size / downsizing_factor) * downsizing_factor;
+    const float2 tiles_per_screen = viewport_size / true_tile_size;
+
+}
 
 float4 lanczos_downsample_horiz(
     const sampler2D tex, const float2 tex_invsize,
     const float2 tex_uv, const float downsizing_factor, const int num_sinc_lobes
 ) {
+
+    const int downsizing_factor_int = ceil(downsizing_factor);
     const float2 tex_uv_delta = float2(tex_invsize.x, 0);
-    const int num_samples = 1 + num_sinc_lobes * ceil(downsizing_factor);
+    const int num_samples = 2 * num_sinc_lobes * downsizing_factor_int + 1;
 
-    const float2 tex_uv_scaled = tex_uv * float2(downsizing_factor, 1);
+    const float2 tex_uv_scaled = frac(tex_uv * float2(downsizing_factor, 1));
 
-    const int stop_x_idx = num_sinc_lobes * ceil(downsizing_factor);
+    const int stop_x_idx = num_sinc_lobes * downsizing_factor_int;
     const int start_x_idx = -stop_x_idx;
     const float sinc_dx = 2.0 * num_sinc_lobes / float(num_samples - 1);
 
@@ -58,12 +69,13 @@ float4 lanczos_downsample_vert(
     const float2 tex_uv, const float downsizing_factor, const int num_sinc_lobes
 ) {
 
+    const int downsizing_factor_int = ceil(downsizing_factor);
     const float2 tex_uv_delta = float2(0, tex_invsize.y);
-    const int num_samples = 1 + num_sinc_lobes * ceil(downsizing_factor);
+    const int num_samples = 2 * num_sinc_lobes * downsizing_factor_int + 1;
 
-    const float2 tex_uv_scaled = tex_uv * float2(1, downsizing_factor);
+    const float2 tex_uv_scaled = frac(tex_uv * float2(1, downsizing_factor));
 
-    const int stop_x_idx = num_sinc_lobes * ceil(downsizing_factor);
+    const int stop_x_idx = num_sinc_lobes * downsizing_factor_int;
     const int start_x_idx = -stop_x_idx;
     const float sinc_dx = 2.0 * num_sinc_lobes / float(num_samples - 1);
 

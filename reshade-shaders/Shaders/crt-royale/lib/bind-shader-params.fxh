@@ -225,13 +225,19 @@ uniform float mask_specify_num_triads <
     ui_max     = 1.0;
     ui_step    = 1.0;
 > = mask_specify_num_triads_static;
-uniform float mask_triad_size_desired <
-    ui_label   = "Mask Triad Size";
-    ui_type    = "slider";
-    ui_min     = 1.0;
-    ui_max     = 18.0;
-    ui_step    = 0.1;
-> = mask_triad_size_desired_static;
+#if __RENDERER__ != 0x9000
+    uniform float mask_triad_size_desired <
+        ui_label   = "Mask Triad Size";
+        ui_type    = "slider";
+        ui_min     = 3.0;
+        ui_max     = 18.0;
+        ui_step    = 0.1;
+    > = mask_triad_size_desired_static;
+#else
+    #ifndef mask_triad_size_desired
+        #define mask_triad_size_desired 3
+    #endif
+#endif
 uniform float mask_num_triads_desired <
     ui_label   = "Mask Num Triads";
     ui_type    = "slider";
