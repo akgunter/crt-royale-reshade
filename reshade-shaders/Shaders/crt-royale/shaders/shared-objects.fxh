@@ -161,9 +161,9 @@ texture2D texMaskResizeVertical {
 sampler2D samplerMaskResizeVertical {
 	Texture = texMaskResizeVertical;
 
-    AddressU = NONE;
-    AddressV = NONE;
-    AddressW = NONE;
+    AddressU = mask_texture_wrap_mode;
+    AddressV = mask_texture_wrap_mode;
+    AddressW = mask_texture_wrap_mode;
 };
 
 // Pass 6 Mask Texture (MASK_RESIZE)
@@ -179,9 +179,9 @@ texture2D texMaskResizeHorizontal {
 sampler2D samplerMaskResizeHorizontal {
 	Texture = texMaskResizeHorizontal;
     
-    AddressU = NONE;
-    AddressV = NONE;
-    AddressW = NONE;
+    AddressU = mask_texture_wrap_mode;
+    AddressV = mask_texture_wrap_mode;
+    AddressW = mask_texture_wrap_mode;
 };
 
 // Pass 7 Buffer (MASKED_SCANLINES)

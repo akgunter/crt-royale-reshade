@@ -26,7 +26,7 @@
 
 
 #define mask_texture_wrap_mode REPEAT
-#define mask_texture_magmin_filter_type NONE
+#define mask_texture_magmin_filter_type LINEAR
 
 
 // #ifdef PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT

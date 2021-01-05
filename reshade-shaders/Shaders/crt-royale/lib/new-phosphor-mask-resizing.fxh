@@ -56,11 +56,12 @@ float4 lanczos_downsample_horiz(
     for(int i = start_x_idx; i <= stop_x_idx; i++) {
         const float2 coord = tex_uv_scaled + i * tex_uv_delta;
         const float sinc_x = i * sinc_dx;
-        const float weight = i == 0 ?
-            lanczos_weight_at_center :
-            num_sinc_lobes * sin(pi*sinc_x) * sin(pi*sinc_x/float(num_sinc_lobes)) / (pi*pi * sinc_x*sinc_x);
+        const float weight = i != 0 ?
+            num_sinc_lobes * sin(pi*sinc_x) * sin(pi*sinc_x/float(num_sinc_lobes)) / (pi*pi * sinc_x*sinc_x) :
+            lanczos_weight_at_center;
+
         w_sum += weight;
-        acc += tex2D(tex, coord) * weight;
+        acc += tex2Dlod(tex, float4(coord, 0, 0)) * weight;
     }
 
     return acc / w_sum;
@@ -86,11 +87,12 @@ float4 lanczos_downsample_vert(
     for(int i = start_x_idx; i <= stop_x_idx; i++) {
         const float2 coord = tex_uv_scaled + i * tex_uv_delta;
         const float sinc_x = i * sinc_dx;
-        const float weight = i == 0 ?
-            lanczos_weight_at_center :
-            num_sinc_lobes * sin(pi*sinc_x) * sin(pi*sinc_x/float(num_sinc_lobes)) / (pi*pi * sinc_x*sinc_x);
+        const float weight = i != 0 ?
+            num_sinc_lobes * sin(pi*sinc_x) * sin(pi*sinc_x/float(num_sinc_lobes)) / (pi*pi * sinc_x*sinc_x) :
+            lanczos_weight_at_center;
+
         w_sum += weight;
-        acc += tex2D(tex, coord) * weight;
+        acc += tex2Dlod(tex, float4(coord, 0, 0)) * weight;
     }
 
     return acc / w_sum;
