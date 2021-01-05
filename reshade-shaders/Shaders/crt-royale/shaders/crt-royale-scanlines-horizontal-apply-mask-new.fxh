@@ -31,28 +31,19 @@ void newPixelShader7(
         scanline_texture_size, scanline_texture_size_inv);
     const float auto_dim_factor = levels_autodim_temp;
 
+    const float tile_aspect = mask_resize_src_lut_size.y/mask_resize_src_lut_size.x;
     const float mask_sample_mode = get_mask_sample_mode();
     const bool sample_orig_luts = get_mask_sample_mode() > 0.5;
-    const float2 true_tile_size = mask_sample_mode < 1.5 ? mask_triad_size_desired * mask_triads_per_tile * float2(1, 1) : mask_size;
-    const float2 tiles_per_screen = ceil(content_size / true_tile_size);
+    const float2 true_tile_size = mask_sample_mode < 1.5 ?
+        mask_triad_size_desired * mask_triads_per_tile * float2(1, tile_aspect) :
+        content_size;
+    const float2 tiles_per_screen = content_size / true_tile_size;
 
     float3 phosphor_mask_sample;
     if(sample_orig_luts)
     {
         const float2 tile_uv_wrap = frac(texcoord * tiles_per_screen);
-        //  If mask_type is static, this branch will be resolved statically.
-        if(mask_type < 0.5)
-        {
-            phosphor_mask_sample = tex2D(samplerMaskGrille, tile_uv_wrap).rgb;
-        }
-        else if(mask_type < 1.5)
-        {
-            phosphor_mask_sample = tex2D(samplerMaskSlot, tile_uv_wrap).rgb;
-        }
-        else
-        {
-            phosphor_mask_sample = tex2D(samplerMaskShadow, tile_uv_wrap).rgb;
-        }
+        phosphor_mask_sample = tex2D(samplerPhosphorMask, tile_uv_wrap).rgb;
     }
     else
     {
@@ -163,5 +154,5 @@ void newPixelShader7(
         const float3 pixel_color = phosphor_emission_dim;
     #endif
     //  Encode if necessary, and output.
-    color = encode_output(float4(phosphor_mask_sample, 1.0), get_intermediate_gamma());
+    color = encode_output(float4(pixel_color, 1.0), get_intermediate_gamma());
 }

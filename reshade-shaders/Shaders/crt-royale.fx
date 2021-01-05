@@ -30,83 +30,23 @@
 	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
-	#include "crt-royale/shaders/crt-royale-mask-resize-vertical.fxh"
-	#include "crt-royale/shaders/crt-royale-mask-resize-horizontal.fxh"
-	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
+	// #include "crt-royale/shaders/crt-royale-mask-resize-vertical.fxh"
+	// #include "crt-royale/shaders/crt-royale-mask-resize-horizontal.fxh"
+	// #include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
 	#include "crt-royale/shaders/crt-royale-brightpass.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
 	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
 	
-	#include "crt-royale/lib/new-phosphor-mask-resizing.fxh"
+	#include "crt-royale/shaders/crt-royale-mask-resize.fxh"
 	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask-new.fxh"
 #else
 	#include "crt-royale/shaders/content-box.fxh"
 #endif
 
-static const int num_sinc_lobes = 3;
 
 
-void dummyShader2(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
 
-    out float4 color : SV_Target
-) {
-    const float2 mask_size_inv = 1.0 / mask_size;
-	
-    const float downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
-    const float2 true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
-    // const float2 tiles_per_screen = viewport_size / mask_size;
-
-	float4 phosphor_mask_sample;
-	if(mask_type < 0.5)
-	{
-		phosphor_mask_sample = lanczos_downsample_horiz(
-			samplerMaskGrille, mask_size_inv,
-			texcoord, downsizing_factor, num_sinc_lobes
-		);
-	}
-	else if(mask_type < 1.5)
-	{
-		phosphor_mask_sample = lanczos_downsample_horiz(
-			samplerMaskSlot, mask_size_inv,
-			texcoord, downsizing_factor, num_sinc_lobes
-		);
-	}
-	else
-	{
-		phosphor_mask_sample = lanczos_downsample_horiz(
-			samplerMaskShadow, mask_size_inv,
-			texcoord, downsizing_factor, num_sinc_lobes
-		);
-	}
-	if (texcoord.x * mask_size.x >= true_tile_size.x) color = float4(0, 0, 0, 0);
-	else color = phosphor_mask_sample;
-}
-
-void dummyShader3(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-
-    out float4 color : SV_Target
-) {
-    const float2 mask_size_inv = 1.0 / mask_size;
-	
-    const float downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
-    const float2 true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
-    // const float2 tiles_per_screen = viewport_size / mask_size;
-
-	const float4 sampled_color = lanczos_downsample_vert(
-        samplerMaskResizeVertical, mask_size_inv,
-        texcoord, downsizing_factor, num_sinc_lobes
-    );
-	// const float2 texcoord_scaled = frac(texcoord * float2(1, downsizing_factor));
-	// const float4 sampled_color = tex2D(samplerMaskResizeVertical, texcoord_scaled);
-	
-	if (texcoord.y * mask_size.y >= true_tile_size.y) color = float4(0, 0, 0, 0);
-	else color = sampled_color;
-}
 
 technique CRT_Royale
 {
@@ -167,36 +107,29 @@ technique CRT_Royale
 			
 			RenderTarget = texBlurHorizontal;
 		}
-		// crt-royale-mask-resize-vertical.fxh
+		// crt-royale-mask-resize.fxh
 		pass p5
 		{
-			// VertexShader = PostProcessVS;
-			// PixelShader = pixelShader5;
-			VertexShader = PostProcessVS;
-			PixelShader = dummyShader2;
+			VertexShader = maskResizeVertVS;
+			PixelShader = maskResizeVertPS;
 			
 			RenderTarget = texMaskResizeVertical;
 		}
-		// crt-royale-mask-resize-horizontal.fxh
+		// crt-royale-mask-resize.fxh
 		pass p6
 		{
-			// VertexShader = PostProcessVS;
-			// PixelShader = pixelShader6;
-			VertexShader = PostProcessVS;
-			PixelShader = dummyShader3;
+			VertexShader = maskResizeHorizVS;
+			PixelShader = maskResizeHorizPS;
 			
 			RenderTarget = texMaskResizeHorizontal;
 		}
-		// crt-royale-scanlines-horizontal-apply-mask.fxh
+		// crt-royale-scanlines-horizontal-apply-mask-new.fxh
 		pass p7
 		{
-			VertexShader = vertexShader7;
-			PixelShader = pixelShader7;
-			// VertexShader = PostProcessVS;
-			// PixelShader = newPixelShader7;
+			VertexShader = PostProcessVS;
+			PixelShader = newPixelShader7;
 			
 			RenderTarget = texMaskedScanlines;
-			// RenderTarget = texGeometry;
 		}
 		// crt-royale-brightpass.fxh
 		pass p8

@@ -149,9 +149,11 @@ texture2D texBlurHorizontal {
 sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
 
 // Pass 5 Mask Texture
+// TODO: Figure out how to set these to 144 insead of 512
+//       without losing data during downsampling
 #define TEX_MASKVERTICAL_WIDTH mask_size_xy
 #define TEX_MASKVERTICAL_HEIGHT mask_size_xy
-#define TEX_MASKVERTICAL_SIZE int2(mask_size_xy, mask_size_xy)
+#define TEX_MASKVERTICAL_SIZE int2(TEX_MASKVERTICAL_WIDTH, TEX_MASKVERTICAL_HEIGHT)
 texture2D texMaskResizeVertical {
 	Width = TEX_MASKVERTICAL_WIDTH;
 	Height = TEX_MASKVERTICAL_HEIGHT;
@@ -159,15 +161,17 @@ texture2D texMaskResizeVertical {
 sampler2D samplerMaskResizeVertical {
 	Texture = texMaskResizeVertical;
 
-    AddressU = mask_texture_wrap_mode;
-    AddressV = mask_texture_wrap_mode;
-    AddressW = mask_texture_wrap_mode;
+    AddressU = NONE;
+    AddressV = NONE;
+    AddressW = NONE;
 };
 
 // Pass 6 Mask Texture (MASK_RESIZE)
+// TODO: Figure out how to set these to 144 insead of 512
+//       without losing data during downsampling
 #define TEX_MASKHORIZONTAL_WIDTH mask_size_xy
 #define TEX_MASKHORIZONTAL_HEIGHT mask_size_xy
-#define TEX_MASKHORIZONTAL_SIZE int2(mask_size_xy, mask_size_xy)
+#define TEX_MASKHORIZONTAL_SIZE int2(TEX_MASKHORIZONTAL_WIDTH, TEX_MASKHORIZONTAL_HEIGHT)
 texture2D texMaskResizeHorizontal {
 	Width = TEX_MASKHORIZONTAL_WIDTH;
 	Height = TEX_MASKHORIZONTAL_HEIGHT;
@@ -175,9 +179,9 @@ texture2D texMaskResizeHorizontal {
 sampler2D samplerMaskResizeHorizontal {
 	Texture = texMaskResizeHorizontal;
     
-    AddressU = mask_texture_wrap_mode;
-    AddressV = mask_texture_wrap_mode;
-    AddressW = mask_texture_wrap_mode;
+    AddressU = NONE;
+    AddressV = NONE;
+    AddressW = NONE;
 };
 
 // Pass 7 Buffer (MASKED_SCANLINES)
