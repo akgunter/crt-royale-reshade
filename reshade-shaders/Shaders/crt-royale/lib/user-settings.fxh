@@ -127,6 +127,12 @@
 #endif
 
 //  PHOSPHOR MASK:
+//  Choose between a 64x64 or 512x512 source for the phosphor mask
+//  Mainly affects Sample Mode 1
+#ifndef USE_LARGE_PHOSPHOR_MASK
+    #define USE_LARGE_PHOSPHOR_MASK 1
+#endif
+
 //  Manually resize the phosphor mask for best results (slower)?  Disabling this
 //  removes the option to do so, but it may be faster without dynamic branches.
 #ifndef PHOSPHOR_MASK_MANUALLY_RESIZE

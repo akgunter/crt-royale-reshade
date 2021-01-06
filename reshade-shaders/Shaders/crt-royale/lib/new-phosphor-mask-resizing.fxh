@@ -26,6 +26,21 @@
 #include "derived-settings-and-constants.fxh"
 #include "bind-shader-params.fxh"
 
+float3 get_downsizing_factor_and_true_tile_size() {
+    const float triad_size = mask_specify_num_triads == 0 ?
+        mask_triad_size_desired :
+        float(CONTENT_WIDTH) / mask_num_triads_desired;
+
+    const float2 true_tile_size_float = mask_sample_mode_desired < 1.5 ?
+        triad_size * mask_triads_per_tile * float2(1, tile_aspect_inv) :
+        content_size;
+
+    const float downsizing_factor = mask_size.x / (triad_size * mask_triads_per_tile);
+    const float2 true_tile_size = floor(true_tile_size_float + FIX_ZERO(0.0));
+
+    return float3(downsizing_factor, true_tile_size);
+}
+
 
 float4 lanczos_downsample_horiz(
     const sampler2D tex, const float2 tex_invsize,
@@ -87,6 +102,18 @@ float4 lanczos_downsample_vert(
     }
 
     return acc / w_sum;
+}
+
+float4 samplePhosphorMask(const float2 texcoord) {
+    if (mask_type == 0) {
+        return tex2D(samplerMaskGrille, texcoord);
+    }
+    else if (mask_type == 2) {
+        return tex2D(samplerMaskShadow, texcoord);
+    }
+    else {
+        return tex2D(samplerMaskSlot, texcoord);
+    }
 }
 
 #endif  //  _NEW_PHOSPHOR_MASK_RESIZING_H

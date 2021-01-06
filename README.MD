@@ -33,17 +33,20 @@ This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan.
 For the most part, configuring this implementation of crt-royale should be the same as configuring the libretro versions, so refer to any past experience or to the existing documentation for help with that. I've left almost all of the code's comments intact, so you can also scroll through that for descriptions of the various preprocessor definitions. You should be able to find all of them in `user-settings.fxh`, `derived-settings-and-constants.fxh`, `bind-shader-params.fxh`, and `shared-objects.fxh`. The main difference is that you configure many preprocessor definitions by setting them to integer values rather than just defining them. This is to let users set them from ReShade's UI instead of editing the source code.
 
 There are a handful of notable differences:
-1)  The Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
+1)  Mask Sample Mode 0 has a new setting `Downsampling Sharpness`. The short version is that you can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between. I find this particularly useful for the Shadow mask.
 
-2)  Mask Sample Mode 0 has a new setting `Lanczos Weight at Center`. The short version is that you can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between.
+2)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
-3)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
+3)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
 
-4)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
+4)  You can swap between a 512x512 and a 64x64 phosphor mask texture file with the `USE_LARGE_PHOSPHOR_MASK` setting. Try toggling this if you're dead set on a particular triad size but get awful results.
 
-5)  Many of the "RUNTIME_..." settings are disabled. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did to begin with. Some of them I just haven't gotten around to implementing yet.
+5)  Many of the "RUNTIME_..." settings are disabled. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did to begin with.
 
 6)  I figured out that the default anti-aliasing setting was way too strong, so I turned it into a preprocessor definition antialias_level and defaulted it to 0. This is defined in `user-settings.fxh`.
+
+7)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
+
 
 #### QUALITATIVE DIFFERENCES
 

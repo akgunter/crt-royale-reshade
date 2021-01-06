@@ -127,10 +127,8 @@ technique CRT_Royale
 			VertexShader = PostProcessVS;
 			PixelShader = newPixelShader7;
 			
-			// RenderTarget = texMaskedScanlines;
-			RenderTarget = texGeometry;
+			RenderTarget = texMaskedScanlines;
 		}
-		/*
 		// crt-royale-brightpass.fxh
 		pass p8
 		{
@@ -163,7 +161,6 @@ technique CRT_Royale
 
 			RenderTarget = texGeometry;
 		}
-		*/
 		// content-crop.fxh
 		pass uncrop
 		{

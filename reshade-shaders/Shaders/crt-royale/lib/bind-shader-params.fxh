@@ -197,11 +197,21 @@ uniform float convergence_offset_y_b <
     ui_step    = 0.01;
 > = convergence_offsets_b_static.y;
 
-#ifndef phosphor_mask_type
-    #define phosphor_mask_type 1
-#endif
+#if __RENDERER__ != 0x9000
+    uniform float mask_type <
+        ui_label   = "Mask Type";
+        ui_type    = "slider";
+        ui_min     = 0.0;
+        ui_max     = 2.0;
+        ui_step    = 1.0;
+    > = mask_type_static;
+#else
+    #ifndef phosphor_mask_type
+        #define phosphor_mask_type 1
+    #endif
 
-#define mask_type phosphor_mask_type
+    #define mask_type phosphor_mask_type
+#endif
 
 uniform float mask_sample_mode_desired <
     ui_label   = "Mask Sample Mode";
@@ -211,11 +221,11 @@ uniform float mask_sample_mode_desired <
     ui_step    = 1.0;
 > = mask_sample_mode_static;
 uniform float lanczos_weight_at_center <
-    ui_label   = "Lanczos Weight at Center";
+    ui_label   = "Downsampling Sharpness";
     ui_tooltip = "Tunes the sharpness of Mask Sample Mode 0";
     ui_type    = "slider";
     ui_min     = 0.1;
-    ui_max     = 20.0;
+    ui_max     = 50.0;
     ui_step    = 0.1;
 > = 1.0;
 uniform float mask_specify_num_triads <
@@ -234,7 +244,7 @@ uniform float mask_triad_size_desired <
 > = mask_triad_size_desired_static;
 uniform float mask_num_triads_desired <
     ui_label   = "Mask Num Triads";
-    ui_type    = "input";
+    ui_type    = "drag";
     ui_min     = 1.0;
     ui_max     = 1280.0;
     ui_step    = 1.0;

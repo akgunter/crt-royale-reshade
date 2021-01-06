@@ -52,22 +52,14 @@ void newPixelShader7(
         scanline_texture_size, scanline_texture_size_inv);
     const float auto_dim_factor = levels_autodim_temp;
 
-    const float tile_aspect_inv = mask_resize_src_lut_size.x/mask_resize_src_lut_size.y;
-
-    const float calculated_triad_size = float(CONTENT_WIDTH) / mask_num_triads_desired;
-    const float2 true_tile_size = mask_sample_mode_desired < 1.5 ?
-        mask_specify_num_triads == 0 ?
-            mask_triad_size_desired * mask_triads_per_tile * float2(1, tile_aspect_inv) :
-            calculated_triad_size * mask_triads_per_tile * float2(1, tile_aspect_inv) :
-        content_size;
-
+    const float2 true_tile_size = get_downsizing_factor_and_true_tile_size().yz;
     const float2 tiles_per_screen = content_size / true_tile_size;
 
     float3 phosphor_mask_sample;
     if(mask_sample_mode_desired > 0.5)
     {
-        const float2 tile_uv_wrap = frac(texcoord * tiles_per_screen);
-        phosphor_mask_sample = tex2D(samplerPhosphorMask, tile_uv_wrap).rgb;
+        const float2 tile_uv_wrap = texcoord * tiles_per_screen;
+        phosphor_mask_sample = samplePhosphorMask(tile_uv_wrap).rgb;
     }
     else
     {
@@ -178,5 +170,6 @@ void newPixelShader7(
         const float3 pixel_color = phosphor_emission_dim;
     #endif
     //  Encode if necessary, and output.
-    color = encode_output(float4(phosphor_mask_sample, 1.0), get_intermediate_gamma());
+    
+    color = encode_output(float4(pixel_color, 1.0), get_intermediate_gamma());
 }
