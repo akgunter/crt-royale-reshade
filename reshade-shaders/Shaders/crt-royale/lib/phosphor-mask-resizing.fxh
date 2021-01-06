@@ -33,7 +33,7 @@
 //  Dynamic loops accomodated: Coarsely branch around static loops.
 //  Dynamic loops assumed allowed: Use a flat dynamic loop.
 #if !DRIVERS_ALLOW_DYNAMIC_BRANCHES
-    #if ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
+    #if _ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
         #define BREAK_LOOPS_INTO_PIECES
     #else
         #define _USE_SINGLE_STATIC_LOOP

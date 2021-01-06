@@ -184,7 +184,7 @@
 
 //  Disable slow runtime paths if static parameters are used.  Most of these
 //  won't be a problem anyway once the params are disabled, but some will.
-#if !RUNTIME_SHADER_PARAMS_ENABLE
+#if !_RUNTIME_SHADER_PARAMS_ENABLE
     #if RUNTIME_PHOSPHOR_BLOOM_SIGMA
         #undef RUNTIME_PHOSPHOR_BLOOM_SIGMA
         #define RUNTIME_PHOSPHOR_BLOOM_SIGMA 0
@@ -193,9 +193,9 @@
         #undef RUNTIME_ANTIALIAS_WEIGHTS
         #define RUNTIME_ANTIALIAS_WEIGHTS 0
     #endif
-    #if RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
-        #undef RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
-        #define RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS 0
+    #if _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+        #undef _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+        #define _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS 0
     #endif
     #if RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
         #undef RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE

@@ -1,3 +1,24 @@
+/////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
+
+//  crt-royale: A full-featured CRT shader, with cheese.
+//  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
+//
+//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
+//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
+//
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or any later version.
+//
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along with
+//  this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+//  Place, Suite 330, Boston, MA 02111-1307 USA
+
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
@@ -31,16 +52,19 @@ void newPixelShader7(
         scanline_texture_size, scanline_texture_size_inv);
     const float auto_dim_factor = levels_autodim_temp;
 
-    const float tile_aspect = mask_resize_src_lut_size.y/mask_resize_src_lut_size.x;
-    const float mask_sample_mode = get_mask_sample_mode();
-    const bool sample_orig_luts = get_mask_sample_mode() > 0.5;
-    const float2 true_tile_size = mask_sample_mode < 1.5 ?
-        mask_triad_size_desired * mask_triads_per_tile * float2(1, tile_aspect) :
+    const float tile_aspect_inv = mask_resize_src_lut_size.x/mask_resize_src_lut_size.y;
+
+    const float calculated_triad_size = float(CONTENT_WIDTH) / mask_num_triads_desired;
+    const float2 true_tile_size = mask_sample_mode_desired < 1.5 ?
+        mask_specify_num_triads == 0 ?
+            mask_triad_size_desired * mask_triads_per_tile * float2(1, tile_aspect_inv) :
+            calculated_triad_size * mask_triads_per_tile * float2(1, tile_aspect_inv) :
         content_size;
+
     const float2 tiles_per_screen = content_size / true_tile_size;
 
     float3 phosphor_mask_sample;
-    if(sample_orig_luts)
+    if(mask_sample_mode_desired > 0.5)
     {
         const float2 tile_uv_wrap = frac(texcoord * tiles_per_screen);
         phosphor_mask_sample = tex2D(samplerPhosphorMask, tile_uv_wrap).rgb;
@@ -154,5 +178,5 @@ void newPixelShader7(
         const float3 pixel_color = phosphor_emission_dim;
     #endif
     //  Encode if necessary, and output.
-    color = encode_output(float4(pixel_color, 1.0), get_intermediate_gamma());
+    color = encode_output(float4(phosphor_mask_sample, 1.0), get_intermediate_gamma());
 }

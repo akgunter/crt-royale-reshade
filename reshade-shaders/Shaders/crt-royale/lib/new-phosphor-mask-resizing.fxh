@@ -26,15 +26,6 @@
 #include "derived-settings-and-constants.fxh"
 #include "bind-shader-params.fxh"
 
-void get_phosphor_mask_parameters(
-    const float2 mask_size,
-    const float2 viewport_size
-) {
-    const float downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
-    const float2 true_tile_size = floor(mask_size / downsizing_factor) * downsizing_factor;
-    const float2 tiles_per_screen = viewport_size / true_tile_size;
-
-}
 
 float4 lanczos_downsample_horiz(
     const sampler2D tex, const float2 tex_invsize,

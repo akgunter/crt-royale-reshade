@@ -1,3 +1,21 @@
+/////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
+
+//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
+//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
+//
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or any later version.
+//
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along with
+//  this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+//  Place, Suite 330, Boston, MA 02111-1307 USA
+
 
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/new-phosphor-mask-resizing.fxh"
@@ -21,8 +39,18 @@ void maskResizeVertVS(
     
     source_mask_size_inv = 1.0 / mask_size;
     output_size = TEX_MASKHORIZONTAL_SIZE;
-    downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
-    true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
+    
+    const float tile_aspect_inv = mask_resize_src_lut_size.x/mask_resize_src_lut_size.y;
+
+    if (mask_specify_num_triads == 0) {
+        downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
+        true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, tile_aspect_inv);
+    }
+    else {
+        const float calculated_triad_size = float(CONTENT_WIDTH) / mask_num_triads_desired;
+        downsizing_factor = mask_size.x / (calculated_triad_size * mask_triads_per_tile);
+        true_tile_size = calculated_triad_size * mask_triads_per_tile * float2(1, tile_aspect_inv);
+    }
 }
 
 void maskResizeVertPS(
@@ -62,8 +90,16 @@ void maskResizeHorizVS(
     
     source_mask_size_inv = 1.0 / TEX_MASKVERTICAL_SIZE;
     output_size = TEX_MASKHORIZONTAL_SIZE;
-    downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
-    true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
+
+    if (mask_specify_num_triads == 0) {
+        downsizing_factor = mask_size.x / (mask_triad_size_desired * mask_triads_per_tile);
+        true_tile_size = mask_triad_size_desired * mask_triads_per_tile * float2(1, 1);
+    }
+    else {
+        const float calculated_triad_size = float(CONTENT_WIDTH) / mask_num_triads_desired;
+        downsizing_factor = mask_size.x / (calculated_triad_size * mask_triads_per_tile);
+        true_tile_size = calculated_triad_size * mask_triads_per_tile * float2(1, 1);
+    }
 }
 
 void maskResizeHorizPS(

@@ -43,8 +43,8 @@
 //  binary search can potentially save some iterations.  However, it may fail:
 //  error C6001: Temporary register limit of 32 exceeded; 35 registers
 //  needed to compile program
-#ifndef ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
-    #define ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS 0
+#ifndef _ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS
+    #define _ACCOMODATE_POSSIBLE_DYNAMIC_LOOPS 0
 #endif
 
 //  tex2Dlod: Requires an fp40 or newer profile.  This can be used to disable
@@ -86,8 +86,8 @@
 //  Enable runtime shader parameters in the Retroarch (etc.) GUI?  They override
 //  many of the options in this file and allow real-time tuning, but many of
 //  them are slower.  Disabling them and using this text file will boost FPS.
-#ifndef RUNTIME_SHADER_PARAMS_ENABLE
-    #define RUNTIME_SHADER_PARAMS_ENABLE 1
+#ifndef _RUNTIME_SHADER_PARAMS_ENABLE
+    #define _RUNTIME_SHADER_PARAMS_ENABLE 1
 #endif
 //  Specify the phosphor bloom sigma at runtime?  This option is 10% slower, but
 //  it's the only way to do a wide-enough full bloom with a runtime dot pitch.
@@ -99,8 +99,8 @@
     #define RUNTIME_ANTIALIAS_WEIGHTS 1
 #endif
 //  Specify subpixel offsets at runtime? (WARNING: EXTREMELY EXPENSIVE!)
-#ifndef RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
-    #define RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS 0
+#ifndef _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+    #define _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS 0
 #endif
 //  Make beam_horiz_filter and beam_horiz_linear_rgb_weight into runtime shader
 //  parameters?  This will require more math or dynamic branching.

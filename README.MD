@@ -12,9 +12,7 @@ Special thanks goes to crosire and co. for their work on ReShade, particularly f
 
 
 #### API SUPPORT
-This shader works with DX10/11/12, and OpenGL. Please report any issues with those APIs because they shouldn't be there.
-
-DX9 sometimes doesn't tile the phosphor mask correctly for some viewport sizes, and Vulkan has stability issues in some emulators (e.g. Dolphin 5.0).
+This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan.
 
 
 #### SETUP
@@ -35,15 +33,17 @@ DX9 sometimes doesn't tile the phosphor mask correctly for some viewport sizes, 
 For the most part, configuring this implementation of crt-royale should be the same as configuring the libretro versions, so refer to any past experience or to the existing documentation for help with that. I've left almost all of the code's comments intact, so you can also scroll through that for descriptions of the various preprocessor definitions. You should be able to find all of them in `user-settings.fxh`, `derived-settings-and-constants.fxh`, `bind-shader-params.fxh`, and `shared-objects.fxh`. The main difference is that you configure many preprocessor definitions by setting them to integer values rather than just defining them. This is to let users set them from ReShade's UI instead of editing the source code.
 
 There are a handful of notable differences:
-1)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present, but instead of defining one of them at a time, you set `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
+1)  The Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
 
-2)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
+2)  Mask Sample Mode 0 has a new setting `Lanczos Weight at Center`. The short version is that you can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between.
 
-3)  `RUNTIME_GEOMETRY_TILT`, `GAMMA_ENCODE_EVERY_FBO`, and `RUNTIME_SHADER_PARAMS_ENABLE` are currently not configurable. Disabling runtime geometry-tilt requires defining global constants with sin() and cos(), which is not possible in ReShade. Enabling `GAMMA_ENCODE_EVERY_FBO` introduces some control-flow wonkiness that I haven't gotten around to dealing with yet, so for now all intermediate buffers use gamma 1.0 and never ntsc_gamma. `RUNTIME_SHADER_PARAMS_ENABLE` required a ton more copy/pasting that I haven't felt like doing yet.
+3)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
-4)  I figured out that the default anti-aliasing setting was way too strong, so I turned it into a preprocessor definition antialias_level and defaulted it to 0. This is defined in `user-settings.fxh`.
+4)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
 
-5)  If you're using the DX9 API, then the Mask Type slider won't be available. Instead you'll find a `phosphor_mask_type` preprocessor definition that you can set to 0, 1, or 2. It's a bit gross, but it works without rewriting a whole bunch of stuff.
+5)  Many of the "RUNTIME_..." settings are disabled. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did to begin with. Some of them I just haven't gotten around to implementing yet.
+
+6)  I figured out that the default anti-aliasing setting was way too strong, so I turned it into a preprocessor definition antialias_level and defaulted it to 0. This is defined in `user-settings.fxh`.
 
 #### QUALITATIVE DIFFERENCES
 

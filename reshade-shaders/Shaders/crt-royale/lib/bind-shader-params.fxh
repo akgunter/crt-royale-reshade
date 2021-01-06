@@ -196,21 +196,13 @@ uniform float convergence_offset_y_b <
     ui_max     = 4.0;
     ui_step    = 0.01;
 > = convergence_offsets_b_static.y;
-// #if __RENDERER__ != 0x9000
-// uniform float mask_type <
-//     ui_label   = "Mask Type";
-//     ui_type    = "slider";
-//     ui_min     = 0.0;
-//     ui_max     = 2.0;
-//     ui_step    = 1.0;
-// > = mask_type_static;
-// #else
-    #ifndef phosphor_mask_type
-        #define phosphor_mask_type 1
-    #endif
-    
-    #define mask_type phosphor_mask_type
-// #endif
+
+#ifndef phosphor_mask_type
+    #define phosphor_mask_type 1
+#endif
+
+#define mask_type phosphor_mask_type
+
 uniform float mask_sample_mode_desired <
     ui_label   = "Mask Sample Mode";
     ui_type    = "slider";
@@ -218,12 +210,6 @@ uniform float mask_sample_mode_desired <
     ui_max     = 2.0;
     ui_step    = 1.0;
 > = mask_sample_mode_static;
-// #ifndef phosphor_mask_sample_mode
-//     #define phosphor_mask_sample_mode 1
-// #endif
-
-// #define mask_sample_mode_desired phosphor_mask_sample_mode
-
 uniform float lanczos_weight_at_center <
     ui_label   = "Lanczos Weight at Center";
     ui_tooltip = "Tunes the sharpness of Mask Sample Mode 0";
@@ -239,31 +225,18 @@ uniform float mask_specify_num_triads <
     ui_max     = 1.0;
     ui_step    = 1.0;
 > = mask_specify_num_triads_static;
-// #if __RENDERER__ != 0x9000
-    uniform float mask_triad_size_desired <
-        ui_label   = "Mask Triad Size";
-        ui_type    = "slider";
-        ui_min     = 3.0;
-        ui_max     = 18.0;
-        ui_step    = 1.0;
-    > = mask_triad_size_desired_static;
-// #else
-//     // Don't name the preprocessor def identically to the uniform
-//     // If a user flip-flops between APIs, the preprocessor def can get stuck
-//     // in the reshade config and will screw up compilation, and it's a pain
-//     // to figure out where the def is coming from. Yes, I learned this the
-//     // hard way.
-//     #ifndef phosphor_mask_triad_size_desired
-//         #define phosphor_mask_triad_size_desired 3
-//     #endif
-
-//     #define mask_triad_size_desired phosphor_mask_triad_size_desired
-// #endif
+uniform float mask_triad_size_desired <
+    ui_label   = "Mask Triad Size";
+    ui_type    = "slider";
+    ui_min     = 3.0;
+    ui_max     = 18.0;
+    ui_step    = 0.1;
+> = mask_triad_size_desired_static;
 uniform float mask_num_triads_desired <
     ui_label   = "Mask Num Triads";
-    ui_type    = "slider";
-    ui_min     = 342.0;
-    ui_max     = 1920.0;
+    ui_type    = "input";
+    ui_min     = 1.0;
+    ui_max     = 1280.0;
     ui_step    = 1.0;
 > = mask_num_triads_desired_static;
 uniform float aa_subpixel_r_offset_x_runtime <
@@ -429,7 +402,7 @@ float2 get_convergence_offsets_b_vector()
 float2 get_aa_subpixel_r_offset()
 {
     #if RUNTIME_ANTIALIAS_WEIGHTS
-        #if RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+        #if _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
             //  WARNING: THIS IS EXTREMELY EXPENSIVE.
             return float2(aa_subpixel_r_offset_x_runtime,
                 aa_subpixel_r_offset_y_runtime);
