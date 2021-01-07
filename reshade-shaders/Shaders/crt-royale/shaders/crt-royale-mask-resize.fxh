@@ -18,7 +18,7 @@
 
 
 #include "../lib/bind-shader-params.fxh"
-#include "../lib/new-phosphor-mask-resizing.fxh"
+#include "../lib/phosphor-mask-resizing.fxh"
 #include "shared-objects.fxh"
 
 static const int num_sinc_lobes = 3;

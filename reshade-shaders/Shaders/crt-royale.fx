@@ -32,14 +32,12 @@
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
 	// #include "crt-royale/shaders/crt-royale-mask-resize-vertical.fxh"
 	// #include "crt-royale/shaders/crt-royale-mask-resize-horizontal.fxh"
-	// #include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
+	#include "crt-royale/shaders/crt-royale-mask-resize.fxh"
+	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
 	#include "crt-royale/shaders/crt-royale-brightpass.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
 	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
-	
-	#include "crt-royale/shaders/crt-royale-mask-resize.fxh"
-	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask-new.fxh"
 #else
 	#include "crt-royale/shaders/content-box.fxh"
 #endif
