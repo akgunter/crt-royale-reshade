@@ -8,7 +8,7 @@ The vast majority of the code here is taken from the current libretro shader rep
 [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders)<br>
 [libretro/slang-shaders](https://github.com/libretro/slang-shaders)
 
-Special thanks goes to crosire and co. for their work on ReShade, particularly for adding support for rectangular matrices and for ReShade's built-in debugging tools. Those features made this project orders of magnitude easier.
+Special thanks goes to crosire and co. for their work on ReShade, particularly for adding support for rectangular matrices and for ReShade's built-in debugging tools. Those features made this project orders of magnitude easier. And also thank you, Matsilagi, for your time, suggestions, testing, and debugging.
 
 
 #### API SUPPORT
