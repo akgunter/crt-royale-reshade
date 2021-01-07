@@ -530,7 +530,7 @@ float3x3 get_object_to_tangent_matrix(const float3 intersection_pos_local,
     //  respectively.  Mathematically we'd base the cotangent/cobitangent on
     //  those, but we'll compute the cotangent/cobitangent directly when we can.
     float3 cotangent_unscaled, cobitangent_unscaled;
-    //  geom_mode should be constant-folded without RUNTIME_GEOMETRY_MODE.
+    //  geom_mode should be constant-folded without _RUNTIME_GEOMETRY_MODE.
     if(geom_mode < 1.5)
     {
         //  Sphere:
@@ -637,7 +637,7 @@ float2 get_curved_video_uv_coords_and_tangent_matrix(
     const float2 video_uv = centered_uv + float2(0.5, 0.5);
     //  Get a pixel-to-tangent-video-uv matrix.  The caller could deal with
     //  all but one of these cases, but that would be more complicated.
-    #if DRIVERS_ALLOW_DERIVATIVES
+    #if _DRIVERS_ALLOW_DERIVATIVES
         //  Derivatives obtain a matrix very fast, but the direction of pixel-
         //  space +y seems to depend on the pass.  Enforce the correct direction
         //  on a best-effort basis (but it shouldn't matter for antialiasing).

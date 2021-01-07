@@ -12,7 +12,7 @@ Special thanks goes to crosire and co. for their work on ReShade, particularly f
 
 
 #### API SUPPORT
-This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan.
+This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan. It'll probably spit out a bunch of yellow error messages in DX9, but that's okay.
 
 
 #### SETUP
@@ -27,25 +27,29 @@ This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan.
 
     Be aware that, if you resize the game's viewport, you'll probably have to readjust these settings. You can mitigate this by defining `CONTENT_WIDTH` and `CONTENT_HEIGHT` algebraically in terms of `BUFFER_WIDTH` and `BUFFER_HEIGHT`, but you'll have to figure out the expressions for that on a case by case basis. As an example, if you know the content has a 4:3 aspect ratio and fills the screen vertically, you can define `CONTENT_HEIGHT` as `BUFFER_HEIGHT` and `CONTENT_WIDTH` as `CONTENT_HEIGHT * 4.0 / 3.0`.
 
+3)  Focus primarily on setting the Mask Type, Mask Sample Mode, and Mask Triad Size. Sample Mode 0 tends to be smoother but dimmer, while Mode 1 tends to be sharper and brighter but more prone to artifacts. You'll usually get the best results with triad sizes 3, 6, 9, etc. Multiples of 0.5 also seem to work fairly well, but they might cause color issues. If you're using DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type` instead of a slider.
 
-#### CONFIGURATION
+4)  Use the `USE_LARGE_PHOSPHOR_MASK` preprocessor definition to fix some artifacting with the phosphor mask. If you want a triad size larger than 8, you must set `USE_LARGE_PHOSPHOR_MASK` to 1, or you will get artifacts. If you have artifacting or color issues with a triad size of 3-8, try setting `USE_LARGE_PHOSPHOR_MASK` to 0.
+
+5)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will basically be rounded down to one of these.
+
+
+#### NOTABLE CHANGES
 
 For the most part, configuring this implementation of crt-royale should be the same as configuring the libretro versions, so refer to any past experience or to the existing documentation for help with that. I've left almost all of the code's comments intact, so you can also scroll through that for descriptions of the various preprocessor definitions. You should be able to find all of them in `user-settings.fxh`, `derived-settings-and-constants.fxh`, `bind-shader-params.fxh`, and `shared-objects.fxh`. The main difference is that you configure many preprocessor definitions by setting them to integer values rather than just defining them. This is to let users set them from ReShade's UI instead of editing the source code.
 
 There are a handful of notable differences:
-1)  Mask Sample Mode 0 has a new setting `Downsampling Sharpness`. The short version is that you can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between. I find this particularly useful for the Shadow mask.
+1)  Mask Sample Mode 0 has a new setting `Downsampling Sharpness`. You can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between. I find this particularly useful for the Shadow mask.
 
 2)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
 3)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
 
-4)  You can swap between a 512x512 and a 64x64 phosphor mask texture file with the `USE_LARGE_PHOSPHOR_MASK` setting. Try toggling this if you're dead set on a particular triad size but get awful results.
+4)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
 
-5)  Many of the "RUNTIME_..." settings are disabled. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did to begin with.
+5)  The code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
 
-6)  I figured out that the default anti-aliasing setting was way too strong, so I turned it into a preprocessor definition antialias_level and defaulted it to 0. This is defined in `user-settings.fxh`.
-
-7)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
+6)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
 
 
 #### QUALITATIVE DIFFERENCES

@@ -119,7 +119,7 @@ void vertexShader11(
 
     //  Get an optimal eye position based on geom_view_dist, viewport_aspect,
     //  and CRT radius/rotation:
-    #if RUNTIME_GEOMETRY_MODE
+    #if _RUNTIME_GEOMETRY_MODE
         const float geom_mode = geom_mode_runtime;
     #else
         static const float geom_mode = geom_mode_static;
@@ -149,7 +149,7 @@ void pixelShader11(
     #else
         static const float3x3 global_to_local = geom_global_to_local_static;
     #endif
-    #if RUNTIME_GEOMETRY_MODE
+    #if _RUNTIME_GEOMETRY_MODE
         const float geom_mode = geom_mode_runtime;
     #else
         static const float geom_mode = geom_mode_static;

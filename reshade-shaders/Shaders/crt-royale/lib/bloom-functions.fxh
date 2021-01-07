@@ -98,7 +98,7 @@ float get_absolute_scale_blur_sigma(const float thresh)
 float get_center_weight(const float sigma)
 {
     //  Given a Gaussian blur sigma, get the blur weight for the center texel.
-    #if RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #if _RUNTIME_PHOSPHOR_BLOOM_SIGMA
         return get_fast_gaussian_weight_sum_inv(sigma);
     #else
         const float denom_inv = 0.5/(sigma*sigma);
@@ -170,13 +170,13 @@ float3 tex2DblurNfast(const sampler2D tex, const float2 tex_uv,
     //  If sigma is static, we can safely branch and use the smallest blur
     //  that's big enough.  Ignore #define hints, because we'll only use a
     //  large blur if we actually need it, and the branches cost nothing.
-    #if !RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #if !_RUNTIME_PHOSPHOR_BLOOM_SIGMA
         #define PHOSPHOR_BLOOM_BRANCH_FOR_BLUR_SIZE
     #else
         //  It's still worth branching if the profile supports dynamic branches:
         //  It's much faster than using a hugely excessive blur, but each branch
         //  eats ~1% FPS.
-        #if DRIVERS_ALLOW_DYNAMIC_BRANCHES
+        #if _DRIVERS_ALLOW_DYNAMIC_BRANCHES
             #define PHOSPHOR_BLOOM_BRANCH_FOR_BLUR_SIZE
         #endif
     #endif
@@ -307,7 +307,7 @@ float get_final_bloom_sigma(const float bloom_sigma_runtime)
     //              so static sigmas can be constant-folded!
     const float bloom_sigma_optimistic = get_min_sigma_to_blur_triad(
         mask_triad_size_desired_static, bloom_diff_thresh);
-    #if RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #if _RUNTIME_PHOSPHOR_BLOOM_SIGMA
         return bloom_sigma_runtime;
     #else
         //  Overblurring looks as bad as underblurring, so assume average-size

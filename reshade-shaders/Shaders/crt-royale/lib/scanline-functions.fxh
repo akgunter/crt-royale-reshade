@@ -336,7 +336,7 @@ float3 get_interpolated_linear_color(const float3 color0, const float3 color1,
     //              4.) beam_horiz_linear_rgb_weight must be defined as a global
     //                  float in [0.0, 1.0] describing how much blending should
     //                  be done in linear RGB (rest is gamma-corrected RGB).
-    //              5.) RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE must be #defined
+    //              5.) _RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE must be #defined
     //                  if beam_horiz_linear_rgb_weight is anything other than a
     //                  static constant, or we may try branching at runtime
     //                  without dynamic branches allowed (slow).
@@ -348,10 +348,10 @@ float3 get_interpolated_linear_color(const float3 color0, const float3 color1,
     const float inv_intermediate_gamma = 1.0 / intermediate_gamma;
     //  Branch if beam_horiz_linear_rgb_weight is static (for free) or if the
     //  profile allows dynamic branches (faster than computing extra pows):
-    #if !RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+    #if !_RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
         #define SCANLINES_BRANCH_FOR_LINEAR_RGB_WEIGHT
     #else
-        #if DRIVERS_ALLOW_DYNAMIC_BRANCHES
+        #if _DRIVERS_ALLOW_DYNAMIC_BRANCHES
             #define SCANLINES_BRANCH_FOR_LINEAR_RGB_WEIGHT
         #endif
     #endif

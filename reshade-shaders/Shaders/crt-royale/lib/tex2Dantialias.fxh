@@ -114,7 +114,7 @@
 //                  fix incompatibilities with anisotropic filtering.  This is
 //                  slower, and the Cg profile must support tex2Dlod().
 //              2.) If aa_cubic_c is a runtime uniform, you can #define
-//                  RUNTIME_ANTIALIAS_WEIGHTS to evaluate cubic weights once per
+//                  _RUNTIME_ANTIALIAS_WEIGHTS to evaluate cubic weights once per
 //                  fragment instead of at the usage site (which is used by
 //                  default, because it enables static evaluation).
 //  Description:
@@ -159,12 +159,12 @@
 
 /////////////////////////////  SETTINGS MANAGEMENT  ////////////////////////////
 
-#if !ANTIALIAS_OVERRIDE_BASICS
-    //  The following settings must be static constants:
-    static const float antialias_level = 12.0;
-    static const float aa_filter = 0.0;
-    static const bool aa_temporal = false;
-#endif
+// #if !ANTIALIAS_OVERRIDE_BASICS
+//     //  The following settings must be static constants:
+//     static const float antialias_level = 12.0;
+//     static const float aa_filter = 0.0;
+//     static const bool aa_temporal = false;
+// #endif
 
 #ifndef ANTIALIAS_OVERRIDE_STATIC_CONSTANTS
     //  Users may override these parameters, but the file structure requires
@@ -193,22 +193,22 @@
     );
 #endif
 
-#if !ANTIALIAS_OVERRIDE_PARAMETERS
-    //  Users may override these values with their own uniform or static consts.
-    //  Cubics: See http://www.imagemagick.org/Usage/filter/#mitchell
-    //  1.) "Keys cubics" with B = 1 - 2C are considered the highest quality.
-    //  2.) C = 0.5 (default) is Catmull-Rom; higher C's apply sharpening.
-    //  3.) C = 1.0/3.0 is the Mitchell-Netravali filter.
-    //  4.) C = 0.0 is a soft spline filter.
-    static const float aa_cubic_c = 0.5;
-    static const float aa_gauss_sigma = 0.5 / aa_pixel_diameter;
-    //  Users may override the subpixel offset accessor function with their own.
-    //  A function is used for compatibility with scalar runtime shader params.
-    float2 get_aa_subpixel_r_offset()
-    {
-        return float2(0.0, 0.0);
-    }
-#endif
+// #if !ANTIALIAS_OVERRIDE_PARAMETERS
+//     //  Users may override these values with their own uniform or static consts.
+//     //  Cubics: See http://www.imagemagick.org/Usage/filter/#mitchell
+//     //  1.) "Keys cubics" with B = 1 - 2C are considered the highest quality.
+//     //  2.) C = 0.5 (default) is Catmull-Rom; higher C's apply sharpening.
+//     //  3.) C = 1.0/3.0 is the Mitchell-Netravali filter.
+//     //  4.) C = 0.0 is a soft spline filter.
+//     static const float aa_cubic_c = 0.5;
+//     static const float aa_gauss_sigma = 0.5 / aa_pixel_diameter;
+//     //  Users may override the subpixel offset accessor function with their own.
+//     //  A function is used for compatibility with scalar runtime shader params.
+//     float2 get_aa_subpixel_r_offset()
+//     {
+//         return float2(0.0, 0.0);
+//     }
+// #endif
 
 
 //////////////////////////////////  INCLUDES  //////////////////////////////////
@@ -314,7 +314,7 @@ float eval_gaussian_filter(const float dist)
 float eval_cubic_filter(const float dist)
 {
     //  Compute coefficients like assign_aa_cubic_constants(), but statically.
-    #if RUNTIME_ANTIALIAS_WEIGHTS
+    #if _RUNTIME_ANTIALIAS_WEIGHTS
         //  When runtime weights are used, these values are instead written to
         //  global uniforms at the beginning of each tex2Daa* call.
         const float aa_cubic_b = 1.0 - 2.0*aa_cubic_c;
@@ -1375,7 +1375,7 @@ float3 tex2Daa(const sampler2D tex, const float2 tex_uv,
     return (antialias_level < 0.5) ? tex2D_linearize(tex, tex_uv, input_gamma).rgb :
         (antialias_level < 3.5) ? tex2Daa_subpixel_weights_only(
             tex, tex_uv, pixel_to_tex_uv, input_gamma) :
-        (antialias_level < 4.5) ? tex2Daa4x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        // (antialias_level < 4.5) ? tex2Daa4x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         (antialias_level < 5.5) ? tex2Daa5x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         (antialias_level < 6.5) ? tex2Daa6x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         (antialias_level < 7.5) ? tex2Daa7x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :

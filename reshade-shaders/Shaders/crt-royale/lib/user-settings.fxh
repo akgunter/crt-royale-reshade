@@ -9,7 +9,7 @@
 //  or driver capabilities, so instead you must comment or uncomment the lines
 //  below with "//" before "#define."  Disable an option if you get compilation
 //  errors resembling those listed.  Generally speaking, all of these options
-//  will run on nVidia cards, but only DRIVERS_ALLOW_TEX2DBIAS (if that) is
+//  will run on nVidia cards, but only _DRIVERS_ALLOW_TEX2DBIAS (if that) is
 //  likely to run on ATI/AMD, due to the Cg compiler's profile limitations.
 
 //  Derivatives: Unsupported on fp20, ps_1_1, ps_1_2, ps_1_3, and arbfp1.
@@ -17,27 +17,27 @@
 //  with curved manually tiled phosphor mask coords.  Related errors:
 //  error C3004: function "float2 ddx(float2);" not supported in this profile
 //  error C3004: function "float2 ddy(float2);" not supported in this profile
-#ifndef DRIVERS_ALLOW_DERIVATIVES
-    #define DRIVERS_ALLOW_DERIVATIVES 0
+#ifndef _DRIVERS_ALLOW_DERIVATIVES
+    #define _DRIVERS_ALLOW_DERIVATIVES 0
 #endif
 
 //  Fine derivatives: Unsupported on older ATI cards.
 //  Fine derivatives enable 2x2 fragment block communication, letting us perform
 //  fast single-pass blur operations.  If your card uses coarse derivatives and
 //  these are enabled, blurs could look broken.  Derivatives are a prerequisite.
-#if DRIVERS_ALLOW_DERIVATIVES
-    #define DRIVERS_ALLOW_FINE_DERIVATIVES
+#if _DRIVERS_ALLOW_DERIVATIVES
+    #define _DRIVERS_ALLOW_FINE_DERIVATIVES
 #endif
 
 //  Dynamic looping: Requires an fp30 or newer profile.
 //  This makes phosphor mask resampling faster in some cases.  Related errors:
 //  error C5013: profile does not support "for" statements and "for" could not
 //  be unrolled
-#ifndef DRIVERS_ALLOW_DYNAMIC_BRANCHES
-    #define DRIVERS_ALLOW_DYNAMIC_BRANCHES 0
+#ifndef _DRIVERS_ALLOW_DYNAMIC_BRANCHES
+    #define _DRIVERS_ALLOW_DYNAMIC_BRANCHES 0
 #endif
 
-//  Without DRIVERS_ALLOW_DYNAMIC_BRANCHES, we need to use unrollable loops.
+//  Without _DRIVERS_ALLOW_DYNAMIC_BRANCHES, we need to use unrollable loops.
 //  Using one static loop avoids overhead if the user is right, but if the user
 //  is wrong (loops are allowed), breaking a loop into if-blocked pieces with a
 //  binary search can potentially save some iterations.  However, it may fail:
@@ -51,30 +51,30 @@
 //  anisotropic filtering, thereby fixing related artifacts.  Related errors:
 //  error C3004: function "float4 tex2Dlod(sampler2D, float4);" not supported in
 //  this profile
-#ifndef DRIVERS_ALLOW_TEX2DLOD
-    #define DRIVERS_ALLOW_TEX2DLOD 1
-#endif
+// #ifndef _DRIVERS_ALLOW_TEX2DLOD
+//     #define _DRIVERS_ALLOW_TEX2DLOD 1
+// #endif
 
 //  tex2Dbias: Requires an fp30 or newer profile.  This can be used to alleviate
 //  artifacts from anisotropic filtering and mipmapping.  Related errors:
 //  error C3004: function "float4 tex2Dbias(sampler2D, float4);" not supported
 //  in this profile
-#ifndef DRIVERS_ALLOW_TEX2DBIAS
-    #define DRIVERS_ALLOW_TEX2DBIAS 0
-#endif
+// #ifndef _DRIVERS_ALLOW_TEX2DBIAS
+//     #define _DRIVERS_ALLOW_TEX2DBIAS 0
+// #endif
 
 //  Integrated graphics compatibility: Integrated graphics like Intel HD 4000
 //  impose stricter limitations on register counts and instructions.  Enable
-//  INTEGRATED_GRAPHICS_COMPATIBILITY_MODE if you still see error C6001 or:
+//  _INTEGRATED_GRAPHICS_COMPATIBILITY_MODE if you still see error C6001 or:
 //  error C6002: Instruction limit of 1024 exceeded: 1523 instructions needed
 //  to compile program.
 //  Enabling integrated graphics compatibility mode will automatically disable:
-//  1.) PHOSPHOR_MASK_MANUALLY_RESIZE: The phosphor mask will be softer.
+//  1.) _PHOSPHOR_MASK_MANUALLY_RESIZE: The phosphor mask will be softer.
 //      (This may be reenabled in a later release.)
-//  2.) RUNTIME_GEOMETRY_MODE
+//  2.) _RUNTIME_GEOMETRY_MODE
 //  3.) The high-quality 4x4 Gaussian resize for the bloom approximation
-#ifndef INTEGRATED_GRAPHICS_COMPATIBILITY_MODE
-    #define INTEGRATED_GRAPHICS_COMPATIBILITY_MODE 0
+#ifndef _INTEGRATED_GRAPHICS_COMPATIBILITY_MODE
+    #define _INTEGRATED_GRAPHICS_COMPATIBILITY_MODE 0
 #endif
 
 
@@ -91,12 +91,12 @@
 #endif
 //  Specify the phosphor bloom sigma at runtime?  This option is 10% slower, but
 //  it's the only way to do a wide-enough full bloom with a runtime dot pitch.
-#ifndef RUNTIME_PHOSPHOR_BLOOM_SIGMA
-    #define RUNTIME_PHOSPHOR_BLOOM_SIGMA 1
+#ifndef _RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #define _RUNTIME_PHOSPHOR_BLOOM_SIGMA 1
 #endif
 //  Specify antialiasing weight parameters at runtime?  (Costs ~20% with cubics)
-#ifndef RUNTIME_ANTIALIAS_WEIGHTS
-    #define RUNTIME_ANTIALIAS_WEIGHTS 1
+#ifndef _RUNTIME_ANTIALIAS_WEIGHTS
+    #define _RUNTIME_ANTIALIAS_WEIGHTS 1
 #endif
 //  Specify subpixel offsets at runtime? (WARNING: EXTREMELY EXPENSIVE!)
 #ifndef _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
@@ -104,8 +104,8 @@
 #endif
 //  Make beam_horiz_filter and beam_horiz_linear_rgb_weight into runtime shader
 //  parameters?  This will require more math or dynamic branching.
-#ifndef RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
-    #define RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE 1
+#ifndef _RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE
+    #define _RUNTIME_SCANLINES_HORIZ_FILTER_COLORSPACE 1
 #endif
 //  Specify the tilt at runtime?  This makes things about 3% slower.
 //    akgunter:
@@ -116,15 +116,15 @@
 #define _RUNTIME_GEOMETRY_TILT 1
 
 //  Specify the geometry mode at runtime?
-#ifndef RUNTIME_GEOMETRY_MODE
-    #define RUNTIME_GEOMETRY_MODE 1
+#ifndef _RUNTIME_GEOMETRY_MODE
+    #define _RUNTIME_GEOMETRY_MODE 1
 #endif
 //  Specify the phosphor mask type (aperture grille, slot mask, shadow mask) and
 //  mode (Lanczos-resize, hardware resize, or tile 1:1) at runtime, even without
 //  dynamic branches?  This is cheap if mask_resize_viewport_scale is small.
-#ifndef FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
-    #define FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT 1
-#endif
+// #ifndef FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
+//     #define FORCE_RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT 1
+// #endif
 
 //  PHOSPHOR MASK:
 //  Choose between a 64x64 or 512x512 source for the phosphor mask
@@ -135,13 +135,13 @@
 
 //  Manually resize the phosphor mask for best results (slower)?  Disabling this
 //  removes the option to do so, but it may be faster without dynamic branches.
-#ifndef PHOSPHOR_MASK_MANUALLY_RESIZE
-    #define PHOSPHOR_MASK_MANUALLY_RESIZE 1
+#ifndef _PHOSPHOR_MASK_MANUALLY_RESIZE
+    #define _PHOSPHOR_MASK_MANUALLY_RESIZE 1
 #endif
 //  If we sinc-resize the mask, should we Lanczos-window it (slower but better)?
-#ifndef PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW
-    #define PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW 1
-#endif
+// #ifndef PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW
+//     #define PHOSPHOR_MASK_RESIZE_LANCZOS_WINDOW 1
+// #endif
 //  Larger blurs are expensive, but we need them to blur larger triads.  We can
 //  detect the right blur if the triad size is static or our profile allows
 //  dynamic branches, but otherwise we use the largest blur the user indicates
@@ -299,10 +299,16 @@ static const bool interlace_bff_static = false;
 //  4: Gaussian (separable), 5: Gaussian (cylindrical),
 //  6: Cubic* (separable), 7: Cubic* (cylindrical, poor)
 //  8: Lanczos Sinc (separable), 9: Lanczos Jinc (cylindrical, poor)
-//      * = Especially slow with RUNTIME_ANTIALIAS_WEIGHTS
-static const float aa_filter = 6.0;                     //  range [0, 9]
+//      * = Especially slow with _RUNTIME_ANTIALIAS_WEIGHTS
+#ifndef antialias_filter
+    #define antialias_filter 6
+#endif
+static const float aa_filter = antialias_filter;                     //  range [0, 9]
 //  Flip the sample grid on odd/even frames (static option only for now)?
-static const bool aa_temporal = false;
+#ifndef antialias_temporal
+    #define antialias_temporal false
+#endif
+static const bool aa_temporal = antialias_temporal;
 //  Use RGB subpixel offsets for antialiasing?  The pixel is at green, and
 //  the blue offset is the negative r offset; range [0, 0.5]
 static const float2 aa_subpixel_r_offset_static = float2(-1.0/3.0, 0.0);//float2(0.0);
@@ -320,7 +326,7 @@ static const float aa_gauss_sigma_static = 0.5;     //  range [0.0625, 1.0]
 static const float mask_type_static = 1.0;                  //  range [0, 2]
 //  We can sample the mask three ways.  Pick 2/3 from: Pretty/Fast/Flexible.
 //  0.) Sinc-resize to the desired dot pitch manually (pretty/slow/flexible).
-//      This requires PHOSPHOR_MASK_MANUALLY_RESIZE to be #defined.
+//      This requires _PHOSPHOR_MASK_MANUALLY_RESIZE to be #defined.
 //  1.) Hardware-resize to the desired dot pitch (ugly/fast/flexible).  This
 //      is halfway decent with LUT mipmapping but atrocious without it.
 //  2.) Tile it without resizing at a 1:1 texel:pixel ratio for flat coords
@@ -329,7 +335,7 @@ static const float mask_type_static = 1.0;                  //  range [0, 2]
 //      you change the mask LUT filenames in your .cgp file.
 static const float mask_sample_mode_static = 0.0;           //  range [0, 2]
 //  Prefer setting the triad size (0.0) or number on the screen (1.0)?
-//  If RUNTIME_PHOSPHOR_BLOOM_SIGMA isn't #defined, the specified triad size
+//  If _RUNTIME_PHOSPHOR_BLOOM_SIGMA isn't #defined, the specified triad size
 //  will always be used to calculate the full bloom sigma statically.
 static const float mask_specify_num_triads_static = 0.0;    //  range [0, 1]
 //  Specify the phosphor triad size, in pixels.  Each tile (usually with 8

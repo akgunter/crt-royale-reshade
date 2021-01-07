@@ -68,7 +68,7 @@
 //  limitation, we need to define derived constants using functions.
 
 //  Set device gamma constants, but allow users to override them:
-#if OVERRIDE_DEVICE_GAMMA
+#if _OVERRIDE_DEVICE_GAMMA
     //  The user promises to globally define the appropriate constants:
     float get_crt_gamma()    {   return crt_gamma;   }
     float get_gba_gamma()    {   return gba_gamma;   }
@@ -77,7 +77,7 @@
     float get_crt_gamma()    {   return crt_reference_gamma_high;    }
     float get_gba_gamma()    {   return 3.5; }   //  Game Boy Advance; in (3.0, 4.0)
     float get_lcd_gamma()    {   return lcd_office_gamma;            }
-#endif  //  OVERRIDE_DEVICE_GAMMA
+#endif  //  _OVERRIDE_DEVICE_GAMMA
 
 //  Set decoding/encoding gammas for the first/lass passes, but allow overrides:
 #ifdef OVERRIDE_FINAL_GAMMA

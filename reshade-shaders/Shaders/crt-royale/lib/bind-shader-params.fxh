@@ -33,17 +33,17 @@
 ////////////////////////////////  END INCLUDES  ////////////////////////////////
 
 //  Override some parameters for gamma-management.h and tex2Dantialias.h:
-#ifndef OVERRIDE_DEVICE_GAMMA
-    #define OVERRIDE_DEVICE_GAMMA 1
+#ifndef _OVERRIDE_DEVICE_GAMMA
+    #define _OVERRIDE_DEVICE_GAMMA 1
 #endif
 
-#ifndef ANTIALIAS_OVERRIDE_BASICS
-    #define ANTIALIAS_OVERRIDE_BASICS 1
-#endif
+// #ifndef ANTIALIAS_OVERRIDE_BASICS
+//     #define ANTIALIAS_OVERRIDE_BASICS 1
+// #endif
 
-#ifndef ANTIALIAS_OVERRIDE_PARAMETERS
-    #define ANTIALIAS_OVERRIDE_PARAMETERS 1
-#endif
+// #ifndef ANTIALIAS_OVERRIDE_PARAMETERS
+//     #define ANTIALIAS_OVERRIDE_PARAMETERS 1
+// #endif
 
 static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
 
@@ -411,7 +411,7 @@ float2 get_convergence_offsets_b_vector()
 
 float2 get_aa_subpixel_r_offset()
 {
-    #if RUNTIME_ANTIALIAS_WEIGHTS
+    #if _RUNTIME_ANTIALIAS_WEIGHTS
         #if _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
             //  WARNING: THIS IS EXTREMELY EXPENSIVE.
             return float2(aa_subpixel_r_offset_x_runtime,
@@ -438,13 +438,13 @@ float get_mask_amplify()
 float get_mask_sample_mode()
 {
     #ifdef _RUNTIME_PHOSPHOR_MASK_MODE_TYPE_SELECT
-        #if PHOSPHOR_MASK_MANUALLY_RESIZE
+        #if _PHOSPHOR_MASK_MANUALLY_RESIZE
             return mask_sample_mode_desired;
         #else
             return clamp(mask_sample_mode_desired, 1.0, 2.0);
         #endif
     #else
-        #if PHOSPHOR_MASK_MANUALLY_RESIZE
+        #if _PHOSPHOR_MASK_MANUALLY_RESIZE
             return mask_sample_mode_static;
         #else
             return clamp(mask_sample_mode_static, 1.0, 2.0);

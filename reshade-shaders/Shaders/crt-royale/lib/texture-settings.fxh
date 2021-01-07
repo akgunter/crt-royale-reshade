@@ -28,8 +28,6 @@
 #define mask_texture_wrap_mode REPEAT
 #define mask_texture_magmin_filter_type LINEAR
 
-
-// #ifdef PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
 #if USE_LARGE_PHOSPHOR_MASK == 1
     #define mask_grille_texture_path "crt-royale/TileableLinearApertureGrille15Wide8And5d5Spacing.png"
     #define mask_slot_texture_path "crt-royale/TileableLinearSlotMaskTall15Wide9And4d5Horizontal9d14VerticalSpacing.png"

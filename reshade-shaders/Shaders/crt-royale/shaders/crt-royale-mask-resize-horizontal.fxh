@@ -75,7 +75,7 @@ void pixelShader6(
     //  vertically.  Lanczos-resizing the phosphor mask achieves much sharper
     //  results than mipmapping, outputting >= mask_resize_num_tiles makes for
     //  easier tiled sampling later.
-    #if PHOSPHOR_MASK_MANUALLY_RESIZE
+    #if _PHOSPHOR_MASK_MANUALLY_RESIZE
         //  Discard unneeded fragments in case our profile allows real branches.
         //const float2 tile_uv_wrap = tile_uv_wrap;
         if(get_mask_sample_mode() < 0.5 &&
