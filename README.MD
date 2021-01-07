@@ -47,7 +47,7 @@ There are a handful of notable differences:
 
 4)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
 
-5)  The code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
+5)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
 
 6)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
 
