@@ -1,3 +1,6 @@
+#ifndef _CONTENT_CROPPING
+#define _CONTENT_CROPPING
+
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
@@ -20,12 +23,20 @@
 #include "shared-objects.fxh"
 
 
-static const float2 offset = (buffer_size - content_size) / (2.0 * buffer_size);
+// The normalized center is 0.5 plus the normalized offset
+static const float2 content_center = float2(CONTENT_CENTER_X, CONTENT_CENTER_Y) / buffer_size + 0.5;
+// The content's normalized diameter d is its size divided by the buffer's size. The radius is d/2.
+static const float2 content_radius = content_size / (2.0 * buffer_size);
 
-static const float content_left = content_center_x - content_radius_y;
-static const float content_right = content_center_x + content_radius_y;
-static const float content_upper = content_center_y - content_radius_y;
-static const float content_lower = content_center_y + content_radius_y;
+static const float content_left = content_center.x - content_radius.x;
+static const float content_right = content_center.x + content_radius.x;
+static const float content_upper = content_center.y - content_radius.y;
+static const float content_lower = content_center.y + content_radius.y;
+
+// The xy-offset of the top-left pixel in the content box
+static const float2 content_offset = float2(content_left, content_upper);
+
+
 
 void cropContentPixelShader(
     in const float4 pos : SV_Position,
@@ -33,7 +44,7 @@ void cropContentPixelShader(
 
     out float4 color : SV_Target
 ) {
-    const float2 texcoord_cropped = texcoord * content_size / buffer_size + offset;
+    const float2 texcoord_cropped = texcoord * content_size / buffer_size + content_offset;
     color = tex2D(samplerColor, texcoord_cropped);
 }
 
@@ -43,12 +54,14 @@ void uncropContentPixelShader(
 
     out float4 color : SV_Target
 ) {
-    const float2 texcoord_uncropped = (texcoord - offset) * buffer_size / content_size;
     const bool is_in_boundary = (
-        texcoord_uncropped.x >= content_left && texcoord_uncropped.x <= content_right &&
-        texcoord_uncropped.y >= content_upper && texcoord_uncropped.y <= content_lower
+        texcoord.x >= content_left && texcoord.x <= content_right &&
+        texcoord.y >= content_upper && texcoord.y <= content_lower
     );
+    const float2 texcoord_uncropped = (texcoord - content_offset) * buffer_size / content_size;
 
     if (is_in_boundary) color = tex2D(samplerGeometry, texcoord_uncropped);
     else color = float4(0, 0, 0, 1);
 }
+
+#endif  //  _CONTENT_CROPPING
