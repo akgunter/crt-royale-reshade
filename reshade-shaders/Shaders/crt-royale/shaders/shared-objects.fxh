@@ -119,9 +119,9 @@ texture2D texBloomApprox {
 sampler2D samplerBloomApprox {
 	Texture = texBloomApprox;
 	
-	MagFilter = POINT;
-	MinFilter = POINT;
-	MipFilter = POINT;
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
 };
 
 // Pass 3 Buffer
@@ -137,9 +137,9 @@ texture2D texBlurVertical {
 sampler2D samplerBlurVertical {
 	Texture = texBlurVertical;
 
-	MagFilter = POINT;
-	MinFilter = POINT;
-	MipFilter = POINT;
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
 };
 
 // Pass 4 Buffer (HALATION_BLUR)
@@ -155,9 +155,9 @@ texture2D texBlurHorizontal {
 sampler2D samplerBlurHorizontal {
 	Texture = texBlurHorizontal;
 
-	MagFilter = POINT;
-	MinFilter = POINT;
-	MipFilter = POINT;
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
 };
 
 // Pass 5 Mask Texture
@@ -176,6 +176,10 @@ sampler2D samplerMaskResizeVertical {
     AddressU = mask_texture_wrap_mode;
     AddressV = mask_texture_wrap_mode;
     AddressW = mask_texture_wrap_mode;
+	
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
 };
 
 // Pass 6 Mask Texture (MASK_RESIZE)
@@ -194,6 +198,10 @@ sampler2D samplerMaskResizeHorizontal {
     AddressU = mask_texture_wrap_mode;
     AddressV = mask_texture_wrap_mode;
     AddressW = mask_texture_wrap_mode;
+
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
 };
 
 // Pass 7 Buffer (MASKED_SCANLINES)
@@ -206,7 +214,13 @@ texture2D texMaskedScanlines {
 
 	Format = RGBA16;
 };
-sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
+sampler2D samplerMaskedScanlines {
+	Texture = texMaskedScanlines;
+
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
+};
 
 // Pass 8 Buffer (BRIGHTPASS)
 #define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
@@ -218,7 +232,13 @@ texture2D texBrightpass {
 
 	Format = RGBA16;
 };
-sampler2D samplerBrightpass { Texture = texBrightpass; };
+sampler2D samplerBrightpass {
+	Texture = texBrightpass;
+
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
+};
 
 // Pass 9 Buffer
 #define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH_INTERNAL
@@ -230,7 +250,13 @@ texture2D texBloomVertical {
 
 	Format = RGBA16;
 };
-sampler2D samplerBloomVertical { Texture = texBloomVertical; };
+sampler2D samplerBloomVertical {
+	Texture = texBloomVertical;
+
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
+};
 
 // Pass 10 Buffer
 #define TEX_BLOOMHORIZONTAL_WIDTH CONTENT_WIDTH_INTERNAL
@@ -242,7 +268,13 @@ texture2D texBloomHorizontal {
 
 	Format = RGBA16;
 };
-sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
+sampler2D samplerBloomHorizontal {
+	Texture = texBloomHorizontal;
+
+	// MagFilter = POINT;
+	// MinFilter = POINT;
+	// MipFilter = POINT;
+};
 
 // Pass 11 Buffer
 #define TEX_GEOMETRY_WIDTH CONTENT_WIDTH_INTERNAL
@@ -256,7 +288,13 @@ sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 
 		Format = RGBA16;
 	};
-	sampler2D samplerGeometry { Texture = texGeometry; };
+	sampler2D samplerGeometry {
+		Texture = texGeometry;
+		
+		// MagFilter = POINT;
+		// MinFilter = POINT;
+		// MipFilter = POINT;
+	};
 #else
 	#define texGeometry texOrigLinearized
 	#define samplerGeometry samplerOrigLinearized
