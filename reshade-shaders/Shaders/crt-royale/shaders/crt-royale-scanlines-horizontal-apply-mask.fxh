@@ -65,7 +65,6 @@ void newPixelShader7(
     {
         const float2 tile_uv_wrap = frac(texcoord * tiles_per_screen);
         const float2 tile_uv_crop = tile_uv_wrap * true_tile_size / TEX_MASKHORIZONTAL_SIZE;
-        // const float2 tile_uv_crop = frac(texcoord * ceil(content_size / mask_size));
 
         //  Sample the resized mask, and avoid tiling artifacts:
         phosphor_mask_sample = tex2D(samplerMaskResizeHorizontal, tile_uv_crop).rgb;

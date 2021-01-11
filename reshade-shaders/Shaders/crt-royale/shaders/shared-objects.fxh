@@ -35,8 +35,8 @@
 
 // Wrap the content size in parenthesis for internal use, so the
 // user doesn't have to
-#define CONTENT_WIDTH_INTERNAL (CONTENT_WIDTH)
-#define CONTENT_HEIGHT_INTERNAL (CONTENT_HEIGHT)
+#define CONTENT_WIDTH_INTERNAL int(CONTENT_WIDTH)
+#define CONTENT_HEIGHT_INTERNAL int(CONTENT_HEIGHT)
 
 // Offset the center of the game's content (horizontal)
 #ifndef CONTENT_CENTER_X
