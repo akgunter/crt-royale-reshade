@@ -515,14 +515,14 @@ float3 sample_rgb_scanline_horizontal(const sampler2D tex,
 }
 
 float3 get_bobbed_scanline_sample(
-    sampler2D tex, float2 texcoord,
-    float scanline_start_y, float v_step_y,
-    float input_gamma
+    sampler2D tex, const float2 texcoord,
+    const float scanline_start_y, const float v_step_y,
+    const float input_gamma
 ) {
     float3 interpolated_line;
     for (int i = 0; i < scanline_num_pixels; i++) {
-        float2 coord = float2(texcoord.x, scanline_start_y + i * v_step_y);
-        interpolated_line += tex2D_linearize(tex, coord, input_gamma).rgb;
+        float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
+        interpolated_line += tex2Dlod_linearize(tex, coord, input_gamma).rgb;
     }
     interpolated_line /= float(scanline_num_pixels);
 
