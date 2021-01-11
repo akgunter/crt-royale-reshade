@@ -302,21 +302,6 @@ float3 get_raw_interpolated_color(const float3 color0,
     const float4 weights)
 {
     //  Use max to avoid bizarre artifacts from negative colors:
-
-    // Original Slang implementation
-    // return max(mul(weights, float4x3(color0, color1, color2, color3)), 0.0);
-
-    // ReShade implementation that avoids rectangular matrices
-    // return max(
-    //     float3(
-    //         dot(weights, float4(color0.x, color1.x, color2.x, color3.x)),
-    //         dot(weights, float4(color0.y, color1.y, color2.y, color3.y)),
-    //         dot(weights, float4(color0.z, color1.z, color2.z, color3.z))
-    //     ),
-    //     0.0
-    // );
-
-    // ReShade implementation that uses rectangular matrices (broken in Vulkan?)
     const float4x3 mtrx = float4x3(color0, color1, color2, color3);
     const float3 m = mul(weights, mtrx);
     return max(m, 0.0);
@@ -529,6 +514,44 @@ float3 sample_rgb_scanline_horizontal(const sampler2D tex,
     }
 }
 
+float3 get_bobbed_scanline_sample(
+    sampler2D tex, float2 texcoord,
+    float scanline_start_y, float v_step_y,
+    float input_gamma
+) {
+    float3 interpolated_line;
+    for (int i = 0; i < scanline_num_pixels; i++) {
+        float2 coord = float2(texcoord.x, scanline_start_y + i * v_step_y);
+        interpolated_line += tex2D_linearize(tex, coord, input_gamma).rgb;
+    }
+    interpolated_line /= float(scanline_num_pixels);
+
+    return interpolated_line;
+}
+
+float get_cur_scanline_idx(
+    const float texcoord_y,
+    const float tex_size_y
+) {
+    const float curr_line_texel_y = texcoord_y * tex_size_y;
+    return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
+}
+
+float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
+{
+    const float modulus = enable_interlacing + 1.0;
+    const float frame_field_idx = fmod(frame_count + interlace_bff, modulus);
+    const float line_field_idx = fmod(cur_scanline_idx, modulus);
+
+    return float2(frame_field_idx, line_field_idx);
+}
+
+float cur_line_is_wrong_field(float cur_scanline_idx)
+{
+    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
+    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
+}
+
 float2 get_last_scanline_uv(const float2 tex_uv, const float2 tex_size,
     const float2 texture_size_inv, const float2 il_step_multiple,
     const float frame_count, out float dist)
@@ -543,24 +566,31 @@ float2 get_last_scanline_uv(const float2 tex_uv, const float2 tex_size,
     //  Note: TFF/BFF won't matter for sources that double-weave or similar.
     // wtf fixme
 //	const float interlace_bff1 = 1.0;
-    const float field_offset = floor(il_step_multiple.y * 0.75) *
-        fmod(frame_count + ((float) interlace_bff), 2.0);
+
+    const float cur_scanline_idx = get_cur_scanline_idx(tex_uv.y, tex_size.y);
+    const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
+
+    // const float field_offset = floor(il_step_multiple.y * 0.75) *
+    //     fmod(frame_count + ((float) interlace_bff), 2.0);
     const float2 curr_texel = tex_uv * tex_size;
     //  Use under_half to fix a rounding bug right around exact texel locations.
     const float2 prev_texel_num = floor(curr_texel - float2(under_half, under_half));
-    const float wrong_field = fmod(
-        prev_texel_num.y + field_offset, il_step_multiple.y);
+    // const float wrong_field = fmod(
+    //     prev_texel_num.y + field_offset, il_step_multiple.y);
     const float2 scanline_texel_num = prev_texel_num - float2(0.0, wrong_field);
     //  Snap to the center of the previous scanline in the current field:
     const float2 scanline_texel = scanline_texel_num + float2(0.5, 0.5);
     const float2 scanline_uv = scanline_texel * texture_size_inv;
     //  Save the sample's distance from the scanline, in units of scanlines:
+
     dist = (curr_texel.y - scanline_texel.y)/il_step_multiple.y;
     return scanline_uv;
 }
 
 bool is_interlaced(float num_lines)
 {
+    return bool(enable_interlacing);
+    /*
     //  Detect interlacing based on the number of lines in the source.
     if(interlace_detect)
     {
@@ -586,6 +616,8 @@ bool is_interlaced(float num_lines)
     {
         return false;
     }
+    */
 }
+
 
 #endif  //  _SCANLINE_FUNCTIONS_H

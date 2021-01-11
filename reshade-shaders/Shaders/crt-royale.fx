@@ -86,6 +86,7 @@ technique CRT_Royale
 			PixelShader = pixelShader2;
 			
 			RenderTarget = texBloomApprox;
+			// RenderTarget = texGeometry;
 		}
 		// blur9fast-vertical.fxh
 		pass p3

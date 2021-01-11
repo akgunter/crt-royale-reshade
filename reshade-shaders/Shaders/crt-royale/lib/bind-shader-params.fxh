@@ -352,6 +352,21 @@ uniform float interlace_bff <
     ui_max     = 1.0;
     ui_step    = 1.0;
 > = interlace_bff_static;
+uniform float enable_interlacing <
+    ui_label   = "Enable Interlacing";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 1.0;
+> = true;
+uniform float scanline_num_pixels <
+    ui_label   = "Scanline Pixel Thickness";
+    ui_type    = "slider";
+    ui_min     = 1.0;
+    ui_max     = 10.0;
+    ui_step    = 1.0;
+> = 2.0;
+/*
 uniform float interlace_1080i <
     ui_label   = "Assume 1080 signal is 1080i";
     ui_type    = "slider";
@@ -359,6 +374,7 @@ uniform float interlace_1080i <
     ui_max     = 1.0;
     ui_step    = 1.0;
 > = interlace_1080i_static;
+*/
 
 //  Provide accessors for vector constants that pack scalar uniforms:
 float2 get_aspect_vector(const float geom_aspect_ratio)

@@ -161,6 +161,7 @@ void pixelShader2(
     // const float2 tex_uv = video_uv * ORIG_LINEARIZEDvideo_size / ORIG_LINEARIZEDtexture_size;
     const float2 tex_uv = texcoord;
 
+    /*
     //  The last pass (vertical scanlines) had a viewport y scale, so we can
     //  use it to calculate a better runtime sigma:
     const float estimated_viewport_size_x =
@@ -195,7 +196,7 @@ void pixelShader2(
     //  Detecting interlacing again here lets us apply convergence offsets in
     //  this pass.  il_step_multiple contains the (texel, scanline) step
     //  multiple: 1 for progressive, 2 for interlaced.
-    const float y_step = 1.0 + float(is_interlaced(orig_linearized_size.y));
+    const float y_step = 1.0 + enable_interlacing;
     const float2 il_step_multiple = float2(1.0, y_step);
     //  Get the uv distance between (texels, same-field scanlines):
     const float2 uv_scanline_step = il_step_multiple / orig_linearized_size;
@@ -327,8 +328,10 @@ void pixelShader2(
     {
         out_color = float3(out_color_r.r, out_color_g.g, out_color_b.b);
     }
+    */
     //  Encode and output the blurred image:
-    // color = encode_output(float4(tex2D_linearize(samplerOrigLinearized, tex_uv, get_intermediate_gamma())), get_intermediate_gamma());
+    color = encode_output(float4(tex2D_linearize(samplerOrigLinearized, tex_uv, get_intermediate_gamma())), get_intermediate_gamma());
     // color = tex2D(samplerOrigLinearized, tex_uv);
-    color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());
+
+    // color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());
 }

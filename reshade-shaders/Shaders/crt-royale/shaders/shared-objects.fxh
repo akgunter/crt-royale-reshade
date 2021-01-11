@@ -116,7 +116,13 @@ texture2D texBloomApprox {
 
 	Format = RGBA16;
 };
-sampler2D samplerBloomApprox { Texture = texBloomApprox; };
+sampler2D samplerBloomApprox {
+	Texture = texBloomApprox;
+	
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
 
 // Pass 3 Buffer
 #define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROX_WIDTH
@@ -128,7 +134,13 @@ texture2D texBlurVertical {
 
 	Format = RGBA16;
 };
-sampler2D samplerBlurVertical { Texture = texBlurVertical; };
+sampler2D samplerBlurVertical {
+	Texture = texBlurVertical;
+
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
 
 // Pass 4 Buffer (HALATION_BLUR)
 #define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROX_WIDTH
@@ -140,7 +152,13 @@ texture2D texBlurHorizontal {
 
 	Format = RGBA16;
 };
-sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
+sampler2D samplerBlurHorizontal {
+	Texture = texBlurHorizontal;
+
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
 
 // Pass 5 Mask Texture
 // TODO: Figure out how to set these to 144 insead of 512

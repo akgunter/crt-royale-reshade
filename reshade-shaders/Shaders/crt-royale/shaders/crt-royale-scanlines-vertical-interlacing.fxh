@@ -41,7 +41,8 @@ void vertexShader1(
     //  Detect interlacing: il_step_multiple indicates the step multiple between
     //  lines: 1 is for progressive sources, and 2 is for interlaced sources.
     const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
-    const float y_step = 1.0 + float(is_interlaced(orig_linearized_size.y));
+    // const float y_step = 1.0 + float(is_interlaced(orig_linearized_size.y));
+    const float y_step = 1.0 + enable_interlacing;
 
     il_step_multiple = float2(1.0, y_step);
     //  Get the uv tex coords step between one texel (x) and scanline (y):

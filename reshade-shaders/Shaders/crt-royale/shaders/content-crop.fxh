@@ -37,7 +37,6 @@ static const float content_lower = content_center.y + content_radius.y;
 static const float2 content_offset = float2(content_left, content_upper);
 
 
-
 void cropContentPixelShader(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
