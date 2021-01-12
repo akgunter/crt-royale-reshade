@@ -31,7 +31,9 @@ This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan. It'll probably
 
 4)  Use the `USE_LARGE_PHOSPHOR_MASK` preprocessor definition to fix some artifacting with the phosphor mask. If you want a triad size larger than 8, you must set `USE_LARGE_PHOSPHOR_MASK` to 1, or you will get artifacts. If you have artifacting or color issues with a triad size of 3-8, try setting `USE_LARGE_PHOSPHOR_MASK` to 0.
 
-5)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will basically be rounded down to one of these.
+5)  Use `Enable Interlacing` to toggle all things interlacing. This replaces all of the autodetection logic, so you have complete control over it now. Use `Scanline Thickness` to control the thickness of the scanlines in pixels. You might need to adjust your vsync settings to make these look good. They can be prone to jittering.
+
+6)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will basically be rounded down to one of these.
 
 
 #### NOTABLE CHANGES
@@ -41,15 +43,17 @@ For the most part, configuring this implementation of crt-royale should be the s
 There are a handful of notable differences:
 1)  Mask Sample Mode 0 has a new setting `Downsampling Sharpness`. You can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between. I find this particularly useful for the Shadow mask.
 
-2)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
+2)  The scanline logic is now user-toggleable instead of autodetected, and you can change the thickness of the scanlines if you want.
 
-3)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
+3)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
-4)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
+4)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
 
-5)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
+5)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
 
-6)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
+6)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
+
+7)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
 
 
 #### QUALITATIVE DIFFERENCES

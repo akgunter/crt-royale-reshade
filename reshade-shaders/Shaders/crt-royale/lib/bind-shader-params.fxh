@@ -160,42 +160,42 @@ uniform float convergence_offset_x_r <
     ui_min     = -4.0;
     ui_max     = 4.0;
     ui_step    = 0.01;
-> = convergence_offsets_r_static.x;
+> = 0;
 uniform float convergence_offset_x_g <
     ui_label   = "Convergence Offset X G";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
     ui_step    = 0.01;
-> = convergence_offsets_g_static.x;
+> = 0;
 uniform float convergence_offset_x_b <
     ui_label   = "Convergence Offset X B";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
     ui_step    = 0.01;
-> = convergence_offsets_b_static.x;
+> = 0;
 uniform float convergence_offset_y_r <
     ui_label   = "Convergence Offset Y R";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
     ui_step    = 0.01;
-> = convergence_offsets_r_static.y;
+> = 0;
 uniform float convergence_offset_y_g <
     ui_label   = "Convergence Offset Y G";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
     ui_step    = 0.01;
-> = convergence_offsets_g_static.y;
+> = 0;
 uniform float convergence_offset_y_b <
     ui_label   = "Convergence Offset Y B";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
     ui_step    = 0.01;
-> = convergence_offsets_b_static.y;
+> = 0;
 
 #if __RENDERER__ != 0x9000
     uniform float mask_type <
@@ -345,13 +345,6 @@ uniform float border_compress <
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = border_compress_static;
-uniform float interlace_bff <
-    ui_label   = "Use Interlace BFF";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
-> = interlace_bff_static;
 uniform float enable_interlacing <
     ui_label   = "Enable Interlacing";
     ui_type    = "slider";
@@ -360,12 +353,19 @@ uniform float enable_interlacing <
     ui_step    = 1.0;
 > = true;
 uniform float scanline_num_pixels <
-    ui_label   = "Scanline Pixel Thickness";
+    ui_label   = "Scanline Thickness";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 10.0;
     ui_step    = 1.0;
 > = 2.0;
+uniform float interlace_bff <
+    ui_label   = "Use Interlace BFF";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 1.0;
+> = interlace_bff_static;
 /*
 uniform float interlace_1080i <
     ui_label   = "Assume 1080 signal is 1080i";

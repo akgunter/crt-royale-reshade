@@ -41,15 +41,14 @@ void vertexShader1(
     //  Detect interlacing: il_step_multiple indicates the step multiple between
     //  lines: 1 is for progressive sources, and 2 is for interlaced sources.
     const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
-    // const float y_step = 1.0 + float(is_interlaced(orig_linearized_size.y));
-    const float y_step = 1.0 + enable_interlacing;
+    const float y_step = enable_interlacing == 1 ? 2 * scanline_num_pixels : 1.0;
 
     il_step_multiple = float2(1.0, y_step);
     //  Get the uv tex coords step between one texel (x) and scanline (y):
     uv_step = il_step_multiple / orig_linearized_size;
     
     //  We need the pixel height in scanlines for antialiased/integral sampling:
-    pixel_height_in_scanlines = (orig_linearized_size.y / TEX_VERTICALSCANLINES_SIZE.y) / il_step_multiple.y;
+    pixel_height_in_scanlines = (orig_linearized_size.y / TEX_VERTICALSCANLINES_SIZE.y) / (il_step_multiple.y * scanline_num_pixels);
     // pixel_height_in_scanlines = 1.0 / il_step_multiple.y;
 }
 
@@ -85,7 +84,7 @@ void pixelShader1(
     //  horizontal sampling, since since output_size.x = video_size.x).
     //  NOTE: Anisotropic filtering creates interlacing artifacts, which is why
     //  ORIG_LINEARIZED bobbed any interlaced input before this pass.
-    const float2 v_step = float2(0.0, uv_step.y);
+    const float2 v_step = float2(0.0, scanline_num_pixels * orig_linearized_size_inv.y);
     const float3 scanline2_color = tex2D_linearize(samplerOrigLinearized, scanline_uv, get_intermediate_gamma()).rgb;
     const float3 scanline3_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + v_step, get_intermediate_gamma()).rgb;
     float3 scanline0_color, scanline1_color, scanline4_color, scanline5_color,

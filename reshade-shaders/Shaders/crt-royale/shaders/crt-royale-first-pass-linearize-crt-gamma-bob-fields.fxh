@@ -41,7 +41,7 @@ void vertexShader0(
     const float2 input_video_size = content_size;
     
     //  Detect interlacing: 1.0 = true, 0.0 = false.
-    interlaced = float(is_interlaced(input_video_size.y));
+    interlaced = enable_interlacing;
     v_step = float2(0.0, 1.0 / input_video_size.y);
 }
 

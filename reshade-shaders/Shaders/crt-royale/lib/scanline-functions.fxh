@@ -577,12 +577,12 @@ float2 get_last_scanline_uv(const float2 tex_uv, const float2 tex_size,
     const float2 prev_texel_num = floor(curr_texel - float2(under_half, under_half));
     // const float wrong_field = fmod(
     //     prev_texel_num.y + field_offset, il_step_multiple.y);
-    const float2 scanline_texel_num = prev_texel_num - float2(0.0, wrong_field);
+    const float2 scanline_texel_num = prev_texel_num - float2(0.0, wrong_field * scanline_num_pixels);
     //  Snap to the center of the previous scanline in the current field:
     const float2 scanline_texel = scanline_texel_num + float2(0.5, 0.5);
     const float2 scanline_uv = scanline_texel * texture_size_inv;
-    //  Save the sample's distance from the scanline, in units of scanlines:
 
+    //  Save the sample's distance from the scanline, in units of scanlines:
     dist = (curr_texel.y - scanline_texel.y)/il_step_multiple.y;
     return scanline_uv;
 }
