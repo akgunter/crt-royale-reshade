@@ -48,7 +48,8 @@ void vertexShader1(
     uv_step = il_step_multiple / orig_linearized_size;
     
     //  We need the pixel height in scanlines for antialiased/integral sampling:
-    pixel_height_in_scanlines = (orig_linearized_size.y / TEX_VERTICALSCANLINES_SIZE.y) / (il_step_multiple.y * scanline_num_pixels);
+    const float m = enable_interlacing == 1 ? il_step_multiple.y * scanline_num_pixels : 1.0;
+    pixel_height_in_scanlines = (orig_linearized_size.y / TEX_VERTICALSCANLINES_SIZE.y) / m;
     // pixel_height_in_scanlines = 1.0 / il_step_multiple.y;
 }
 
