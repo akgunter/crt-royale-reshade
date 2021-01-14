@@ -184,32 +184,45 @@ sampler2D samplerMaskResizeHorizontal {
 #define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_MASKEDSCANLINES_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_MASKEDSCANLINES_SIZE int2(TEX_MASKEDSCANLINES_WIDTH, TEX_MASKEDSCANLINES_HEIGHT)
-texture2D texMaskedScanlines {
-	Width = TEX_MASKEDSCANLINES_WIDTH;
-	Height = TEX_MASKEDSCANLINES_HEIGHT;
 
-	Format = RGBA16;
-};
-sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
+#if __RENDERER__ != 0x9000
+	texture2D texMaskedScanlines {
+		Width = TEX_MASKEDSCANLINES_WIDTH;
+		Height = TEX_MASKEDSCANLINES_HEIGHT;
+
+		Format = RGBA16;
+	};
+	sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
+#else
+	#define texMaskedScanlines texCrop
+	#define samplerMaskedScanlines samplerCrop
+#endif
 
 
 // Pass 8 Buffer (BRIGHTPASS)
 #define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BRIGHTPASS_SIZE int2(TEX_BRIGHTPASS_WIDTH, TEX_BRIGHTPASS_HEIGHT)
-texture2D texBrightpass {
-	Width = TEX_BRIGHTPASS_WIDTH;
-	Height = TEX_BRIGHTPASS_HEIGHT;
 
-	Format = RGBA16;
-};
-sampler2D samplerBrightpass { Texture = texBrightpass; };
+#if __RENDERER__ != 0x9000
+	texture2D texBrightpass {
+		Width = TEX_BRIGHTPASS_WIDTH;
+		Height = TEX_BRIGHTPASS_HEIGHT;
+
+		Format = RGBA16;
+	};
+	sampler2D samplerBrightpass { Texture = texBrightpass; };
+#else
+	#define texBrightpass texOrigLinearized
+	#define samplerBrightpass samplerOrigLinearized
+#endif
 
 
 // Pass 9 Buffer
 #define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BLOOMVERTICAL_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BLOOMVERTICAL_SIZE int2(TEX_BLOOMVERTICAL_WIDTH, TEX_BLOOMVERTICAL_HEIGHT)
+
 texture2D texBloomVertical {
 	Width = TEX_BLOOMVERTICAL_WIDTH;
 	Height = TEX_BLOOMVERTICAL_HEIGHT;
@@ -246,8 +259,8 @@ sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 	};
 	sampler2D samplerGeometry { Texture = texGeometry; };
 #else
-	#define texGeometry texOrigLinearized
-	#define samplerGeometry samplerOrigLinearized
+	#define texGeometry texCrop
+	#define samplerGeometry samplerCrop
 #endif
 
 
@@ -262,6 +275,7 @@ texture2D texBlendScanline {
 	Format = RGBA16;
 };
 sampler2D samplerBlendScanline { Texture = texBlendScanline; };
+
 
 // Frame Merge Buffer
 #define TEX_FREEZEFRAME_WIDTH CONTENT_WIDTH_INTERNAL
