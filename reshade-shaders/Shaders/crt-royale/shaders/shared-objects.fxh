@@ -205,6 +205,7 @@ sampler2D samplerMaskResizeHorizontal {
 #endif
 
 
+
 // Pass 8 Buffer (BRIGHTPASS)
 #define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT_INTERNAL
@@ -222,6 +223,7 @@ sampler2D samplerMaskResizeHorizontal {
 	#define texBrightpass texOrigLinearized
 	#define samplerBrightpass samplerOrigLinearized
 #endif
+
 
 
 // Pass 9 Buffer
@@ -281,7 +283,6 @@ texture2D texBlendScanline {
 	Format = RGBA16;
 };
 sampler2D samplerBlendScanline { Texture = texBlendScanline; };
-
 
 // Frame Merge Buffer
 #define TEX_FREEZEFRAME_WIDTH CONTENT_WIDTH_INTERNAL

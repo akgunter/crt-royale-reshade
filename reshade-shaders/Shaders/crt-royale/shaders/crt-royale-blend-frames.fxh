@@ -30,10 +30,10 @@ void lerpScanlinesPS(
         // const float4 prev_weight = cur_line_prev_color;
         const float4 avg_color = (cur_line_color + cur_line_prev_color) / 2.0;
         const float s = wrong_field ? 1 : -1;
-        const float4 color_dev = cur_line_color - avg_color;
-        const float4 delta_c = (1 - scanline_blend_strength) * color_dev;
+        const float4 color_dev = abs(cur_line_color - avg_color);
+        const float4 delta_c = s * (1 - scanline_blend_strength) * color_dev;
         // color = encode_output(avg_color + delta_c, get_intermediate_gamma());
-        color = encode_output(avg_color + delta_c, lerp(1.0, scanline_blend_gamma, scanline_blend_strength));
+        color = avg_color + delta_c;
 
         /*
         const float field_offset = cur_scanline_idx % 2 == 0 ? 1 : -1;

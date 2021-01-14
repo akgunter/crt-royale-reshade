@@ -42,6 +42,73 @@
 	#include "crt-royale/shaders/content-box.fxh"
 #endif
 
+texture2D texOut {
+	Width = BUFFER_WIDTH;
+	Height = BUFFER_HEIGHT;
+};
+sampler2D samplerOut {
+	Texture = texOut;
+
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
+
+#ifndef box_width
+	#define box_width 100
+#endif
+#ifndef box_height
+	#define box_height int(box_width * float(BUFFER_HEIGHT) / BUFFER_WIDTH)
+#endif
+#ifndef box_center_x
+	#define box_center_x 0
+#endif
+// Offset the center of the game's content (vertical)
+#ifndef box_center_y
+	#define box_center_y 0
+#endif
+
+static const float2 box_size = float2(box_width, box_height);
+
+static const float2 box_center = float2(box_center_x, box_center_y) / buffer_size + 0.5;
+static const float2 box_radius = box_size / (2.0 * buffer_size);
+
+static const float box_left = box_center.x - box_radius.x;
+static const float box_right = box_center.x + box_radius.x;
+static const float box_upper = box_center.y - box_radius.y;
+static const float box_lower = box_center.y + box_radius.y;
+static const float2 box_offset = float2(box_left, box_upper);
+
+
+texture2D texBox {
+	Width = box_width;
+	Height = box_height;
+};
+sampler2D samplerBox {
+	Texture = texBox;
+
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
+
+void getBoxPixelShader(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+    const float2 texcoord_cropped = texcoord * box_size / buffer_size + box_offset;
+    color = tex2D(samplerOut, texcoord_cropped);
+}
+void unboxPixelShader(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+	color = tex2D(samplerBox, texcoord);
+}
 
 technique CRT_Royale
 {
@@ -181,6 +248,20 @@ technique CRT_Royale
 		{
 			VertexShader = PostProcessVS;
 			PixelShader = uncropContentPixelShader;
+
+			// RenderTarget = texOut;
 		}
+		// pass box
+		// {
+		// 	VertexShader = PostProcessVS;
+		// 	PixelShader = getBoxPixelShader;
+
+		// 	RenderTarget = texBox;
+		// }
+		// pass unbox
+		// {
+		// 	VertexShader = PostProcessVS;
+		// 	PixelShader = unboxPixelShader;
+		// }
 	#endif
 }
