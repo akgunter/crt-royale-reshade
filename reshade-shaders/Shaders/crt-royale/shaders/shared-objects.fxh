@@ -206,6 +206,7 @@ sampler2D samplerMaskResizeHorizontal {
 
 
 
+
 // Pass 8 Buffer (BRIGHTPASS)
 #define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT_INTERNAL
@@ -223,6 +224,7 @@ sampler2D samplerMaskResizeHorizontal {
 	#define texBrightpass texOrigLinearized
 	#define samplerBrightpass samplerOrigLinearized
 #endif
+
 
 
 
