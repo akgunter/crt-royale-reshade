@@ -587,37 +587,5 @@ float2 get_last_scanline_uv(const float2 tex_uv, const float2 tex_size,
     return scanline_uv;
 }
 
-bool is_interlaced(float num_lines)
-{
-    return bool(enable_interlacing);
-    /*
-    //  Detect interlacing based on the number of lines in the source.
-    if(interlace_detect)
-    {
-        //  NTSC: 525 lines, 262.5/field; 486 active (2 half-lines), 243/field
-        //  NTSC Emulators: Typically 224 or 240 lines
-        //  PAL: 625 lines, 312.5/field; 576 active (typical), 288/field
-        //  PAL Emulators: ?
-        //  ATSC: 720p, 1080i, 1080p
-        //  Where do we place our cutoffs?  Assumptions:
-        //  1.) We only need to care about active lines.
-        //  2.) Anything > 288 and <= 576 lines is probably interlaced.
-        //  3.) Anything > 576 lines is probably not interlaced...
-        //  4.) ...except 1080 lines, which is a crapshoot (user decision).
-        //  5.) Just in case the main program uses calculated video sizes,
-        //      we should nudge the float thresholds a bit.
-        const bool sd_interlace = ((num_lines > 288.5) && (num_lines < 576.5));
-        const bool hd_interlace = bool(interlace_1080i) ?
-            ((num_lines > 1079.5) && (num_lines < 1080.5)) :
-            false;
-        return (sd_interlace || hd_interlace);
-    }
-    else
-    {
-        return false;
-    }
-    */
-}
-
 
 #endif  //  _SCANLINE_FUNCTIONS_H
