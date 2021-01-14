@@ -366,6 +366,13 @@ uniform float interlace_bff <
     ui_max     = 1.0;
     ui_step    = 1.0;
 > = interlace_bff_static;
+uniform float scanline_blend_strength <
+    ui_label   = "Scanline Blend Strength";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 0.01;
+> = 0.0;
 /*
 uniform float interlace_1080i <
     ui_label   = "Assume 1080 signal is 1080i";

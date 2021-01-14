@@ -53,6 +53,7 @@ void pixelShader0(
 
     out float4 color : SV_Target
 ) {
+
     // const float2 texcoord_cropped = texcoord * content_size / buffer_size + offset;
     // color = tex2D(samplerColor, texcoord_cropped);
 
@@ -89,25 +90,6 @@ void pixelShader0(
         //  Select the correct color, and output the result:
         const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
         const float3 selected_color = lerp(in_field_interpolated_line, out_field_interpolated_line, wrong_field);
-
-        /*
-        const float3 curr_line = tex2D_linearize(samplerCrop, texcoord, get_input_gamma()).rgb;
-        const float3 last_line = tex2D_linearize(samplerCrop, texcoord - v_step, get_input_gamma()).rgb;
-        const float3 next_line = tex2D_linearize(samplerCrop, texcoord + v_step, get_input_gamma()).rgb;
-        const float3 interpolated_line = 0.5 * (last_line + next_line);
-
-        //  If we're interlacing, determine which field curr_line is in:
-        const float modulus = interlaced + 1.0;
-        const float field_offset = fmod(frame_count + interlace_bff, modulus);
-        const float curr_line_texel = texcoord.y * content_size.y;
-
-        //  Use under_half to fix a rounding bug around exact texel locations.
-        const float line_num_last = floor(curr_line_texel - under_half);
-        const float wrong_field = fmod(line_num_last + field_offset, modulus);
-
-        //  Select the correct color, and output the result:
-        const float3 selected_color = lerp(curr_line, interpolated_line, wrong_field);
-        */
 
         // color = encode_output(float4(selected_color, 1.0), 1.0);
         color = encode_output(float4(selected_color, 1.0), get_intermediate_gamma());

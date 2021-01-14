@@ -546,7 +546,7 @@ float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
     return float2(frame_field_idx, line_field_idx);
 }
 
-float cur_line_is_wrong_field(float cur_scanline_idx)
+float cur_line_is_wrong_field(const float cur_scanline_idx)
 {
     const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
     return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);

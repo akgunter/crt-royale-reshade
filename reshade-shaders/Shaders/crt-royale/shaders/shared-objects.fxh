@@ -102,9 +102,6 @@ texture2D texVerticalScanlines {
 };
 sampler2D samplerVerticalScanlines { Texture = texVerticalScanlines; };
 
-static const int intermediate_buffer_x = 320;
-static const int intermediate_buffer_y = 240;
-
 
 // Pass 2 Buffer (BLOOM_APPROX)
 #define TEX_BLOOMAPPROX_WIDTH 320
@@ -118,6 +115,7 @@ texture2D texBloomApprox {
 };
 sampler2D samplerBloomApprox { Texture = texBloomApprox; };
 
+
 // Pass 3 Buffer
 #define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROX_WIDTH
 #define TEX_BLURVERTICAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
@@ -130,6 +128,7 @@ texture2D texBlurVertical {
 };
 sampler2D samplerBlurVertical { Texture = texBlurVertical; };
 
+
 // Pass 4 Buffer (HALATION_BLUR)
 #define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROX_WIDTH
 #define TEX_BLURHORIZONTAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
@@ -141,6 +140,7 @@ texture2D texBlurHorizontal {
 	Format = RGBA16;
 };
 sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
+
 
 // Pass 5 Mask Texture
 // TODO: Figure out how to set these to 144 insead of 512
@@ -160,6 +160,7 @@ sampler2D samplerMaskResizeVertical {
     AddressW = mask_texture_wrap_mode;
 };
 
+
 // Pass 6 Mask Texture (MASK_RESIZE)
 // TODO: Figure out how to set these to 144 insead of 512
 //       without losing data during downsampling
@@ -178,6 +179,7 @@ sampler2D samplerMaskResizeHorizontal {
     AddressW = mask_texture_wrap_mode;
 };
 
+
 // Pass 7 Buffer (MASKED_SCANLINES)
 #define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_MASKEDSCANLINES_HEIGHT CONTENT_HEIGHT_INTERNAL
@@ -189,6 +191,7 @@ texture2D texMaskedScanlines {
 	Format = RGBA16;
 };
 sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
+
 
 // Pass 8 Buffer (BRIGHTPASS)
 #define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
@@ -202,6 +205,7 @@ texture2D texBrightpass {
 };
 sampler2D samplerBrightpass { Texture = texBrightpass; };
 
+
 // Pass 9 Buffer
 #define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BLOOMVERTICAL_HEIGHT CONTENT_HEIGHT_INTERNAL
@@ -214,6 +218,7 @@ texture2D texBloomVertical {
 };
 sampler2D samplerBloomVertical { Texture = texBloomVertical; };
 
+
 // Pass 10 Buffer
 #define TEX_BLOOMHORIZONTAL_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BLOOMHORIZONTAL_HEIGHT CONTENT_HEIGHT_INTERNAL
@@ -225,6 +230,7 @@ texture2D texBloomHorizontal {
 	Format = RGBA16;
 };
 sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
+
 
 // Pass 11 Buffer
 #define TEX_GEOMETRY_WIDTH CONTENT_WIDTH_INTERNAL
@@ -243,6 +249,32 @@ sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 	#define texGeometry texOrigLinearized
 	#define samplerGeometry samplerOrigLinearized
 #endif
+
+
+// Scanline Blend Buffer
+#define TEX_BLENDSCANLINE_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BLENDSCANLINE_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_BLENDSCANLINE_SIZE int2(TEX_BLENDSCANLINE_WIDTH, TEX_BLENDSCANLINE_HEIGHT)
+texture2D texBlendScanline {
+	Width = TEX_BLENDSCANLINE_WIDTH;
+	Height = TEX_BLENDSCANLINE_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerBlendScanline { Texture = texBlendScanline; };
+
+// Frame Merge Buffer
+#define TEX_FREEZEFRAME_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_FREEZEFRAME_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_FREEZEFRAME_SIZE int2(TEX_FREEZEFRAME_WIDTH, TEX_FREEZEFRAME_HEIGHT
+texture2D texFreezeFrame {
+	Width = TEX_FREEZEFRAME_WIDTH;
+	Height = TEX_FREEZEFRAME_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerFreezeFrame { Texture = texFreezeFrame; };
+
 
 uniform int frame_count < source = "framecount"; >;
 
