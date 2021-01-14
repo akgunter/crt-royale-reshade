@@ -373,6 +373,13 @@ uniform float scanline_blend_strength <
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = 0.0;
+uniform float scanline_blend_gamma <
+    ui_label   = "Scanline Blend Gamma";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 5.0;
+    ui_step    = 0.01;
+> = 0.95;
 /*
 uniform float interlace_1080i <
     ui_label   = "Assume 1080 signal is 1080i";
