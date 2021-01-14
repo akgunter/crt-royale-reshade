@@ -110,8 +110,6 @@ static const float mask_shadow_avg_color = 41.0/255.0;
 
 ///////////////////////////////  FIXED SETTINGS  ///////////////////////////////
 
-//  Avoid dividing by zero; using a macro overloads for float, float2, etc.:
-#define FIX_ZERO(c) (root_max(root_abs(c), 0.0000152587890625))   //  2^-16
 
 
 #define _SIMULATE_CRT_ON_LCD 1
@@ -405,18 +403,5 @@ static const float2 min_allowed_viewport_triads =
 float2(mask_resize_num_triads, mask_resize_num_triads) / mask_resize_viewport_scale;
 
 
-////////////////////////  COMMON MATHEMATICAL CONSTANTS  ///////////////////////
-
-static const float pi = 3.141592653589;
-//  We often want to find the location of the previous texel, e.g.:
-//      const float2 curr_texel = uv * texture_size;
-//      const float2 prev_texel = floor(curr_texel - float2(0.5)) + float2(0.5);
-//      const float2 prev_texel_uv = prev_texel / texture_size;
-//  However, many GPU drivers round incorrectly around exact texel locations.
-//  We need to subtract a little less than 0.5 before flooring, and some GPU's
-//  require this value to be farther from 0.5 than others; define it here.
-//      const float2 prev_texel =
-//          floor(curr_texel - float2(under_half)) + float2(0.5);
-static const float under_half = 0.4995;
 
 #endif  //  _DERIVED_SETTINGS_AND_CONSTANTS_H
