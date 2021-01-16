@@ -519,6 +519,8 @@ float3 get_bobbed_scanline_sample(
     const float scanline_start_y, const float v_step_y,
     const float input_gamma
 ) {
+    // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
+
     float3 interpolated_line;
     for (int i = 0; i < scanline_num_pixels; i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
@@ -529,16 +531,23 @@ float3 get_bobbed_scanline_sample(
     return interpolated_line;
 }
 
-float get_cur_scanline_idx(
+float get_curr_scanline_idx(
     const float texcoord_y,
     const float tex_size_y
 ) {
-    const float curr_line_texel_y = texcoord_y * tex_size_y;
+    // Given a y-coordinate in [0, 1] and a texture size,
+    // return the scanline index. Note that a scanline is a single band of
+    // thickness `scanline_num_pixels` belonging to a single field.
+
+    const float curr_line_texel_y = texcoord_y * tex_size_y + TEXCOORD_OFFSET;
     return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
 }
 
 float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
 {
+    // Given a scanline index, determine which field it belongs to.
+    // Also determine which field is being drawn this frame.
+
     const float modulus = enable_interlacing + 1.0;
     const float frame_field_idx = fmod(frame_count + interlace_bff, modulus);
     const float line_field_idx = fmod(cur_scanline_idx, modulus);
@@ -546,15 +555,65 @@ float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
     return float2(frame_field_idx, line_field_idx);
 }
 
-float cur_line_is_wrong_field(const float cur_scanline_idx)
+float curr_line_is_wrong_field(float cur_scanline_idx)
 {
+    // Return 1.0 if the current scanline is in the current field.
+    // 0.0 otherwise
+
     const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
     return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
 }
 
-float2 get_last_scanline_uv(const float2 tex_uv, const float2 tex_size,
-    const float2 texture_size_inv, const float2 il_step_multiple,
-    const float frame_count, out float dist)
+float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
+{
+    // Return 1.0 if the current scanline is in the current field.
+    // 0.0 otherwise
+
+    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
+}
+
+float2 get_curr_texel(const float2 tex_uv, const float2 tex_size)
+{
+    // Rescale tex_uv to match the texture's dimensions, with an optional offset
+
+    return tex_uv * tex_size;
+}
+
+float2 get_curr_texel(const float2 tex_uv, const float2 tex_size, const float texcoord_offset)
+{
+    // Rescale tex_uv to match the texture's dimensions, with an optional offset
+
+    return tex_uv * tex_size + texcoord_offset;
+}
+
+float get_scanline_sample_dist(const float wrong_field) {
+    return wrong_field ? 1.0 : 0.5;
+}
+
+float3 get_scanline_beam_dist(const float2 curr_texel,
+    const float frame_field_idx,
+    const float3 convergence_offsets)
+{
+    // Given a texel position, determine the distance to the nearest in-field beam center
+    // Optionally use an offset to vertically shift the channels independently
+
+    // Compute dist as triangle wave
+    if (enable_interlacing) {
+        const float3 offset = scanline_num_pixels / 2.0 - convergence_offsets * scanline_num_pixels;// + frame_field_idx * scanline_num_pixels;
+        
+        const float3 curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
+        const float3 signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
+
+        return 0.5 + 0.5 * abs(signal);
+    }
+    else {
+        return 0.5;
+    }
+}
+
+float2 get_last_scanline_uv(const float2 curr_texel,
+    const float2 texture_size,
+    const float wrong_field)
 {
     //  Compute texture coords for the last/upper scanline, accounting for
     //  interlacing: With interlacing, only consider even/odd scanlines every
@@ -565,26 +624,56 @@ float2 get_last_scanline_uv(const float2 tex_uv, const float2 tex_size,
     //  not because anisotropic filtering is blurring across field boundaries.
     //  Note: TFF/BFF won't matter for sources that double-weave or similar.
     // wtf fixme
-//	const float interlace_bff1 = 1.0;
+    //	const float interlace_bff1 = 1.0;
 
-    const float cur_scanline_idx = get_cur_scanline_idx(tex_uv.y, tex_size.y);
-    const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
+    // const float cur_scanline_idx = get_cur_scanline_idx(tex_uv.y, tex_size.y);
+    // const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
+    // const float2 curr_texel = tex_uv * tex_size;
 
-    // const float field_offset = floor(il_step_multiple.y * 0.75) *
-    //     fmod(frame_count + ((float) interlace_bff), 2.0);
-    const float2 curr_texel = tex_uv * tex_size;
     //  Use under_half to fix a rounding bug right around exact texel locations.
-    const float2 prev_texel_num = floor(curr_texel - float2(under_half, under_half));
-    // const float wrong_field = fmod(
-    //     prev_texel_num.y + field_offset, il_step_multiple.y);
+    const float2 prev_texel_num = floor(curr_texel - float2(1, scanline_num_pixels) + under_half);
     const float2 scanline_texel_num = prev_texel_num - float2(0.0, wrong_field * scanline_num_pixels);
+
     //  Snap to the center of the previous scanline in the current field:
     const float2 scanline_texel = scanline_texel_num + float2(0.5, 0.5);
-    const float2 scanline_uv = scanline_texel * texture_size_inv;
+    const float2 scanline_uv = scanline_texel / texture_size;
 
     //  Save the sample's distance from the scanline, in units of scanlines:
-    dist = (curr_texel.y - scanline_texel.y)/il_step_multiple.y;
+    // dist = (curr_texel.y - scanline_texel.y) / il_step_multiple.y;
+    // dist = wrong_field ? 1.0 : 0.5;
     return scanline_uv;
+}
+
+void get_scanline_base_params(
+    const float texcoord_y,
+    const float tex_size_y,
+
+    out float2 frame_and_line_field_idx,
+    out float wrong_field
+) {
+    const float cur_scanline_idx = get_curr_scanline_idx(texcoord_y, tex_size_y);
+
+    frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
+    wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
+}
+
+void get_scanline_sample_params(
+    const float2 tex_uv,
+    const float2 texture_size,
+    const float2 frame_and_line_field_idx,
+    const float wrong_field,
+    const float3 convergence_offsets,
+
+    out float sample_dist,
+    out float3 beam_dist,
+    out float2 scanline_uv
+)
+{
+    const float2 curr_texel = get_curr_texel(tex_uv, texture_size, 0);
+
+    sample_dist = get_scanline_sample_dist(wrong_field);
+    beam_dist = get_scanline_beam_dist(curr_texel, frame_and_line_field_idx.x, convergence_offsets);
+    scanline_uv = get_last_scanline_uv(curr_texel, texture_size, wrong_field);
 }
 
 

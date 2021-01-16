@@ -64,16 +64,16 @@ void pixelShader0(
     {
         //  Sample the current line and an average of the previous/next line;
         //  tex2D_linearize will decode CRT gamma.  Don't bother branching:
-        float cur_scanline_idx = get_cur_scanline_idx(texcoord.y, content_size.y);
-        float cur_scanline_start_y = cur_scanline_idx * scanline_num_pixels / content_size.y;
+        float curr_scanline_idx = get_curr_scanline_idx(texcoord.y, content_size.y);
+        float curr_scanline_start_y = curr_scanline_idx * scanline_num_pixels / content_size.y;
         float3 in_field_interpolated_line = get_bobbed_scanline_sample(
             samplerCrop, texcoord,
-            cur_scanline_start_y, v_step.y,
+            curr_scanline_start_y, v_step.y,
             get_input_gamma()
         );
 
-        float prev_scanline_start_y = cur_scanline_start_y - scanline_num_pixels * v_step.y;
-        float next_scanline_starty_y = cur_scanline_start_y + scanline_num_pixels * v_step.y;
+        float prev_scanline_start_y = curr_scanline_start_y - scanline_num_pixels * v_step.y;
+        float next_scanline_starty_y = curr_scanline_start_y + scanline_num_pixels * v_step.y;
         float3 prev_interpolated_line = get_bobbed_scanline_sample(
             samplerCrop, texcoord,
             prev_scanline_start_y, v_step.y,
@@ -88,7 +88,7 @@ void pixelShader0(
         float3 out_field_interpolated_line = 0.5 * (prev_interpolated_line + next_interpolated_line);
 
         //  Select the correct color, and output the result:
-        const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
+        const float wrong_field = curr_line_is_wrong_field(curr_scanline_idx);
         const float3 selected_color = lerp(in_field_interpolated_line, out_field_interpolated_line, wrong_field);
 
         // color = encode_output(float4(selected_color, 1.0), 1.0);
