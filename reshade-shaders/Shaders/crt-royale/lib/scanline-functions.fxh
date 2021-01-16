@@ -554,7 +554,7 @@ float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
     return float2(frame_field_idx, line_field_idx);
 }
 
-float cur_line_is_wrong_field(const float cur_scanline_idx)
+float curr_line_is_wrong_field(float cur_scanline_idx)
 {
     // Return 1.0 if the current scanline is in the current field.
     // 0.0 otherwise
