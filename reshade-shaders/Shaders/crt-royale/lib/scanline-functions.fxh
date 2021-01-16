@@ -590,6 +590,26 @@ float get_scanline_sample_dist(const float wrong_field) {
     return wrong_field ? 1.0 : 0.5;
 }
 
+float get_scanline_sample_dist(const float2 curr_texel,
+    const float frame_field_idx)
+{
+    // Given a texel position, determine the distance to the nearest in-field beam center
+    // Optionally use an offset to vertically shift the channels independently
+
+    // Compute dist as triangle wave
+    if (enable_interlacing) {
+        const float offset = scanline_num_pixels / 2.0 * scanline_num_pixels;// + frame_field_idx * scanline_num_pixels;
+        
+        const float curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
+        const float signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
+
+        return 0.5 + 0.5 * abs(signal);
+    }
+    else {
+        return 0.5;
+    }
+}
+
 float3 get_scanline_beam_dist(const float2 curr_texel,
     const float frame_field_idx,
     const float3 convergence_offsets)
@@ -671,8 +691,10 @@ void get_scanline_sample_params(
 {
     const float2 curr_texel = get_curr_texel(tex_uv, texture_size, 0);
 
-    sample_dist = get_scanline_sample_dist(wrong_field);
-    beam_dist = get_scanline_beam_dist(curr_texel, frame_and_line_field_idx.x, convergence_offsets);
+    // sample_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);
+    // beam_dist = get_scanline_beam_dist(curr_texel, frame_and_line_field_idx.x, convergence_offsets);
+    sample_dist = get_scanline_sample_dist(frame_and_line_field_idx.y);
+    beam_dist = get_scanline_sample_dist(frame_and_line_field_idx.y) - convergence_offsets * 2.0;
     scanline_uv = get_last_scanline_uv(curr_texel, texture_size, wrong_field);
 }
 
