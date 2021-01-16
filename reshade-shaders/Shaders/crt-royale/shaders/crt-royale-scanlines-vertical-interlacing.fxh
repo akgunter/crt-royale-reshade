@@ -69,17 +69,34 @@ void pixelShader1(
     const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
     const float2 orig_linearized_size_inv = 1.0/orig_linearized_size;
 
-    // frame_count comes from shared-objects.fxh
-    const float frame_count_f = float(frame_count);
-
     // rename for ease of use
     const float ph = pixel_height_in_scanlines;
+
+    /*
+    // frame_count comes from shared-objects.fxh
+    const float frame_count_f = float(frame_count);
 
     //  Get the uv coords of the previous scanline (in this field), and the
     //  scanline's distance from this sample, in scanlines.
     float dist;
     const float2 scanline_uv = get_last_scanline_uv(texcoord, orig_linearized_size,
         orig_linearized_size_inv, il_step_multiple, frame_count_f, dist);
+    */
+    
+    const float3 convergence_offsets_y = beam_misconvergence ? get_convergence_offsets_y_vector() : float3(0, 0, 0);
+    float2 frame_and_line_field_idx;
+    float wrong_field;
+    float sample_dist;
+    float3 beam_dist;
+    float2 scanline_uv;
+    get_scanline_base_params(texcoord.y, orig_linearized_size.y,
+        frame_and_line_field_idx, wrong_field
+    );
+    get_scanline_sample_params(texcoord, orig_linearized_size,
+        frame_and_line_field_idx, wrong_field, convergence_offsets_y,
+        sample_dist, beam_dist, scanline_uv
+    );
+
     //  Consider 2, 3, 4, or 6 scanlines numbered 0-5: The previous and next
     //  scanlines are numbered 2 and 3.  Get scanline colors colors (ignore
     //  horizontal sampling, since since output_size.x = video_size.x).
@@ -104,8 +121,8 @@ void pixelShader1(
     {
         scanline1_color = tex2D_linearize(samplerOrigLinearized, scanline_uv - v_step, get_intermediate_gamma()).rgb;
         scanline4_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
-        //  dist is in [0, 1]
-        dist_round = round(dist);
+        //  sample_dist is in [0, 1]
+        dist_round = round(sample_dist);
         const float2 sample_0_or_5_uv_off = lerp(-2.0 * v_step, 3.0 * v_step, dist_round);
         //  Call this "scanline_outside_color" to cope with the conditional
         //  scanline number:
@@ -120,8 +137,8 @@ void pixelShader1(
     //  Use scanline 1 or 4 for a total of 3 scanlines:
     else if(beam_num_scanlines > 2.5)
     {
-        //  dist is in [0, 1]
-        dist_round = round(dist);
+        //  sample_dist is in [0, 1]
+        dist_round = round(sample_dist);
         const float2 sample_1or4_uv_off = lerp(-v_step, 2.0 * v_step, dist_round);
         scanline_outside_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + sample_1or4_uv_off, get_intermediate_gamma()).rgb;
     }
@@ -129,12 +146,14 @@ void pixelShader1(
     //  Compute scanline contributions, accounting for vertical convergence.
     //  Vertical convergence offsets are in units of current-field scanlines.
     //  dist2 means "positive sample distance from scanline 2, in scanlines:"
-    float3 dist2 = float3(dist, dist, dist);
+    float3 dist2 = beam_dist;
+    /*
     if(beam_misconvergence)
     {
         const float3 convergence_offsets_vert_rgb = get_convergence_offsets_y_vector();
         dist2 = dist2 - convergence_offsets_vert_rgb;
     }
+    */
     //  Calculate {sigma, shape}_range outside of scanline_contrib so it's only
     //  done once per pixel (not 6 times) with runtime params.  Don't reuse the
     //  vertex shader calculations, so static versions can be constant-folded.

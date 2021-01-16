@@ -66,7 +66,7 @@ static const float under_half = 0.4995;
 
 float fmod(float x, float y)
 {
-    return x - y * floor(x/y + FIX_ZERO(0.0));
+    return x - y * floor(x/y);
 }
 
 

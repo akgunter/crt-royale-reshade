@@ -159,42 +159,42 @@ uniform float convergence_offset_x_r <
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
-    ui_step    = 0.01;
+    ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_x_g <
     ui_label   = "Convergence Offset X G";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
-    ui_step    = 0.01;
+    ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_x_b <
     ui_label   = "Convergence Offset X B";
     ui_type    = "slider";
     ui_min     = -4.0;
     ui_max     = 4.0;
-    ui_step    = 0.01;
+    ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_y_r <
     ui_label   = "Convergence Offset Y R";
     ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.01;
+    ui_min     = -2.0;
+    ui_max     = 2.0;
+    ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_y_g <
     ui_label   = "Convergence Offset Y G";
     ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.01;
+    ui_min     = -2.0;
+    ui_max     = 2.0;
+    ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_y_b <
     ui_label   = "Convergence Offset Y B";
     ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.01;
+    ui_min     = -2.0;
+    ui_max     = 2.0;
+    ui_step    = 0.05;
 > = 0;
 
 #if __RENDERER__ != 0x9000
