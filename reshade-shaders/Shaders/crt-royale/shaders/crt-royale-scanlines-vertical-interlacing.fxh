@@ -122,7 +122,7 @@ void pixelShader1(
         scanline1_color = tex2D_linearize(samplerOrigLinearized, scanline_uv - v_step, get_intermediate_gamma()).rgb;
         scanline4_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 2.0 * v_step, get_intermediate_gamma()).rgb;
         //  sample_dist is in [0, 1]
-        dist_round = round(sample_dist);
+        dist_round = round(sample_dist * 2 - 1);
         const float2 sample_0_or_5_uv_off = lerp(-2.0 * v_step, 3.0 * v_step, dist_round);
         //  Call this "scanline_outside_color" to cope with the conditional
         //  scanline number:
@@ -138,7 +138,7 @@ void pixelShader1(
     else if(beam_num_scanlines > 2.5)
     {
         //  sample_dist is in [0, 1]
-        dist_round = round(sample_dist);
+        dist_round = round(sample_dist * 2 - 1);
         const float2 sample_1or4_uv_off = lerp(-v_step, 2.0 * v_step, dist_round);
         scanline_outside_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + sample_1or4_uv_off, get_intermediate_gamma()).rgb;
     }
