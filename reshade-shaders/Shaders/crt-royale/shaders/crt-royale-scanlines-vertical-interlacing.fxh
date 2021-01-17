@@ -225,4 +225,8 @@ void pixelShader1(
     //  is faster anyway, levels_autodim_temp = 0.5 isn't causing banding.
     // color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), 1.0);
     color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
+
+    // const float3 foo = scanline_contrib(convergence_offsets_y.b,
+    //     scanline3_color, ph, sigma_range, shape_range);
+    // color = encode_output(float4(foo * levels_autodim_temp, 1.0), get_intermediate_gamma());
 }
