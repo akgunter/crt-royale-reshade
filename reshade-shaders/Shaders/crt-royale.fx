@@ -26,7 +26,8 @@
 #if !CONTENT_BOX_VISIBLE
 	#include "crt-royale/shaders/content-crop.fxh"
 	#include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
-	#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
+	// #include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
+	#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing-new.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"

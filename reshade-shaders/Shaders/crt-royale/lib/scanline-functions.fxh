@@ -572,6 +572,20 @@ float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
     return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
 }
 
+float get_beam_center(const float curr_scanline_idx, const float frame_field_idx)
+{
+    const float modulus = enable_interlacing + 1.0;
+    const float scanline_pair_start = curr_scanline_idx - fmod(curr_scanline_idx, modulus) + frame_field_idx;
+    const float upper_line_center = scanline_pair_start * scanline_num_pixels + scanline_num_pixels / 2.0;
+    // return upper_line_center + frame_field_idx * scanline_num_pixels;
+    return upper_line_center;
+}
+
+float3 get_dist_from_beam(const float texel_y, const float3 beam_center)
+{
+    return abs(texel_y - beam_center) / (2.0 * scanline_num_pixels);
+}
+
 float2 get_curr_texel(const float2 tex_uv, const float2 tex_size)
 {
     // Rescale tex_uv to match the texture's dimensions, with an optional offset
@@ -603,7 +617,7 @@ float get_scanline_sample_dist(const float2 curr_texel,
         const float curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
         const float signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
 
-        return 0.5 + 0.5 * abs(signal);
+        return abs(signal);
     }
     else {
         return 0.5;
@@ -619,17 +633,19 @@ float3 get_scanline_beam_dist(const float2 curr_texel,
 
     // Compute dist as triangle wave
     if (enable_interlacing) {
-        const float3 offset = scanline_num_pixels / 2.0 - convergence_offsets * scanline_num_pixels;// + frame_field_idx * scanline_num_pixels;
+        const float3 offset = scanline_num_pixels / 2.0 - convergence_offsets * scanline_num_pixels + frame_field_idx * scanline_num_pixels;
         
         const float3 curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
         const float3 signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
 
-        return 0.5 + 0.5 * abs(signal);
+        return abs(signal);
     }
     else {
         return 0.5;
     }
 }
+
+
 
 float2 get_last_scanline_uv(const float2 curr_texel,
     const float2 texture_size,
@@ -691,10 +707,13 @@ void get_scanline_sample_params(
 {
     const float2 curr_texel = get_curr_texel(tex_uv, texture_size, 0);
 
-    // sample_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);
-    // beam_dist = get_scanline_beam_dist(curr_texel, frame_and_line_field_idx.x, convergence_offsets);
     sample_dist = get_scanline_sample_dist(frame_and_line_field_idx.y);
-    beam_dist = get_scanline_sample_dist(frame_and_line_field_idx.y) - convergence_offsets * 2.0;
+    // sample_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);
+
+    // beam_dist = get_scanline_sample_dist(frame_and_line_field_idx.y) - convergence_offsets;
+    beam_dist = get_scanline_beam_dist(curr_texel, frame_and_line_field_idx.x, convergence_offsets);
+    // beam_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);
+    
     scanline_uv = get_last_scanline_uv(curr_texel, texture_size, wrong_field);
 }
 
