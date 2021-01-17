@@ -84,7 +84,7 @@ void pixelShader0(
             next_scanline_starty_y, v_step.y,
             get_input_gamma()
         );
-            
+        
         float3 out_field_interpolated_line = 0.5 * (prev_interpolated_line + next_interpolated_line);
 
         //  Select the correct color, and output the result:
