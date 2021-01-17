@@ -74,43 +74,59 @@ void pixelShader1(
         sample_dist, beam_dist, scanline_uv
     );
 
-    // beam_dist -= convergence_offsets_y;
-
     //  Consider 2, 3, 4, or 6 scanlines numbered 0-5: The previous and next
     //  scanlines are numbered 2 and 3.  Get scanline colors colors (ignore
     //  horizontal sampling, since since output_size.x = video_size.x).
     //  NOTE: Anisotropic filtering creates interlacing artifacts, which is why
     //  ORIG_LINEARIZED bobbed any interlaced input before this pass.
     const float2 v_step = float2(0.0, scanline_num_pixels * orig_linearized_size_inv.y);
+    const float correct_field = 1 - wrong_field;
 
-    const float3 scanline_n1_color = tex2D_linearize(samplerOrigLinearized, texcoord - v_step, get_intermediate_gamma()).rgb;
-    const float3 scanline_0_color = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb;
-    const float3 scanline_p1_color = tex2D_linearize(samplerOrigLinearized, texcoord + 2*v_step, get_intermediate_gamma()).rgb;
-    // const float3 scanline_p2_color = tex2D_linearize(samplerOrigLinearized, scanline_uv + 3*v_step, get_intermediate_gamma()).rgb;
+    // const float3 scanline_n3_color = tex2D_linearize(samplerOrigLinearized, texcoord - 3*v_step, get_intermediate_gamma()).rgb * wrong_field;
+    const float3 scanline_n2_color = tex2D_linearize(samplerOrigLinearized, texcoord - 2*v_step, get_intermediate_gamma()).rgb * correct_field;
+    // const float3 scanline_n1_color = tex2D_linearize(samplerOrigLinearized, texcoord - v_step, get_intermediate_gamma()).rgb * wrong_field;
+    const float3 scanline_0_color = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb * correct_field;
+    // const float3 scanline_p1_color = tex2D_linearize(samplerOrigLinearized, texcoord + v_step, get_intermediate_gamma()).rgb * wrong_field;
+    const float3 scanline_p2_color = tex2D_linearize(samplerOrigLinearized, texcoord + 2*v_step, get_intermediate_gamma()).rgb * correct_field;
+    // const float3 scanline_p3_color = tex2D_linearize(samplerOrigLinearized, texcoord + 3*v_step, get_intermediate_gamma()).rgb * wrong_field;
+
 
     // const float dist_round = round(sample_dist - 0.25);
     const float2 texel_0 = get_curr_texel(texcoord, orig_linearized_size, 0);
 
     const float scanline_0_idx = get_curr_scanline_idx(texcoord.y, orig_linearized_size.y);
     const float3 beam_center = get_beam_center(scanline_0_idx, frame_and_line_field_idx.x) - convergence_offsets_y * scanline_num_pixels;
+
+    const float3 beam_dist_n2 = get_dist_from_beam(texel_0.y - 2*scanline_num_pixels, beam_center);
+    // const float3 beam_dist_n1 = get_dist_from_beam(texel_0.y - scanline_num_pixels, beam_center);
     const float3 beam_dist_0 = get_dist_from_beam(texel_0.y, beam_center);
-    const float3 beam_dist_n1 = get_dist_from_beam(texel_0.y - 2*scanline_num_pixels, beam_center);
-    const float3 beam_dist_p1 = get_dist_from_beam(texel_0.y + 2*scanline_num_pixels, beam_center);
+    // const float3 beam_dist_p1 = get_dist_from_beam(texel_0.y + scanline_num_pixels, beam_center);
+    const float3 beam_dist_p2 = get_dist_from_beam(texel_0.y + 2*scanline_num_pixels, beam_center);
 
-    const float3 scanline_n1_contrib = scanline_contrib(
-        beam_dist_n1,
-        scanline_n1_color, ph, sigma_range, shape_range
+    const float3 scanline_n2_contrib = get_beam_strength(
+        beam_dist_n2,
+        scanline_n2_color, sigma_range, shape_range
     );
-    const float3 scanline_0_contrib = scanline_contrib(
-        beam_dist,
-        scanline_0_color, ph, sigma_range, shape_range
+    // const float3 scanline_n1_contrib = get_beam_strength(
+    //     beam_dist_n1,
+    //     scanline_n1_color, sigma_range, shape_range
+    // );
+    const float3 scanline_0_contrib = get_beam_strength(
+        beam_dist_0,
+        scanline_0_color, sigma_range, shape_range
     );
-    const float3 scanline_p1_contrib = scanline_contrib(
-        beam_dist_p1,
-        scanline_p1_color, ph, sigma_range, shape_range
+    // const float3 scanline_p1_contrib = get_beam_strength(
+    //     beam_dist_p1,
+    //     scanline_p1_color, sigma_range, shape_range
+    // );
+    const float3 scanline_p2_contrib = get_beam_strength(
+        beam_dist_p2,
+        scanline_p2_color, sigma_range, shape_range
     );
 
-    float3 scanline_intensity = scanline_n1_contrib + scanline_0_contrib + scanline_p1_contrib;
-    // float3 scanline_intensity = scanline_n1_contrib;
-    color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
+    float3 scanline_intensity = scanline_0_color;
+    scanline_intensity += scanline_n2_contrib;
+    scanline_intensity += scanline_p2_contrib;
+
+    color = encode_output(float4(scanline_intensity, 1.0), get_intermediate_gamma());
 }

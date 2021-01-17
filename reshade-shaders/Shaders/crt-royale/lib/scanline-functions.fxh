@@ -237,8 +237,7 @@ float3 scanline_generalized_gaussian_sampled_contrib(float3 dist,
     //  Avoid repeated divides:
     const float3 alpha_inv = float3(1.0, 1.0, 1.0)/alpha;
     const float3 beta_inv = float3(1.0, 1.0, 1.0)/beta;
-    const float3 scale = color * beta * 0.5 * alpha_inv /
-        gamma_impl(beta_inv, beta);
+    const float3 scale = color * beta * 0.5 * alpha_inv / gamma_impl(beta_inv, beta);
     if(beam_antialias_level > 0.5)
     {
         //  Sample 1/3 pixel closer to and farther from the scanline too.
@@ -575,7 +574,7 @@ float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
 float get_beam_center(const float curr_scanline_idx, const float frame_field_idx)
 {
     const float modulus = enable_interlacing + 1.0;
-    const float scanline_pair_start = curr_scanline_idx - fmod(curr_scanline_idx, modulus) + frame_field_idx;
+    const float scanline_pair_start = curr_scanline_idx - fmod(curr_scanline_idx, modulus) + (1 - frame_field_idx);
     const float upper_line_center = scanline_pair_start * scanline_num_pixels + scanline_num_pixels / 2.0;
     // return upper_line_center + frame_field_idx * scanline_num_pixels;
     return upper_line_center;
@@ -583,7 +582,7 @@ float get_beam_center(const float curr_scanline_idx, const float frame_field_idx
 
 float3 get_dist_from_beam(const float texel_y, const float3 beam_center)
 {
-    return abs(texel_y - beam_center) / (2.0 * scanline_num_pixels);
+    return abs(texel_y - beam_center) / scanline_num_pixels;
 }
 
 float2 get_curr_texel(const float2 tex_uv, const float2 tex_size)
@@ -645,6 +644,19 @@ float3 get_scanline_beam_dist(const float2 curr_texel,
     }
 }
 
+float3 get_beam_strength(float3 dist, float3 color,
+    const float sigma_range, const float shape_range)
+{
+    //  See scanline_gaussian integral_contrib() for detailed comments!
+    //  gaussian sample = 1/(sigma*sqrt(2*pi)) * e**(-(x**2)/(2*sigma**2))
+    const float3 sigma = get_gaussian_sigma(color, sigma_range);
+    //  Avoid repeated divides:
+    const float3 sigma_inv = 1.0 / sigma;
+    const float3 inner_denom_inv = 0.5 * sigma_inv * sigma_inv;
+    const float3 outer_denom_inv = sigma_inv/sqrt(2.0*pi);
+
+    return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
+}
 
 
 float2 get_last_scanline_uv(const float2 curr_texel,
