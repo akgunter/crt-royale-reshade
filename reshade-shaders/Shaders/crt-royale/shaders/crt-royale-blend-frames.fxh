@@ -19,8 +19,8 @@ void lerpScanlinesPS(
             color = tex2D(samplerFreezeFrame, texcoord);
         }
         */
-        const float cur_scanline_idx = get_cur_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
-        const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
+        const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
+        const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
 
         // const float4 cur_line_color = tex2D_linearize(samplerBloomHorizontal, texcoord, get_intermediate_gamma());
         // const float4 cur_line_prev_color = tex2D_linearize(samplerFreezeFrame, texcoord, get_intermediate_gamma());

@@ -178,22 +178,22 @@ uniform float convergence_offset_x_b <
 uniform float convergence_offset_y_r <
     ui_label   = "Convergence Offset Y R";
     ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
+    ui_min     = -1.0;
+    ui_max     = 1.0;
     ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_y_g <
     ui_label   = "Convergence Offset Y G";
     ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
+    ui_min     = -1.0;
+    ui_max     = 1.0;
     ui_step    = 0.05;
 > = 0;
 uniform float convergence_offset_y_b <
     ui_label   = "Convergence Offset Y B";
     ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
+    ui_min     = -1.0;
+    ui_max     = 1.0;
     ui_step    = 0.05;
 > = 0;
 
