@@ -59,7 +59,7 @@ void pixelShader1(
     const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
 
     const float3 convergence_offsets_y = beam_misconvergence ? get_convergence_offsets_y_vector() : float3(0, 0, 0);
-    const float2 curr_texel = get_curr_texel(texcoord, orig_linearized_size, 0);
+    const float2 curr_texel = get_curr_texel(texcoord, orig_linearized_size);
 
     float2 frame_and_line_field_idx;
     float wrong_field;
@@ -92,7 +92,7 @@ void pixelShader1(
 
 
     // const float dist_round = round(sample_dist - 0.25);
-    const float2 texel_0 = get_curr_texel(texcoord, orig_linearized_size, 0);
+    const float2 texel_0 = get_curr_texel(texcoord, orig_linearized_size);
 
     const float scanline_0_idx = get_curr_scanline_idx(texcoord.y, orig_linearized_size.y);
     const float3 beam_center = get_beam_center(scanline_0_idx, frame_and_line_field_idx.x) - convergence_offsets_y * scanline_num_pixels;

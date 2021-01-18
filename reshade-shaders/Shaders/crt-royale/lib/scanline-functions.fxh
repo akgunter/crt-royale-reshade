@@ -538,7 +538,7 @@ float get_curr_scanline_idx(
     // return the scanline index. Note that a scanline is a single band of
     // thickness `scanline_num_pixels` belonging to a single field.
 
-    const float curr_line_texel_y = texcoord_y * tex_size_y + TEXCOORD_OFFSET;
+    const float curr_line_texel_y = texcoord_y * tex_size_y;
     return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
 }
 
@@ -611,7 +611,7 @@ float get_scanline_sample_dist(const float2 curr_texel,
 
     // Compute dist as triangle wave
     if (enable_interlacing) {
-        const float offset = scanline_num_pixels / 2.0 * scanline_num_pixels;// + frame_field_idx * scanline_num_pixels;
+        const float offset = scanline_num_pixels / 2.0 * scanline_num_pixels + frame_field_idx * scanline_num_pixels;
         
         const float curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
         const float signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
@@ -683,7 +683,7 @@ float2 get_last_scanline_uv(const float2 curr_texel,
     const float2 scanline_texel_num = prev_texel_num - float2(0.0, wrong_field * scanline_num_pixels);
 
     //  Snap to the center of the previous scanline in the current field:
-    const float2 scanline_texel = scanline_texel_num + float2(0.5, 0.5);
+    const float2 scanline_texel = scanline_texel_num + scanline_num_pixels / 2.0;
     const float2 scanline_uv = scanline_texel / texture_size;
 
     //  Save the sample's distance from the scanline, in units of scanlines:
@@ -717,7 +717,7 @@ void get_scanline_sample_params(
     out float2 scanline_uv
 )
 {
-    const float2 curr_texel = get_curr_texel(tex_uv, texture_size, 0);
+    const float2 curr_texel = get_curr_texel(tex_uv, texture_size);
 
     sample_dist = get_scanline_sample_dist(frame_and_line_field_idx.y);
     // sample_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);

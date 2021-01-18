@@ -24,12 +24,6 @@
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/texture-settings.fxh"
 
-#if __RENDERER__ != 0x9000
-    #define TEXCOORD_OFFSET 0.0
-#else
-    #define TEXCOORD_OFFSET 0.5
-#endif
-
 // The width of the game's content
 #ifndef CONTENT_WIDTH
 	#define CONTENT_WIDTH BUFFER_WIDTH
