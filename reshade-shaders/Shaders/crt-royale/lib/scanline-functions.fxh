@@ -123,179 +123,6 @@ float3 get_generalized_gaussian_beta(const float3 color,
     return beam_min_shape + shape_range * pow(color, float3(beam_shape_power, beam_shape_power, beam_shape_power));
 }
 
-float3 scanline_gaussian_integral_contrib(const float3 dist,
-    const float3 color, const float pixel_height, const float sigma_range)
-{
-    //  Requires:   1.) dist is the distance of the [potentially separate R/G/B]
-    //                  point(s) from a scanline in units of scanlines, where
-    //                  1.0 means the sample point straddles the next scanline.
-    //              2.) color is the underlying source color along a scanline.
-    //              3.) pixel_height is the output pixel height in scanlines.
-    //              4.) Requirements of get_gaussian_sigma() must be met.
-    //  Returns:    Return a scanline's light output over a given pixel.
-    //  Details:
-    //  The CRT beam profile follows a roughly Gaussian distribution which is
-    //  wider for bright colors than dark ones.  The integral over the full
-    //  range of a Gaussian function is always 1.0, so we can vary the beam
-    //  with a standard deviation without affecting brightness.  'x' = distance:
-    //      gaussian sample = 1/(sigma*sqrt(2*pi)) * e**(-(x**2)/(2*sigma**2))
-    //      gaussian integral = 0.5 (1.0 + erf(x/(sigma * sqrt(2))))
-    //  Use a numerical approximation of the "error function" (the Gaussian
-    //  indefinite integral) to find the definite integral of the scanline's
-    //  average brightness over a given pixel area.  Even if curved coords were
-    //  used in this pass, a flat scalar pixel height works almost as well as a
-    //  pixel height computed from a full pixel-space to scanline-space matrix.
-    const float ph_half = pixel_height * 0.5;
-    const float3 sigma = get_gaussian_sigma(color, sigma_range);
-    const float3 ph_offset = float3(ph_half, ph_half, ph_half);
-    const float3 denom_inv = 1.0/(sigma*sqrt(2.0));
-    const float3 integral_high = erf((dist + ph_offset)*denom_inv);
-    const float3 integral_low = erf((dist - ph_offset)*denom_inv);
-    return color * 0.5*(integral_high - integral_low)/pixel_height;
-}
-
-float3 scanline_generalized_gaussian_integral_contrib(float3 dist,
-    float3 color, float pixel_height, float sigma_range,
-    float shape_range)
-{
-    //  Requires:   1.) Requirements of scanline_gaussian_integral_contrib()
-    //                  must be met.
-    //              2.) Requirements of get_gaussian_sigma() must be met.
-    //              3.) Requirements of get_generalized_gaussian_beta() must be
-    //                  met.
-    //  Returns:    Return a scanline's light output over a given pixel.
-    //  A generalized Gaussian distribution allows the shape (beta) to vary
-    //  as well as the width (alpha).  "gamma" refers to the gamma function:
-    //      generalized sample =
-    //          beta/(2*alpha*gamma(1/beta)) * e**(-(|x|/alpha)**beta)
-    //  ligamma(s, z) is the lower incomplete gamma function, for which we only
-    //  implement two of four branches (because we keep 1/beta <= 0.5):
-    //      generalized integral = 0.5 + 0.5* sign(x) *
-    //          ligamma(1/beta, (|x|/alpha)**beta)/gamma(1/beta)
-    //  See get_generalized_gaussian_beta() for a discussion of beta.
-    //  We base alpha on the intended Gaussian sigma, but it only strictly
-    //  models models standard deviation at beta == 2, because the standard
-    //  deviation depends on both alpha and beta (keeping alpha independent is
-    //  faster and preserves intuitive behavior and a full spectrum of results).
-    const float ph_half = pixel_height * 0.5;
-    const float3 alpha = sqrt(2.0) * get_gaussian_sigma(color, sigma_range);
-    const float3 beta = get_generalized_gaussian_beta(color, shape_range);
-    const float3 alpha_inv = float3(1.0, 1.0, 1.0)/alpha;
-    const float3 s = float3(1.0, 1.0, 1.0)/beta;
-    const float3 ph_offset = float3(ph_half, ph_half, ph_half);
-    //  Pass beta to gamma_impl to avoid repeated divides.  Similarly pass
-    //  beta (i.e. 1/s) and 1/gamma(s) to normalized_ligamma_impl.
-    const float3 gamma_s_inv = float3(1.0, 1.0, 1.0)/gamma_impl(s, beta);
-    const float3 dist1 = dist + ph_offset;
-    const float3 dist0 = dist - ph_offset;
-    const float3 integral_high = sign(dist1) * normalized_ligamma_impl(
-        s, pow(abs(dist1)*alpha_inv, beta), beta, gamma_s_inv);
-    const float3 integral_low = sign(dist0) * normalized_ligamma_impl(
-        s, pow(abs(dist0)*alpha_inv, beta), beta, gamma_s_inv);
-    return color * 0.5*(integral_high - integral_low)/pixel_height;
-}
-
-float3 scanline_gaussian_sampled_contrib(const float3 dist, const float3 color,
-    const float pixel_height, const float sigma_range)
-{
-    //  See scanline_gaussian integral_contrib() for detailed comments!
-    //  gaussian sample = 1/(sigma*sqrt(2*pi)) * e**(-(x**2)/(2*sigma**2))
-    const float3 sigma = get_gaussian_sigma(color, sigma_range);
-    //  Avoid repeated divides:
-    const float3 sigma_inv = float3(1.0, 1.0, 1.0)/sigma;
-    const float3 inner_denom_inv = 0.5 * sigma_inv * sigma_inv;
-    const float3 outer_denom_inv = sigma_inv/sqrt(2.0*pi);
-    if(beam_antialias_level > 0.5)
-    {
-        const float ph_third = pixel_height / 3.0;
-        //  Sample 1/3 pixel away in each direction as well:
-        const float3 sample_offset = float3(ph_third, ph_third, ph_third);
-        const float3 dist2 = dist + sample_offset;
-        const float3 dist3 = abs(dist - sample_offset);
-        //  Average three pure Gaussian samples:
-        const float3 scale = color/3.0 * outer_denom_inv;
-        const float3 weight1 = exp(-(dist*dist)*inner_denom_inv);
-        const float3 weight2 = exp(-(dist2*dist2)*inner_denom_inv);
-        const float3 weight3 = exp(-(dist3*dist3)*inner_denom_inv);
-        return scale * (weight1 + weight2 + weight3);
-    }
-    else
-    {
-        return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
-    }
-}
-
-float3 scanline_generalized_gaussian_sampled_contrib(float3 dist,
-    float3 color, float pixel_height, float sigma_range,
-    float shape_range)
-{
-    //  See scanline_generalized_gaussian_integral_contrib() for details!
-    //  generalized sample =
-    //      beta/(2*alpha*gamma(1/beta)) * e**(-(|x|/alpha)**beta)
-    const float3 alpha = sqrt(2.0) * get_gaussian_sigma(color, sigma_range);
-    const float3 beta = get_generalized_gaussian_beta(color, shape_range);
-    //  Avoid repeated divides:
-    const float3 alpha_inv = float3(1.0, 1.0, 1.0)/alpha;
-    const float3 beta_inv = float3(1.0, 1.0, 1.0)/beta;
-    const float3 scale = color * beta * 0.5 * alpha_inv / gamma_impl(beta_inv, beta);
-    if(beam_antialias_level > 0.5)
-    {
-        //  Sample 1/3 pixel closer to and farther from the scanline too.
-        const float ph_third = pixel_height / 3.0;
-        const float3 sample_offset = float3(ph_third, ph_third, ph_third);
-        const float3 dist2 = dist + sample_offset;
-        const float3 dist3 = abs(dist - sample_offset);
-        //  Average three generalized Gaussian samples:
-        const float3 weight1 = exp(-pow(abs(dist*alpha_inv), beta));
-        const float3 weight2 = exp(-pow(abs(dist2*alpha_inv), beta));
-        const float3 weight3 = exp(-pow(abs(dist3*alpha_inv), beta));
-        return scale/3.0 * (weight1 + weight2 + weight3);
-    }
-    else
-    {
-        return scale * exp(-pow(abs(dist*alpha_inv), beta));
-    }
-}
-
-float3 scanline_contrib(float3 dist, float3 color,
-    float pixel_height, const float sigma_range, const float shape_range)
-{
-    //  Requires:   1.) Requirements of scanline_gaussian_integral_contrib()
-    //                  must be met.
-    //              2.) Requirements of get_gaussian_sigma() must be met.
-    //              3.) Requirements of get_generalized_gaussian_beta() must be
-    //                  met.
-    //  Returns:    Return a scanline's light output over a given pixel, using
-    //              a generalized or pure Gaussian distribution and sampling or
-    //              integrals as desired by user codepath choices.
-    if(beam_generalized_gaussian)
-    {
-        if(beam_antialias_level > 1.5)
-        {
-            return scanline_generalized_gaussian_integral_contrib(
-                dist, color, pixel_height, sigma_range, shape_range);
-        }
-        else
-        {
-            return scanline_generalized_gaussian_sampled_contrib(
-                dist, color, pixel_height, sigma_range, shape_range);
-        }
-    }
-    else
-    {
-        if(beam_antialias_level > 1.5)
-        {
-            return scanline_gaussian_integral_contrib(
-                dist, color, pixel_height, sigma_range);
-        }
-        else
-        {
-            return scanline_gaussian_sampled_contrib(
-                dist, color, pixel_height, sigma_range);
-        }
-    }
-}
-
 float3 get_raw_interpolated_color(const float3 color0,
     const float3 color1, const float3 color2, const float3 color3,
     const float4 weights)
@@ -530,6 +357,13 @@ float3 get_bobbed_scanline_sample(
     return interpolated_line;
 }
 
+
+float2 get_curr_texel(const float2 tex_uv, const float2 tex_size)
+{
+    // Rescale tex_uv to match the texture's dimensions
+    return floor(tex_uv * tex_size + under_half);
+}
+
 float get_curr_scanline_idx(
     const float texcoord_y,
     const float tex_size_y
@@ -538,8 +372,8 @@ float get_curr_scanline_idx(
     // return the scanline index. Note that a scanline is a single band of
     // thickness `scanline_num_pixels` belonging to a single field.
 
-    const float curr_line_texel_y = texcoord_y * tex_size_y;
-    return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
+    const float curr_line_texel_y = floor(texcoord_y * tex_size_y + under_half);
+    return floor(curr_line_texel_y / scanline_num_pixels);
 }
 
 float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
@@ -571,78 +405,30 @@ float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
     return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
 }
 
-float get_beam_center(const float curr_scanline_idx, const float frame_field_idx)
+float get_scanline_pair_start(const float curr_scanline_idx, const float frame_field_idx)
 {
     const float modulus = enable_interlacing + 1.0;
-    const float scanline_pair_start = curr_scanline_idx - fmod(curr_scanline_idx, modulus) + (1 - frame_field_idx);
-    const float upper_line_center = scanline_pair_start * scanline_num_pixels + scanline_num_pixels / 2.0;
-    // return upper_line_center + frame_field_idx * scanline_num_pixels;
-    return upper_line_center;
+    const float scanline_pair_start = curr_scanline_idx - fmod(curr_scanline_idx, modulus) + frame_field_idx;
+    const float upper_line_start = scanline_pair_start * scanline_num_pixels;
+    return upper_line_start;
 }
 
-float3 get_dist_from_beam(const float texel_y, const float3 beam_center)
+float get_beam_center(const float texel_y, const float scanline_idx, const float wrong_field)
+{
+    const float true_center = scanline_idx * scanline_num_pixels + scanline_num_pixels / 2.0;
+    const float direction = texel_y <= true_center ? -1 : 1;
+
+    const float parity_correction = direction * (1 - fmod(scanline_num_pixels, 2.0)) * 0.5;
+    const float corrected_center = true_center + parity_correction;
+
+    return corrected_center + wrong_field * direction * scanline_num_pixels;
+}
+
+float3 get_dist_from_beam(const float texel_y, const float3 beam_center, const float wrong_field)
 {
     return abs(texel_y - beam_center) / scanline_num_pixels;
 }
 
-float2 get_curr_texel(const float2 tex_uv, const float2 tex_size)
-{
-    // Rescale tex_uv to match the texture's dimensions, with an optional offset
-
-    return tex_uv * tex_size;
-}
-
-float2 get_curr_texel(const float2 tex_uv, const float2 tex_size, const float texcoord_offset)
-{
-    // Rescale tex_uv to match the texture's dimensions, with an optional offset
-
-    return tex_uv * tex_size + texcoord_offset;
-}
-
-float get_scanline_sample_dist(const float wrong_field) {
-    return wrong_field ? 1.0 : 0.5;
-}
-
-float get_scanline_sample_dist(const float2 curr_texel,
-    const float frame_field_idx)
-{
-    // Given a texel position, determine the distance to the nearest in-field beam center
-    // Optionally use an offset to vertically shift the channels independently
-
-    // Compute dist as triangle wave
-    if (enable_interlacing) {
-        const float offset = scanline_num_pixels / 2.0 * scanline_num_pixels + frame_field_idx * scanline_num_pixels;
-        
-        const float curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
-        const float signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
-
-        return abs(signal);
-    }
-    else {
-        return 0.5;
-    }
-}
-
-float3 get_scanline_beam_dist(const float2 curr_texel,
-    const float frame_field_idx,
-    const float3 convergence_offsets)
-{
-    // Given a texel position, determine the distance to the nearest in-field beam center
-    // Optionally use an offset to vertically shift the channels independently
-
-    // Compute dist as triangle wave
-    if (enable_interlacing) {
-        const float3 offset = scanline_num_pixels / 2.0 - convergence_offsets * scanline_num_pixels + frame_field_idx * scanline_num_pixels;
-        
-        const float3 curr_texel_adj = (curr_texel.y + offset) / (2.0 * scanline_num_pixels);
-        const float3 signal = 2 * (curr_texel_adj - floor(curr_texel_adj + 0.5));
-
-        return abs(signal);
-    }
-    else {
-        return 0.5;
-    }
-}
 
 float3 get_beam_strength(float3 dist, float3 color,
     const float sigma_range, const float shape_range)
@@ -658,75 +444,20 @@ float3 get_beam_strength(float3 dist, float3 color,
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
 
-
-float2 get_last_scanline_uv(const float2 curr_texel,
-    const float2 texture_size,
-    const float wrong_field)
-{
-    //  Compute texture coords for the last/upper scanline, accounting for
-    //  interlacing: With interlacing, only consider even/odd scanlines every
-    //  other frame.  Top-field first (TFF) order puts even scanlines on even
-    //  frames, and BFF order puts them on odd frames.  Texels are centered at:
-    //      frac(tex_uv * tex_size) == x.5
-    //  Caution: If these coordinates ever seem incorrect, first make sure it's
-    //  not because anisotropic filtering is blurring across field boundaries.
-    //  Note: TFF/BFF won't matter for sources that double-weave or similar.
-    // wtf fixme
-    //	const float interlace_bff1 = 1.0;
-
-    // const float cur_scanline_idx = get_cur_scanline_idx(tex_uv.y, tex_size.y);
-    // const float wrong_field = cur_line_is_wrong_field(cur_scanline_idx);
-    // const float2 curr_texel = tex_uv * tex_size;
-
-    //  Use under_half to fix a rounding bug right around exact texel locations.
-    const float2 prev_texel_num = floor(curr_texel - float2(1, scanline_num_pixels) + under_half);
-    const float2 scanline_texel_num = prev_texel_num - float2(0.0, wrong_field * scanline_num_pixels);
-
-    //  Snap to the center of the previous scanline in the current field:
-    const float2 scanline_texel = scanline_texel_num + scanline_num_pixels / 2.0;
-    const float2 scanline_uv = scanline_texel / texture_size;
-
-    //  Save the sample's distance from the scanline, in units of scanlines:
-    // dist = (curr_texel.y - scanline_texel.y) / il_step_multiple.y;
-    // dist = wrong_field ? 1.0 : 0.5;
-    return scanline_uv;
-}
-
 void get_scanline_base_params(
-    const float texcoord_y,
-    const float tex_size_y,
+    const float2 texcoord,
+    const float2 tex_size,
 
+    out float2 curr_texel,
+    out float curr_scanline_idx,
     out float2 frame_and_line_field_idx,
     out float wrong_field
 ) {
-    const float cur_scanline_idx = get_curr_scanline_idx(texcoord_y, tex_size_y);
 
-    frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
+    curr_texel = get_curr_texel(texcoord, tex_size);
+    curr_scanline_idx = get_curr_scanline_idx(texcoord.y, tex_size.y);
+    frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
     wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
-}
-
-void get_scanline_sample_params(
-    const float2 tex_uv,
-    const float2 texture_size,
-    const float2 frame_and_line_field_idx,
-    const float wrong_field,
-    const float3 convergence_offsets,
-
-    out float sample_dist,
-    out float3 beam_dist,
-    out float2 scanline_uv
-)
-{
-    const float2 curr_texel = get_curr_texel(tex_uv, texture_size);
-
-    sample_dist = get_scanline_sample_dist(frame_and_line_field_idx.y);
-    // sample_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);
-
-    // beam_dist = get_scanline_sample_dist(frame_and_line_field_idx.y) - convergence_offsets;
-    beam_dist = get_scanline_beam_dist(curr_texel, frame_and_line_field_idx.x, convergence_offsets);
-    // beam_dist = get_scanline_sample_dist(curr_texel, frame_and_line_field_idx.x);
-    
-    scanline_uv = get_last_scanline_uv(curr_texel, texture_size, wrong_field);
 }
 
 

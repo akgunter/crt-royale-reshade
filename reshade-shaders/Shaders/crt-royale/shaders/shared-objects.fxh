@@ -24,6 +24,14 @@
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/texture-settings.fxh"
 
+
+
+#if __RENDERER__ != 0x9000
+    #define TEXCOORD_OFFSET 0.0
+#else
+    #define TEXCOORD_OFFSET 0.5
+#endif
+
 // The width of the game's content
 #ifndef CONTENT_WIDTH
 	#define CONTENT_WIDTH BUFFER_WIDTH
@@ -294,6 +302,18 @@ texture2D texFreezeFrame {
 };
 sampler2D samplerFreezeFrame { Texture = texFreezeFrame; };
 
+/*
+#define TEX_GEOMETRY_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_GEOMETRY_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_GEOMETRY_SIZE int2(TEX_GEOMETRY_WIDTH, TEX_GEOMETRY_HEIGHT)
+texture2D texGeometry {
+	Width = TEX_GEOMETRY_WIDTH;
+	Height = TEX_GEOMETRY_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerGeometry { Texture = texGeometry; };
+*/
 
 uniform int frame_count < source = "framecount"; >;
 
