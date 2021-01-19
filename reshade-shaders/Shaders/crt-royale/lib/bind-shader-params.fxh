@@ -47,9 +47,69 @@
 
 static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
 
+// ==== PHOSPHOR MASK ====
+#if __RENDERER__ != 0x9000
+    uniform float mask_type <
+        ui_label   = "Mask Type";
+        ui_tooltip = "Selects the phosphor shape";
+        ui_type    = "slider";
+        ui_min     = 0.0;
+        ui_max     = 2.0;
+        ui_step    = 1.0;
+    > = mask_type_static;
+#else
+    #ifndef phosphor_mask_type
+        #define phosphor_mask_type 1
+    #endif
 
+    #define mask_type phosphor_mask_type
+#endif
+
+uniform float mask_sample_mode_desired <
+    ui_label   = "Mask Sample Mode";
+    ui_tooltip = "Selects the phosphor downsampling method";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 2.0;
+    ui_step    = 1.0;
+> = mask_sample_mode_static;
+uniform float lanczos_weight_at_center <
+    ui_label   = "Downsampling Sharpness";
+    ui_tooltip = "Tunes the sharpness of Mask Sample Mode 0";
+    ui_type    = "slider";
+    ui_min     = 0.1;
+    ui_max     = 50.0;
+    ui_step    = 0.1;
+> = 1.0;
+uniform float mask_specify_num_triads <
+    ui_label   = "Mask Specify Num Triads";
+    ui_tooltip = "Switch between using Mask Triad Size or Mask Num Triads";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 1.0;
+> = mask_specify_num_triads_static;
+uniform float mask_triad_size_desired <
+    ui_label   = "Mask Triad Size";
+    ui_tooltip = "The width of a triad";
+    ui_type    = "slider";
+    ui_min     = 3.0;
+    ui_max     = 18.0;
+    ui_step    = 0.1;
+> = mask_triad_size_desired_static;
+uniform float mask_num_triads_desired <
+    ui_label   = "Mask Num Triads";
+    ui_tooltip = "The number of triads in the viewport (horizontally)";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_max     = 1280.0;
+    ui_step    = 1.0;
+> = mask_num_triads_desired_static;
+
+// ==== IMAGE COLORIZATION ====
 uniform float crt_gamma <
     ui_label   = "CRT Gamma";
+    ui_tooltip = "The gamma-level of the inbound content";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -57,6 +117,7 @@ uniform float crt_gamma <
 > = crt_gamma_static;
 uniform float lcd_gamma <
     ui_label   = "LCD Gamma";
+    ui_tooltip = "The gamma-level of the display";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -96,6 +157,201 @@ uniform float bloom_excess <
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = bloom_excess_static;
+
+
+// ==== INTERLACING ====
+uniform float enable_interlacing <
+    ui_label   = "Enable Interlacing";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 1.0;
+> = true;
+uniform float scanline_num_pixels <
+    ui_label   = "Scanline Thickness";
+    ui_type    = "slider";
+    ui_min     = 1.0;
+    ui_max     = 10.0;
+    ui_step    = 1.0;
+> = 2.0;
+uniform float scanline_blend_strength <
+    ui_label   = "Scanline Blend Strength";
+    ui_tooltip = "Removes VSync artifacting by blending the current and previous frames";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 0.01;
+> = 0.0;
+uniform float scanline_blend_gamma <
+    ui_label   = "Scanline Blend Gamma";
+    ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 5.0;
+    ui_step    = 0.01;
+> = 0.95;
+uniform float interlace_bff <
+    ui_label   = "Use Interlace BFF";
+    ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 1.0;
+> = interlace_bff_static;
+uniform float convergence_offset_x_r <
+    ui_label   = "Convergence Offset X R";
+    ui_tooltip   = "Shift the red channel horizontally";
+    ui_type    = "slider";
+    ui_min     = -4.0;
+    ui_max     = 4.0;
+    ui_step    = 0.05;
+> = 0;
+uniform float convergence_offset_x_g <
+    ui_label   = "Convergence Offset X G";
+    ui_tooltip   = "Shift the green channel horizontally";
+    ui_type    = "slider";
+    ui_min     = -4.0;
+    ui_max     = 4.0;
+    ui_step    = 0.05;
+> = 0;
+uniform float convergence_offset_x_b <
+    ui_label   = "Convergence Offset X B";
+    ui_tooltip   = "Shift the blue channel horizontally";
+    ui_type    = "slider";
+    ui_min     = -4.0;
+    ui_max     = 4.0;
+    ui_step    = 0.05;
+> = 0;
+uniform float convergence_offset_y_r <
+    ui_label   = "Convergence Offset Y R";
+    ui_tooltip   = "Shift the red channel vertically";
+    ui_type    = "slider";
+    ui_min     = -2.0;
+    ui_max     = 2.0;
+    ui_step    = 0.05;
+> = 0;
+uniform float convergence_offset_y_g <
+    ui_label   = "Convergence Offset Y G";
+    ui_tooltip   = "Shift the green channel vertically";
+    ui_type    = "slider";
+    ui_min     = -2.0;
+    ui_max     = 2.0;
+    ui_step    = 0.05;
+> = 0;
+uniform float convergence_offset_y_b <
+    ui_label   = "Convergence Offset Y B";
+    ui_tooltip   = "Shift the blue channel vertically";
+    ui_type    = "slider";
+    ui_min     = -2.0;
+    ui_max     = 2.0;
+    ui_step    = 0.05;
+> = 0;
+
+// ==== GEOMETRY ====
+uniform float geom_mode_runtime <
+    ui_label   = "Geom Mode";
+    ui_tooltip   = "Select screen curvature";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 3.0;
+    ui_step    = 1.0;
+> = geom_mode_static;
+uniform float geom_radius <
+    ui_label   = "Geom Radius";
+    ui_tooltip   = "Select screen curvature radius";
+    ui_type    = "slider";
+    ui_min     = 1.0 / (2.0 * pi);
+    ui_max     = 1024;
+    ui_step    = 0.01;
+> = geom_radius_static;
+uniform float geom_view_dist <
+    ui_label   = "Geom View Distance";
+    ui_type    = "slider";
+    ui_min     = 0.5;
+    ui_max     = 1024;
+    ui_step    = 0.01;
+> = geom_view_dist_static;
+uniform float geom_tilt_angle_x <
+    ui_label   = "Geom Tilt Angle X";
+    ui_type    = "slider";
+    ui_min     = -pi;
+    ui_max     = pi;
+    ui_step    = 0.01;
+> = geom_tilt_angle_static.x;
+uniform float geom_tilt_angle_y <
+    ui_label   = "Geom Tilt Angle Y";
+    ui_type    = "slider";
+    ui_min     = -pi;
+    ui_max     = pi;
+    ui_step    = 0.01;
+> = geom_tilt_angle_static.y;
+uniform float geom_aspect_ratio_x <
+    ui_label   = "Geom Aspect Ratio X";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_step    = 0.01;
+> = geom_aspect_ratio_static;
+uniform float geom_aspect_ratio_y <
+    ui_label   = "Geom Aspect Ratio Y";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_step    = 0.01;
+> = 1.0;
+uniform float geom_overscan_x <
+    ui_label   = "Geom Overscan X";
+    ui_type    = "drag";
+    ui_min     = FIX_ZERO(0.0);
+    ui_step    = 0.01;
+> = geom_overscan_static.x;
+uniform float geom_overscan_y <
+    ui_label   = "Geom Overscan Y";
+    ui_type    = "drag";
+    ui_min     = FIX_ZERO(0.0);
+    ui_step    = 0.01;
+> = geom_overscan_static.y;
+
+// ==== ANTI-ALIASING ====
+uniform float aa_subpixel_r_offset_x_runtime <
+    ui_label   = "AA Subpixel R Offet X";
+    ui_type    = "slider";
+    ui_min     = -0.5;
+    ui_max     = 0.5;
+    ui_step    = 0.01;
+> = aa_subpixel_r_offset_static.x;
+uniform float aa_subpixel_r_offset_y_runtime <
+    ui_label   = "AA Subpixel R Offet Y";
+    ui_type    = "slider";
+    ui_min     = -0.5;
+    ui_max     = 0.5;
+    ui_step    = 0.01;
+> = aa_subpixel_r_offset_static.y;
+
+static const float aa_cubic_c = aa_cubic_c_static;
+static const float aa_gauss_sigma = aa_gauss_sigma_static;
+
+// ==== BORDER ====
+uniform float border_size <
+    ui_label   = "Border Size";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 0.5;
+    ui_step    = 0.01;
+> = border_size_static;
+uniform float border_darkness <
+    ui_label   = "Border Darkness";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = border_darkness_static;
+uniform float border_compress <
+    ui_label   = "Border Compress";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = border_compress_static;
+
+
+// ==== ELECTRON BEAM ====
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
     ui_type    = "drag";
@@ -154,241 +410,10 @@ uniform float beam_horiz_linear_rgb_weight <
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = beam_horiz_linear_rgb_weight_static;
-uniform float convergence_offset_x_r <
-    ui_label   = "Convergence Offset X R";
-    ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_x_g <
-    ui_label   = "Convergence Offset X G";
-    ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_x_b <
-    ui_label   = "Convergence Offset X B";
-    ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_y_r <
-    ui_label   = "Convergence Offset Y R";
-    ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_y_g <
-    ui_label   = "Convergence Offset Y G";
-    ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_y_b <
-    ui_label   = "Convergence Offset Y B";
-    ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
-    ui_step    = 0.05;
-> = 0;
 
-#if __RENDERER__ != 0x9000
-    uniform float mask_type <
-        ui_label   = "Mask Type";
-        ui_type    = "slider";
-        ui_min     = 0.0;
-        ui_max     = 2.0;
-        ui_step    = 1.0;
-    > = mask_type_static;
-#else
-    #ifndef phosphor_mask_type
-        #define phosphor_mask_type 1
-    #endif
 
-    #define mask_type phosphor_mask_type
-#endif
 
-uniform float mask_sample_mode_desired <
-    ui_label   = "Mask Sample Mode";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 2.0;
-    ui_step    = 1.0;
-> = mask_sample_mode_static;
-uniform float lanczos_weight_at_center <
-    ui_label   = "Downsampling Sharpness";
-    ui_tooltip = "Tunes the sharpness of Mask Sample Mode 0";
-    ui_type    = "slider";
-    ui_min     = 0.1;
-    ui_max     = 50.0;
-    ui_step    = 0.1;
-> = 1.0;
-uniform float mask_specify_num_triads <
-    ui_label   = "Mask Specify Num Triads";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
-> = mask_specify_num_triads_static;
-uniform float mask_triad_size_desired <
-    ui_label   = "Mask Triad Size";
-    ui_type    = "slider";
-    ui_min     = 3.0;
-    ui_max     = 18.0;
-    ui_step    = 0.1;
-> = mask_triad_size_desired_static;
-uniform float mask_num_triads_desired <
-    ui_label   = "Mask Num Triads";
-    ui_type    = "drag";
-    ui_min     = 1.0;
-    ui_max     = 1280.0;
-    ui_step    = 1.0;
-> = mask_num_triads_desired_static;
-uniform float aa_subpixel_r_offset_x_runtime <
-    ui_label   = "AA Subpixel R Offet X";
-    ui_type    = "slider";
-    ui_min     = -0.5;
-    ui_max     = 0.5;
-    ui_step    = 0.01;
-> = aa_subpixel_r_offset_static.x;
-uniform float aa_subpixel_r_offset_y_runtime <
-    ui_label   = "AA Subpixel R Offet Y";
-    ui_type    = "slider";
-    ui_min     = -0.5;
-    ui_max     = 0.5;
-    ui_step    = 0.01;
-> = aa_subpixel_r_offset_static.y;
 
-static const float aa_cubic_c = aa_cubic_c_static;
-static const float aa_gauss_sigma = aa_gauss_sigma_static;
-
-uniform float geom_mode_runtime <
-    ui_label   = "Geom Mode";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 3.0;
-    ui_step    = 1.0;
-> = geom_mode_static;
-uniform float geom_radius <
-    ui_label   = "Geom Radius";
-    ui_type    = "slider";
-    ui_min     = 1.0 / (2.0 * pi);
-    ui_max     = 1024;
-    ui_step    = 0.01;
-> = geom_radius_static;
-uniform float geom_view_dist <
-    ui_label   = "Geom View Distance";
-    ui_type    = "slider";
-    ui_min     = 0.5;
-    ui_max     = 1024;
-    ui_step    = 0.01;
-> = geom_view_dist_static;
-uniform float geom_tilt_angle_x <
-    ui_label   = "Geom Tilt Angle X";
-    ui_type    = "slider";
-    ui_min     = -pi;
-    ui_max     = pi;
-    ui_step    = 0.01;
-> = geom_tilt_angle_static.x;
-uniform float geom_tilt_angle_y <
-    ui_label   = "Geom Tilt Angle Y";
-    ui_type    = "slider";
-    ui_min     = -pi;
-    ui_max     = pi;
-    ui_step    = 0.01;
-> = geom_tilt_angle_static.y;
-uniform float geom_aspect_ratio_x <
-    ui_label   = "Geom Aspect Ratio X";
-    ui_type    = "drag";
-    ui_min     = 1.0;
-    ui_step    = 0.01;
-> = geom_aspect_ratio_static;
-uniform float geom_aspect_ratio_y <
-    ui_label   = "Geom Aspect Ratio Y";
-    ui_type    = "drag";
-    ui_min     = 1.0;
-    ui_step    = 0.01;
-> = 1.0;
-uniform float geom_overscan_x <
-    ui_label   = "Geom Overscan X";
-    ui_type    = "drag";
-    ui_min     = FIX_ZERO(0.0);
-    ui_step    = 0.01;
-> = geom_overscan_static.x;
-uniform float geom_overscan_y <
-    ui_label   = "Geom Overscan Y";
-    ui_type    = "drag";
-    ui_min     = FIX_ZERO(0.0);
-    ui_step    = 0.01;
-> = geom_overscan_static.y;
-uniform float border_size <
-    ui_label   = "Border Size";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 0.5;
-    ui_step    = 0.01;
-> = border_size_static;
-uniform float border_darkness <
-    ui_label   = "Border Darkness";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = border_darkness_static;
-uniform float border_compress <
-    ui_label   = "Border Compress";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = border_compress_static;
-uniform float enable_interlacing <
-    ui_label   = "Enable Interlacing";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
-> = true;
-uniform float scanline_num_pixels <
-    ui_label   = "Scanline Thickness";
-    ui_type    = "slider";
-    ui_min     = 1.0;
-    ui_max     = 10.0;
-    ui_step    = 1.0;
-> = 2.0;
-uniform float interlace_bff <
-    ui_label   = "Use Interlace BFF";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
-> = interlace_bff_static;
-uniform float scanline_blend_strength <
-    ui_label   = "Scanline Blend Strength";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 0.01;
-> = 0.0;
-uniform float scanline_blend_gamma <
-    ui_label   = "Scanline Blend Gamma";
-    ui_type    = "slider";
-    ui_min     = 0.01;
-    ui_max     = 5.0;
-    ui_step    = 0.01;
-> = 0.95;
-/*
-uniform float interlace_1080i <
-    ui_label   = "Assume 1080 signal is 1080i";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
-> = interlace_1080i_static;
-*/
 
 //  Provide accessors for vector constants that pack scalar uniforms:
 float2 get_aspect_vector(const float geom_aspect_ratio)

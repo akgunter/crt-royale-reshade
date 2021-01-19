@@ -77,7 +77,6 @@ technique CRT_Royale
 			PixelShader = pixelShader1;
 
 			RenderTarget = texVerticalScanlines;
-			// RenderTarget = texGeometry;
 		}
 		// crt-royale-bloom-approx.fxh
 		pass p2
