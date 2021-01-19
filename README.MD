@@ -17,7 +17,7 @@ This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan. It'll probably
 
 #### SETUP
 
-1)  This shader requires ReShade 4.9+. It requires rectangular matrix multiplication that Crosire added in 4.9.
+1)  This shader requires ReShade 4.9+. It requires rectangular matrix multiplication that Crosire added in 4.9. I recommend you calibrate your display's gamma and sharpness. You can use the tests from http://www.lagom.nl/lcd-test/ to do that.
 
 2)  The libretro implementation of crt-royale has the luxury of having the game's true viewport passed directly to it. The ReShade implementation by nature does not. This means the ReShade version by default grabs any letter-boxing as part of its input, and that throws off its geometry and phosphor calculations.
 
@@ -33,7 +33,7 @@ This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan. It'll probably
 
 5)  Use `Enable Interlacing` to toggle all things interlacing. This replaces all of the autodetection logic, so you have complete control over it now. Use `Scanline Thickness` to control the thickness of the scanlines in pixels. If you have problems with your framerate or skipped frames that cause the video to freeze and jitter, use `Scanline Blend Strength` to smooth it out. Setting it to 0 will replicate the original crt-royale behavior, while setting it to 1 will blend the current and previous frames together. At 60 fps, the video should look nearly identical no matter what you set the blend strength to. If the colors are distorted, nudge `Scanline Blend Gamma` a little until the colors look right.
 
-6)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will basically be rounded down to one of these.
+6)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will be rounded down to one of these.
 
 
 #### NOTABLE CHANGES
@@ -43,24 +43,17 @@ For the most part, configuring this implementation of crt-royale should be the s
 There are a handful of notable differences:
 1)  Mask Sample Mode 0 has a new setting `Downsampling Sharpness`. You can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between. I find this particularly useful for the Shadow mask.
 
-2)  The scanline logic is now user-toggleable instead of autodetected, and you can change the thickness of the scanlines if you want.
+2)  The scanline logic is now user-toggleable instead of autodetected, and you can change the thickness of the scanlines if you want. You can now enable frame blending to smooth out VSync artifacting.
 
-3)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
+3)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
 
-4)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
+4)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
-5)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
+5)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
 
-6)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
+6)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
 
-7)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
-
-
-#### QUALITATIVE DIFFERENCES
-
-The biggest change for me is the phosphor mask - it tiles differently in ReShade for some odd reason, although I think it looks better now. The side effect is that setting Mask Sample Mode to 1 was too purple in the libretro implementation while it's arguably too bright now.
-
-I've also noticed that the bloom is more pronounced in this implementation. It might be because of a tweak I made to the write-operation at the end of `crt-royale-bloom-approx.fxh`, but that's just a guess.
+7)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
 
 
 #### REPORTING DISCREPANCIES
