@@ -66,7 +66,6 @@ void pixelShader1(
             texel_0, scanline_0_idx, frame_and_line_field_idx, wrong_field
         );
 
-
         //  Consider 2, 3, 4, or 6 scanlines numbered 0-5: The previous and next
         //  scanlines are numbered 2 and 3.  Get scanline colors colors (ignore
         //  horizontal sampling, since since output_size.x = video_size.x).
@@ -111,7 +110,7 @@ void pixelShader1(
         scanline_intensity += scanline_contrib_n2;
         scanline_intensity += scanline_contrib_p2;
 
-        color = encode_output(float4(scanline_intensity, 1.0), get_intermediate_gamma());
+        color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
     }
     else {
         const float4 sample_color = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma());

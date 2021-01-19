@@ -415,18 +415,26 @@ float get_scanline_pair_start(const float curr_scanline_idx, const float frame_f
 
 float get_beam_center(const float texel_y, const float scanline_idx, const float wrong_field)
 {
-    const float true_center = scanline_idx * scanline_num_pixels + scanline_num_pixels / 2.0;
-    const float direction = texel_y <= true_center ? -1 : 1;
+    if (scanline_num_pixels > 1) {
+        const float true_center = scanline_idx * scanline_num_pixels + scanline_num_pixels / 2.0;
+        const float direction = texel_y <= true_center ? -1 : 1;
+        const float parity_correction = direction * (1 - fmod(scanline_num_pixels, 2.0)) * 0.5;
 
-    const float parity_correction = direction * (1 - fmod(scanline_num_pixels, 2.0)) * 0.5;
-    const float corrected_center = true_center + parity_correction;
-
-    return corrected_center + wrong_field * direction * scanline_num_pixels;
+        return true_center + parity_correction + wrong_field * direction * scanline_num_pixels;
+    }
+    else {
+        return scanline_idx - wrong_field;
+    }
 }
 
 float3 get_dist_from_beam(const float texel_y, const float3 beam_center, const float wrong_field)
 {
-    return abs(texel_y - beam_center) / scanline_num_pixels;
+    if (scanline_num_pixels > 1) {
+        return 0.5 * abs(texel_y - beam_center) / scanline_num_pixels;
+    }
+    else {
+        return 0.5 * float3(texel_y != beam_center.r, texel_y != beam_center.g, texel_y != beam_center.b);
+    }
 }
 
 
