@@ -29,27 +29,13 @@ void lerpScanlinesPS(
 
         // const float4 prev_weight = cur_line_prev_color;
         const float4 avg_color = (cur_line_color + cur_line_prev_color) / 2.0;
-        const float s = wrong_field ? 1 : -1;
-        const float4 color_dev = abs(cur_line_color - avg_color);
-        const float4 delta_c = s * (1 - scanline_blend_strength) * color_dev;
-        // color = encode_output(avg_color + delta_c, get_intermediate_gamma());
-        // color = avg_color + delta_c;
-        color = encode_output(avg_color + delta_c, lerp(1.0, scanline_blend_gamma, scanline_blend_strength));
+        // const float s = wrong_field ? 1 : -1;
+        // const float4 color_dev = abs(cur_line_color - avg_color);
+        // const float4 delta_c = s * (1 - scanline_blend_strength) * color_dev;
+        // color = encode_output(avg_color + delta_c, lerp(1.0, scanline_blend_gamma, scanline_blend_strength));
 
-        /*
-        const float field_offset = cur_scanline_idx % 2 == 0 ? 1 : -1;
-        const float dy = field_offset * float(scanline_num_pixels) / float(CONTENT_HEIGHT_INTERNAL);
-        const float2 sibling_line_coord = float2(texcoord.x, texcoord.y + dy);
-        const float4 sibling_line_color = tex2D_linearize(samplerMaskedScanlines, sibling_line_coord, get_intermediate_gamma());
-
-        const float4 avg_color = (cur_line_color + sibling_line_color) / 2.0;
-
-        const float s = wrong_field == 1 ? 1 : -1;
-        const float4 color_dev = abs(cur_line_color - avg_color);
-        const float4 delta_c = s * scanline_blend_strength * color_dev;
-
-        color = encode_output(cur_line_color + delta_c, get_intermediate_gamma());
-        */
+        const float4 raw_out_color = lerp(cur_line_color, avg_color, scanline_blend_strength);
+        color = encode_output(raw_out_color, lerp(1.0, scanline_blend_gamma, scanline_blend_strength));
     }
     else {
         color = tex2D(samplerBloomHorizontal, texcoord);
