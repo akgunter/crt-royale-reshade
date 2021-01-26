@@ -189,7 +189,7 @@ uniform float scanline_blend_gamma <
     ui_min     = 0.01;
     ui_max     = 5.0;
     ui_step    = 0.01;
-> = 0.95;
+> = 0.96;
 uniform float interlace_bff <
     ui_label   = "Use Interlace BFF";
     ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
