@@ -88,13 +88,6 @@ void pixelShader1(
             texel_0, scanline_0_idx, frame_and_line_field_idx, wrong_field
         );
 
-        //  Consider 2, 3, 4, or 6 scanlines numbered 0-5: The previous and next
-        //  scanlines are numbered 2 and 3.  Get scanline colors colors (ignore
-        //  horizontal sampling, since since output_size.x = video_size.x).
-        //  NOTE: Anisotropic filtering creates interlacing artifacts, which is why
-        //  ORIG_LINEARIZED bobbed any interlaced input before this pass.
-        // const float2 v_step = float2(0.0, scanline_num_pixels / orig_linearized_size.y);
-
         const float raw_beam_center_0 = get_beam_center(texel_0.y, scanline_0_idx, wrong_field);
         const float raw_beam_center_n2 = raw_beam_center_0 - 2*scanline_num_pixels;
         const float raw_beam_center_p2 = raw_beam_center_0 + 2*scanline_num_pixels;

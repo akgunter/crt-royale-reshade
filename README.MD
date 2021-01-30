@@ -8,15 +8,18 @@ The vast majority of the code here is taken from the current libretro shader rep
 [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders)<br>
 [libretro/slang-shaders](https://github.com/libretro/slang-shaders)
 
-Special thanks goes to crosire and co. for their work on ReShade, particularly for adding support for rectangular matrices and for ReShade's built-in debugging tools. Those features made this project orders of magnitude easier. And also thank you, Matsilagi, for your time, suggestions, testing, and debugging.
+Special thanks goes to Matsilagi for his time, suggestions, testing, debugging, and enthusiasm. It's been tremendously helpful, especially in figuring out some of the nastier bugs. Also thank you Crosire and co. for their work on ReShade, particularly for adding support for rectangular matrices and for ReShade's built-in debugging tools. Those features made this project orders of magnitude easier.
 
 
 #### API SUPPORT
 This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan. It'll probably spit out a bunch of yellow error messages in DX9, but that's okay.
 
 
-#### SETUP
+#### SUGGESTED REPOSITORIES
+[Matsilagi/RSRetroArch](https://github.com/Matsilagi/RSRetroArch) - Matsilagi has a chunk of other RetroArch shaders ported over here already. The PAL and NTSC shaders are particularly useful (load them before crt-royale).
 
+
+#### SETUP
 1)  This shader requires ReShade 4.9+. It requires rectangular matrix multiplication that Crosire added in 4.9. I recommend you calibrate your display's gamma and sharpness. You can use the tests from http://www.lagom.nl/lcd-test/ to do that.
 
 2)  The libretro implementation of crt-royale has the luxury of having the game's true viewport passed directly to it. The ReShade implementation by nature does not. This means the ReShade version by default grabs any letter-boxing as part of its input, and that throws off its geometry and phosphor calculations.
@@ -27,25 +30,24 @@ This shader should work with DX9, DX10/11/12, OpenGL, and Vulkan. It'll probably
 
     Be aware that, if you resize the game's viewport, you'll probably have to readjust these settings. You can mitigate this by defining `CONTENT_WIDTH` and `CONTENT_HEIGHT` algebraically in terms of `BUFFER_WIDTH` and `BUFFER_HEIGHT`, but you'll have to figure out the expressions for that on a case by case basis. As an example, if you know the content has a 4:3 aspect ratio and fills the screen vertically, you can define `CONTENT_HEIGHT` as `BUFFER_HEIGHT` and `CONTENT_WIDTH` as `CONTENT_HEIGHT * 4.0 / 3.0`.
 
-3)  Focus primarily on setting the `Mask Type`, `Mask Sample Mode`, and `Mask Triad Size`. Sample Mode 0 tends to be smoother but dimmer, while Mode 1 tends to be sharper and brighter but more prone to artifacts. You'll usually get the best results with triad sizes 3, 6, 9, etc. Multiples of 0.5 also seem to work fairly well, but they might cause color issues. If you're using DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type` instead of a slider.
+3)  Focus primarily on setting the `Mask Type`, `Mask Sample Mode`, and `Mask Triad Width`. Sample Mode "Smooth" tends to be smoother but dimmer, while Mode "Sharp" tends to be sharper and brighter but more prone to artifacts. You'll usually get the best results with triad sizes 3, 6, 9, etc. Multiples of 0.5 also seem to work fairly well, but they might cause color issues. If you're using DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type` instead of a slider. Valid values for that are 0, 1, and 2 or "GRILLE", "SLOT", and "SHADOW".
 
 4)  Use the `USE_LARGE_PHOSPHOR_MASK` preprocessor definition to fix some artifacting with the phosphor mask. If you want a triad size larger than 8, you must set `USE_LARGE_PHOSPHOR_MASK` to 1, or you will get artifacts. If you have artifacting or color issues with a triad size of 3-8, try setting `USE_LARGE_PHOSPHOR_MASK` to 0.
 
 5)  Use `Enable Interlacing` to toggle all things interlacing. This replaces all of the autodetection logic, so you have complete control over it now. Use `Scanline Thickness` to control the thickness of the scanlines in pixels. If you have problems with your framerate or skipped frames that cause the video to freeze and jitter, use `Scanline Blend Strength` to smooth it out. Setting it to 0 will replicate the original crt-royale behavior, while setting it to 1 will blend the current and previous frames together. At 60 fps, the video should look nearly identical no matter what you set the blend strength to. If the colors are distorted, nudge `Scanline Blend Gamma` a little until the colors look right.
 
-6)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will be rounded down to one of these.
+6)  Geom Mode, Geom Radius, and the `antialias_level` preprocessor definition are worth playing with; but I strongly recommend setting `CONTENT_HEIGHT` and `CONTENT_WIDTH` first. Meaningful values for `antialias_level` are 0, 1, 5, 6, 7, 8, 12, 16, 20, and 24. Values in between these will be rounded down.
 
 
 #### NOTABLE CHANGES
-
 For the most part, configuring this implementation of crt-royale should be the same as configuring the libretro versions, so refer to any past experience or to the existing documentation for help with that. I've left almost all of the code's comments intact, so you can also scroll through that for descriptions of the various preprocessor definitions. You should be able to find all of them in `user-settings.fxh`, `derived-settings-and-constants.fxh`, `bind-shader-params.fxh`, and `shared-objects.fxh`. The main difference is that you configure many preprocessor definitions by setting them to integer values rather than just defining them. This is to let users set them from ReShade's UI instead of editing the source code.
 
 There are a handful of notable differences:
-1)  Mask Sample Mode 0 has a new setting `Downsampling Sharpness`. You can use it to make Mode 0 look more similar to Mode 1 if you prefer something in between. I find this particularly useful for the Shadow mask.
+1)  Mask Sample Mode "Smooth" has a new setting `Downsampling Sharpness`. You can use it to make Mode "Smooth" look more similar to Mode "Sharp" if you prefer something in between. I find this particularly useful for the Shadow mask.
 
 2)  The scanline logic is now user-toggleable instead of autodetected, and you can change the thickness of the scanlines if you want. You can now enable frame blending to smooth out VSync artifacting.
 
-3)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask.
+3)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask. You can also type "GRILLE", "SLOT", or "SHADOW" if you prefer.
 
 4)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
@@ -57,7 +59,6 @@ There are a handful of notable differences:
 
 
 #### REPORTING DISCREPANCIES
-
 Please be aware that, because ReShade and RetroArch shaders work so differently, it won't be possible to replicate the libretro version's output perfectly. There simply are too many low-level differences in too many bits of math to achieve a pixel-perfect port, especially now that I've rewritten the scanline logic to be variable-width. That being said, you should be able to get pretty darn close.
 
 Obviously my top-priority is to make sure there aren't any breaking issues. If a configuration completely breaks the shader or crashes the game, I need to know about it. Similarly, if there's a configuration that runs well in RetroArch but is unplayably laggy in ReShade, I need to know about it. The same is true for configurations that completely screw up color balance in some stupid way (e.g. setting the Scanline Width to 2 used to throw off the brightness/gamma horribly, but 1 and 3+ were alright). Discrepancies that I won't be able to fix include occassional crushing in shadows, the bloom effect being more potent in places, or the scanlines being slightly different. These go back to limitations of ReShade and those aforementioned functional differences.

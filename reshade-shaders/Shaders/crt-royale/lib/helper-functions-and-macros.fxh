@@ -1,5 +1,5 @@
-#ifndef _ROOT_LEVEL_FUNCTIONS_H
-#define _ROOT_LEVEL_FUNCTIONS_H
+#ifndef _HELPER_FUNCTIONS_AND_MACROS_H
+#define _HELPER_FUNCTIONS_AND_MACROS_H
 
 /////////////////////////////////  MIT LICENSE  ////////////////////////////////
 
@@ -70,4 +70,4 @@ float fmod(float x, float y)
 }
 
 
-#endif  //  _ROOT_LEVEL_FUNCTIONS_H
+#endif  //  _HELPER_FUNCTIONS_AND_MACROS_H

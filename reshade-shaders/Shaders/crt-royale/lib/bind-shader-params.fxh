@@ -49,48 +49,51 @@ static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
 
 // ==== PHOSPHOR MASK ====
 #if __RENDERER__ != 0x9000
-    uniform float mask_type <
+    uniform int mask_type <
         ui_label   = "Mask Type";
         ui_tooltip = "Selects the phosphor shape";
-        ui_type    = "slider";
-        ui_min     = 0.0;
-        ui_max     = 2.0;
-        ui_step    = 1.0;
+        ui_type    = "combo";
+        ui_items   = "Grille\0"
+                     "Slot\0"
+                     "Shadow\0";
     > = mask_type_static;
 #else
+    #define GRILLE 0
+    #define SLOT 1
+    #define SHADOW 2
+
     #ifndef phosphor_mask_type
-        #define phosphor_mask_type 1
+        #define phosphor_mask_type SLOT
     #endif
 
     #define mask_type phosphor_mask_type
 #endif
 
-uniform float mask_sample_mode_desired <
+uniform int mask_sample_mode_desired <
     ui_label   = "Mask Sample Mode";
     ui_tooltip = "Selects the phosphor downsampling method";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 2.0;
-    ui_step    = 1.0;
+    ui_type    = "combo";
+    ui_items   = "Smooth (Lanczos)\0"
+                 "Sharp (Point)\0"
+                 "Debug\0";
 > = mask_sample_mode_static;
 uniform float lanczos_weight_at_center <
     ui_label   = "Downsampling Sharpness";
-    ui_tooltip = "Tunes the sharpness of Mask Sample Mode 0";
+    ui_tooltip = "Tunes the sharpness of the Smooth Mask Sample Mode";
     ui_type    = "slider";
     ui_min     = 0.1;
     ui_max     = 50.0;
     ui_step    = 0.1;
 > = 1.0;
-uniform float mask_specify_num_triads <
-    ui_label   = "Mask Specify Num Triads";
+uniform int mask_specify_num_triads <
+    ui_label   = "Mask Size Param";
     ui_tooltip = "Switch between using Mask Triad Size or Mask Num Triads";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
+    ui_type    = "combo";
+    ui_items   = "Triad Width\0"
+                 "Num Triads Across\0";
 > = mask_specify_num_triads_static;
 uniform float mask_triad_size_desired <
-    ui_label   = "Mask Triad Size";
+    ui_label   = "Mask Triad Width";
     ui_tooltip = "The width of a triad";
     ui_type    = "slider";
     ui_min     = 3.0;
@@ -98,7 +101,7 @@ uniform float mask_triad_size_desired <
     ui_step    = 0.1;
 > = mask_triad_size_desired_static;
 uniform float mask_num_triads_desired <
-    ui_label   = "Mask Num Triads";
+    ui_label   = "Mask Num Triads Across";
     ui_tooltip = "The number of triads in the viewport (horizontally)";
     ui_type    = "drag";
     ui_min     = 1.0;
@@ -160,12 +163,10 @@ uniform float bloom_excess <
 
 
 // ==== INTERLACING ====
-uniform float enable_interlacing <
+uniform int enable_interlacing <
     ui_label   = "Enable Interlacing";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
+    ui_type    = "combo";
+    ui_items   = "No\0Yes\0";
 > = true;
 uniform float scanline_num_pixels <
     ui_label   = "Scanline Thickness";
@@ -190,75 +191,42 @@ uniform float scanline_blend_gamma <
     ui_max     = 5.0;
     ui_step    = 0.01;
 > = 0.96;
-uniform float interlace_bff <
+uniform int interlace_bff <
+    ui_type    = "combo";
     ui_label   = "Use Interlace BFF";
     ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 1.0;
+    ui_items   = "No\0Yes\0";
 > = interlace_bff_static;
-uniform float convergence_offset_x_r <
-    ui_label   = "Convergence Offset X R";
-    ui_tooltip   = "Shift the red channel horizontally";
+uniform float3 convergence_offset_x <
+    ui_label   = "Convergence Offset X RGB";
+    ui_tooltip = "Shift the color channels horizontally";
     ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.05;
+    ui_min     = float3(-4, -4, -4);
+    ui_max     = float3(4, 4, 4);
+    ui_step    = float3(0.05, 0.05, 0.05);
 > = 0;
-uniform float convergence_offset_x_g <
-    ui_label   = "Convergence Offset X G";
-    ui_tooltip   = "Shift the green channel horizontally";
+uniform float3 convergence_offset_y <
+    ui_label   = "Convergence Offset Y RGB";
+    ui_tooltip = "Shift the color channels vertically";
     ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_x_b <
-    ui_label   = "Convergence Offset X B";
-    ui_tooltip   = "Shift the blue channel horizontally";
-    ui_type    = "slider";
-    ui_min     = -4.0;
-    ui_max     = 4.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_y_r <
-    ui_label   = "Convergence Offset Y R";
-    ui_tooltip   = "Shift the red channel vertically";
-    ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_y_g <
-    ui_label   = "Convergence Offset Y G";
-    ui_tooltip   = "Shift the green channel vertically";
-    ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
-    ui_step    = 0.05;
-> = 0;
-uniform float convergence_offset_y_b <
-    ui_label   = "Convergence Offset Y B";
-    ui_tooltip   = "Shift the blue channel vertically";
-    ui_type    = "slider";
-    ui_min     = -2.0;
-    ui_max     = 2.0;
-    ui_step    = 0.05;
+    ui_min     = float3(-2, -2, -2);
+    ui_max     = float3(2, 2, 2);
+    ui_step    = float3(0.05, 0.05, 0.05);
 > = 0;
 
 // ==== GEOMETRY ====
-uniform float geom_mode_runtime <
+uniform int geom_mode_runtime <
     ui_label   = "Geom Mode";
-    ui_tooltip   = "Select screen curvature";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 3.0;
-    ui_step    = 1.0;
+    ui_tooltip = "Select screen curvature";
+    ui_type    = "combo";
+    ui_items   = "Flat\0"
+                 "Spherical\0"
+                 "Spherical (Alt)\0"
+                 "Cylindrical (Trinitron)\0";
 > = geom_mode_static;
 uniform float geom_radius <
     ui_label   = "Geom Radius";
-    ui_tooltip   = "Select screen curvature radius";
+    ui_tooltip = "Select screen curvature radius";
     ui_type    = "slider";
     ui_min     = 1.0 / (2.0 * pi);
     ui_max     = 1024;
@@ -271,60 +239,34 @@ uniform float geom_view_dist <
     ui_max     = 1024;
     ui_step    = 0.01;
 > = geom_view_dist_static;
-uniform float geom_tilt_angle_x <
-    ui_label   = "Geom Tilt Angle X";
+uniform float2 geom_tilt_angle <
+    ui_label   = "Geom Tilt Angle XY";
     ui_type    = "slider";
     ui_min     = -pi;
     ui_max     = pi;
     ui_step    = 0.01;
-> = geom_tilt_angle_static.x;
-uniform float geom_tilt_angle_y <
-    ui_label   = "Geom Tilt Angle Y";
-    ui_type    = "slider";
-    ui_min     = -pi;
-    ui_max     = pi;
-    ui_step    = 0.01;
-> = geom_tilt_angle_static.y;
-uniform float geom_aspect_ratio_x <
-    ui_label   = "Geom Aspect Ratio X";
+> = geom_tilt_angle_static;
+uniform float2 geom_aspect_ratio <
+    ui_label   = "Geom Aspect Ratio XY";
     ui_type    = "drag";
     ui_min     = 1.0;
     ui_step    = 0.01;
-> = geom_aspect_ratio_static;
-uniform float geom_aspect_ratio_y <
-    ui_label   = "Geom Aspect Ratio Y";
-    ui_type    = "drag";
-    ui_min     = 1.0;
-    ui_step    = 0.01;
-> = 1.0;
-uniform float geom_overscan_x <
-    ui_label   = "Geom Overscan X";
+> = float2(geom_aspect_ratio_static, 1);
+uniform float2 geom_overscan <
+    ui_label   = "Geom Overscan XY";
     ui_type    = "drag";
     ui_min     = FIX_ZERO(0.0);
     ui_step    = 0.01;
-> = geom_overscan_static.x;
-uniform float geom_overscan_y <
-    ui_label   = "Geom Overscan Y";
-    ui_type    = "drag";
-    ui_min     = FIX_ZERO(0.0);
-    ui_step    = 0.01;
-> = geom_overscan_static.y;
+> = geom_overscan_static;
 
 // ==== ANTI-ALIASING ====
-uniform float aa_subpixel_r_offset_x_runtime <
-    ui_label   = "AA Subpixel R Offet X";
+uniform float2 aa_subpixel_r_offset_runtime <
+    ui_label   = "AA Subpixel R Offet XY";
     ui_type    = "slider";
     ui_min     = -0.5;
     ui_max     = 0.5;
     ui_step    = 0.01;
-> = aa_subpixel_r_offset_static.x;
-uniform float aa_subpixel_r_offset_y_runtime <
-    ui_label   = "AA Subpixel R Offet Y";
-    ui_type    = "slider";
-    ui_min     = -0.5;
-    ui_max     = 0.5;
-    ui_step    = 0.01;
-> = aa_subpixel_r_offset_static.y;
+> = aa_subpixel_r_offset_static;
 
 static const float aa_cubic_c = aa_cubic_c_static;
 static const float aa_gauss_sigma = aa_gauss_sigma_static;
@@ -396,12 +338,13 @@ uniform float beam_horiz_sigma <
     ui_min     = FIX_ZERO(0.0);
     ui_step    = 0.01;
 > = beam_horiz_sigma_static;
-uniform float beam_horiz_filter <
+uniform int beam_horiz_filter <
     ui_label   = "Beam Horiz Filter";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 2.0;
-    ui_step    = 1.0;
+    ui_tooltip = "Default is Quilez";
+    ui_type    = "combo";
+    ui_items   = "Quilez\0"
+                 "Gaussian\0"
+                 "Lanczos\0";
 > = beam_horiz_filter_static;
 uniform float beam_horiz_linear_rgb_weight <
     ui_label   = "Beam Horiz Linear RGB Weight";
@@ -429,39 +372,37 @@ float2 get_aspect_vector(const float geom_aspect_ratio)
 
 float2 get_geom_overscan_vector()
 {
-    return float2(geom_overscan_x, geom_overscan_y);
+    return geom_overscan;
 }
 
 float2 get_geom_tilt_angle_vector()
 {
-    return float2(geom_tilt_angle_x, geom_tilt_angle_y);
+    return geom_tilt_angle;
 }
 
 float3 get_convergence_offsets_x_vector()
 {
-    return float3(convergence_offset_x_r, convergence_offset_x_g,
-        convergence_offset_x_b);
+    return convergence_offset_x;
 }
 
 float3 get_convergence_offsets_y_vector()
 {
-    return float3(convergence_offset_y_r, convergence_offset_y_g,
-        convergence_offset_y_b);
+    return convergence_offset_y;
 }
 
 float2 get_convergence_offsets_r_vector()
 {
-    return float2(convergence_offset_x_r, convergence_offset_y_r);
+    return float2(convergence_offset_x.r, convergence_offset_y.r);
 }
 
 float2 get_convergence_offsets_g_vector()
 {
-    return float2(convergence_offset_x_g, convergence_offset_y_g);
+    return float2(convergence_offset_x.g, convergence_offset_y.g);
 }
 
 float2 get_convergence_offsets_b_vector()
 {
-    return float2(convergence_offset_x_b, convergence_offset_y_b);
+    return float2(convergence_offset_x.b, convergence_offset_y.b);
 }
 
 float2 get_aa_subpixel_r_offset()
@@ -469,8 +410,7 @@ float2 get_aa_subpixel_r_offset()
     #if _RUNTIME_ANTIALIAS_WEIGHTS
         #if _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
             //  WARNING: THIS IS EXTREMELY EXPENSIVE.
-            return float2(aa_subpixel_r_offset_x_runtime,
-                aa_subpixel_r_offset_y_runtime);
+            return aa_subpixel_r_offset_runtime;
         #else
             return aa_subpixel_r_offset_static;
         #endif
