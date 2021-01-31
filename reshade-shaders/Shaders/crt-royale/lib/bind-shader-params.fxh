@@ -135,6 +135,7 @@ uniform float levels_contrast <
 > = levels_contrast_static;
 uniform float halation_weight <
     ui_label   = "Halation";
+    ui_tooltip = "Desaturation due to eletrons exciting the wrong phosphors";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;
@@ -142,6 +143,7 @@ uniform float halation_weight <
 > = halation_weight_static;
 uniform float diffusion_weight <
     ui_label   = "Diffusion";
+    ui_tooltip = "Blurring due to refraction from the screen's glass";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;
@@ -149,12 +151,14 @@ uniform float diffusion_weight <
 > = diffusion_weight_static;
 uniform float bloom_underestimate_levels <
     ui_label   = "Bloom Underestimation";
+    ui_tooltip = "Scale the bloom effect's intensity";
     ui_type    = "drag";
     ui_min     = FIX_ZERO(0.0);
     ui_step    = 0.01;
 > = bloom_underestimate_levels_static;
 uniform float bloom_excess <
     ui_label   = "Bloom Excess";
+    ui_tooltip = "Extra bloom applied to all colors";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;
@@ -193,7 +197,7 @@ uniform float scanline_blend_gamma <
 > = 0.93;
 uniform int interlace_bff <
     ui_type    = "combo";
-    ui_label   = "Use Interlace BFF";
+    ui_label   = "Draw Back-Field First";
     ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
     ui_items   = "No\0Yes\0";
 > = interlace_bff_static;
@@ -241,7 +245,6 @@ uniform float geom_view_dist <
 > = geom_view_dist_static;
 uniform float2 geom_tilt_angle <
     ui_label   = "Geom Tilt Angle XY";
-    ui_tooltip = "Tilt the screen";
     ui_type    = "slider";
     ui_min     = -pi;
     ui_max     = pi;
@@ -341,20 +344,22 @@ uniform float beam_shape_power <
     ui_step    = 0.01;
 > = beam_shape_power_static;
 */
-uniform float beam_horiz_sigma <
-    ui_label   = "Beam Horiz Sigma";
-    ui_type    = "drag";
-    ui_min     = FIX_ZERO(0.0);
-    ui_step    = 0.01;
-> = beam_horiz_sigma_static;
 uniform int beam_horiz_filter <
     ui_label   = "Beam Horiz Filter";
     ui_tooltip = "Default is Quilez";
     ui_type    = "combo";
-    ui_items   = "Quilez\0"
-                 "Gaussian\0"
-                 "Lanczos\0";
+    ui_items   = "Quilez (Fast)\0"
+                 "Gaussian (Tunable)\0"
+                 "Lanczos (Sharp)\0";
 > = beam_horiz_filter_static;
+uniform float beam_horiz_sigma <
+    ui_label   = "Beam Horiz Sigma";
+    ui_tooltip = "Requires Gaussian Horiz Filter";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 0.67;
+    ui_step    = 0.01;
+> = beam_horiz_sigma_static;
 uniform float beam_horiz_linear_rgb_weight <
     ui_label   = "Beam Horiz Linear RGB Weight";
     ui_type    = "slider";
