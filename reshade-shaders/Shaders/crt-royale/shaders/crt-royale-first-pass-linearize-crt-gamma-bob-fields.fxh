@@ -53,10 +53,6 @@ void pixelShader0(
 
     out float4 color : SV_Target
 ) {
-
-    // const float2 texcoord_cropped = texcoord * content_size / buffer_size + offset;
-    // color = tex2D(samplerColor, texcoord_cropped);
-
     //  Linearize the input based on CRT gamma and bob interlaced fields.
     //  Bobbing ensures we can immediately blur without getting artifacts.
     //  Note: TFF/BFF won't matter for sources that double-weave or similar.
@@ -91,11 +87,18 @@ void pixelShader0(
         const float wrong_field = curr_line_is_wrong_field(curr_scanline_idx);
         const float3 selected_color = lerp(in_field_interpolated_line, out_field_interpolated_line, wrong_field);
 
-        // color = encode_output(float4(selected_color, 1.0), 1.0);
         color = encode_output(float4(selected_color, 1.0), get_intermediate_gamma());
     }
     else
     {
-        color = encode_output(tex2D_linearize(samplerCrop, texcoord, get_input_gamma()), get_intermediate_gamma());
+        float curr_scanline_idx = get_curr_scanline_idx(texcoord.y, content_size.y);
+        float curr_scanline_start_y = curr_scanline_idx * scanline_num_pixels / content_size.y;
+        float3 in_field_interpolated_line = get_bobbed_scanline_sample(
+            samplerCrop, texcoord,
+            curr_scanline_start_y, v_step.y,
+            get_input_gamma()
+        );
+
+        color = encode_output(float4(in_field_interpolated_line, 1.0), get_intermediate_gamma());
     }
 }

@@ -112,7 +112,7 @@ uniform float mask_num_triads_desired <
 // ==== IMAGE COLORIZATION ====
 uniform float crt_gamma <
     ui_label   = "CRT Gamma";
-    ui_tooltip = "The gamma-level of the inbound content";
+    ui_tooltip = "The gamma-level of the original content";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -120,7 +120,7 @@ uniform float crt_gamma <
 > = crt_gamma_static;
 uniform float lcd_gamma <
     ui_label   = "LCD Gamma";
-    ui_tooltip = "The gamma-level of the display";
+    ui_tooltip = "The gamma-level of your display";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -190,7 +190,7 @@ uniform float scanline_blend_gamma <
     ui_min     = 0.01;
     ui_max     = 5.0;
     ui_step    = 0.01;
-> = 0.96;
+> = 0.93;
 uniform int interlace_bff <
     ui_type    = "combo";
     ui_label   = "Use Interlace BFF";
@@ -201,17 +201,17 @@ uniform float3 convergence_offset_x <
     ui_label   = "Convergence Offset X RGB";
     ui_tooltip = "Shift the color channels horizontally";
     ui_type    = "slider";
-    ui_min     = float3(-4, -4, -4);
-    ui_max     = float3(4, 4, 4);
-    ui_step    = float3(0.05, 0.05, 0.05);
+    ui_min     = -4;
+    ui_max     = 4;
+    ui_step    = 0.05;
 > = 0;
 uniform float3 convergence_offset_y <
     ui_label   = "Convergence Offset Y RGB";
     ui_tooltip = "Shift the color channels vertically";
     ui_type    = "slider";
-    ui_min     = float3(-2, -2, -2);
-    ui_max     = float3(2, 2, 2);
-    ui_step    = float3(0.05, 0.05, 0.05);
+    ui_min     = -4;
+    ui_max     = 4;
+    ui_step    = 0.05;
 > = 0;
 
 // ==== GEOMETRY ====
@@ -241,6 +241,7 @@ uniform float geom_view_dist <
 > = geom_view_dist_static;
 uniform float2 geom_tilt_angle <
     ui_label   = "Geom Tilt Angle XY";
+    ui_tooltip = "Tilt the screen";
     ui_type    = "slider";
     ui_min     = -pi;
     ui_max     = pi;

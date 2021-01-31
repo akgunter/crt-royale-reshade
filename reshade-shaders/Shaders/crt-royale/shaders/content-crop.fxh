@@ -44,7 +44,7 @@ void cropContentPixelShader(
     out float4 color : SV_Target
 ) {
     const float2 texcoord_cropped = texcoord * content_size / buffer_size + content_offset;
-    color = tex2D(samplerColor, texcoord_cropped);
+    color = tex2D(ReShade::BackBuffer, texcoord_cropped);
 }
 
 void uncropContentPixelShader(

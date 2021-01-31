@@ -33,7 +33,7 @@ void newPixelShader7(
     
     out float4 color : SV_Target
 ) {
-    const float2 scanline_texture_size = tex2Dsize(samplerVerticalScanlines);
+    const float2 scanline_texture_size = tex2Dsize(samplerVerticalOffset);
     // const float2 output_size = tex2Dsize(samplerMaskedScanlines);
     const float2 output_size = TEX_MASKEDSCANLINES_SIZE;
 
@@ -48,7 +48,7 @@ void newPixelShader7(
     //  Horizontally sample the current row (a vertically interpolated scanline)
     //  and account for horizontal convergence offsets, given in units of texels.
     const float3 scanline_color_dim = sample_rgb_scanline_horizontal(
-        samplerVerticalScanlines, texcoord,
+        samplerVerticalOffset, texcoord,
         scanline_texture_size, scanline_texture_size_inv);
     const float auto_dim_factor = levels_autodim_temp;
 

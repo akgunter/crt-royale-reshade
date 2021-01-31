@@ -26,8 +26,8 @@
 #if !CONTENT_BOX_VISIBLE
 	#include "crt-royale/shaders/content-crop.fxh"
 	#include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
-	// #include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
-	#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing-new.fxh"
+	#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
+	// #include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing-new.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
@@ -48,14 +48,14 @@ technique CRT_Royale
 	// Toggle the content box to help users configure it
 	#if CONTENT_BOX_VISIBLE
 		// content-box.fxh
-		pass contentBox
+		pass contentBoxPass
 		{
 			VertexShader = PostProcessVS;
 			PixelShader = contentBoxPixelShader;
 		}
 	#else
 		// content-crop.fxh
-		pass crop
+		pass cropPass
 		{
 			VertexShader = PostProcessVS;
 			PixelShader = cropContentPixelShader;
@@ -63,7 +63,7 @@ technique CRT_Royale
 			RenderTarget = texCrop;
 		}
 		// crt-royale-first-pass-linearize-crt-gamma-bob-fields.fx
-		pass p0
+		pass linearizeAndBobPass
 		{
 			VertexShader = vertexShader0;
 			PixelShader = pixelShader0;
@@ -71,15 +71,21 @@ technique CRT_Royale
 			RenderTarget = texOrigLinearized;
 		}
 		// crt-royale-scanlines-vertical-interlacing.fxh
-		pass p1
+		pass verticalBeamPass
 		{
-			VertexShader = vertexShader1;
+			VertexShader = PostProcessVS;
 			PixelShader = pixelShader1;
 
 			RenderTarget = texVerticalScanlines;
 		}
+		pass verticalOffsetPass {
+			VertexShader = PostProcessVS;
+			PixelShader = verticalOffsetPS;
+
+			RenderTarget = texVerticalOffset;
+		}
 		// crt-royale-bloom-approx.fxh
-		pass p2
+		pass bloomApproxPass
 		{
 			VertexShader = PostProcessVS;
 			PixelShader = pixelShader2;
@@ -87,7 +93,7 @@ technique CRT_Royale
 			RenderTarget = texBloomApprox;
 		}
 		// blur9fast-vertical.fxh
-		pass p3
+		pass blurVerticalPass
 		{
 			VertexShader = vertexShader3;
 			PixelShader = pixelShader3;
@@ -95,7 +101,7 @@ technique CRT_Royale
 			RenderTarget = texBlurVertical;
 		}
 		// blur9fast-horizontal.fxh
-		pass p4
+		pass blurHorizontalPass
 		{
 			VertexShader = vertexShader4;
 			PixelShader = pixelShader4;
@@ -103,7 +109,7 @@ technique CRT_Royale
 			RenderTarget = texBlurHorizontal;
 		}
 		// crt-royale-mask-resize.fxh
-		pass p5
+		pass phosphorMaskResizeVerticalPass
 		{
 			VertexShader = maskResizeVertVS;
 			PixelShader = maskResizeVertPS;
@@ -111,7 +117,7 @@ technique CRT_Royale
 			RenderTarget = texMaskResizeVertical;
 		}
 		// crt-royale-mask-resize.fxh
-		pass p6
+		pass phosphorMaskResizeHorizontalPass
 		{
 			VertexShader = maskResizeHorizVS;
 			PixelShader = maskResizeHorizPS;
@@ -119,7 +125,7 @@ technique CRT_Royale
 			RenderTarget = texMaskResizeHorizontal;
 		}
 		// crt-royale-scanlines-horizontal-apply-mask-new.fxh
-		pass p7
+		pass phosphorMaskPass
 		{
 			VertexShader = PostProcessVS;
 			PixelShader = newPixelShader7;
@@ -127,7 +133,7 @@ technique CRT_Royale
 			RenderTarget = texMaskedScanlines;
 		}
 		// crt-royale-brightpass.fxh
-		pass p8
+		pass brightpassPass
 		{
 			VertexShader = vertexShader8;
 			PixelShader = pixelShader8;
@@ -135,7 +141,7 @@ technique CRT_Royale
 			RenderTarget = texBrightpass;
 		}
 		// crt-royale-bloom-vertical.fxh
-		pass p9
+		pass bloomVerticalPass
 		{
 			VertexShader = vertexShader9;
 			PixelShader = pixelShader9;
@@ -143,7 +149,7 @@ technique CRT_Royale
 			RenderTarget = texBloomVertical;
 		}
 		// crt-royale-bloom-horizontal-reconstitute.fxh
-		pass p10
+		pass bloomHorizontalPass
 		{
 			VertexShader = vertexShader10;
 			PixelShader = pixelShader10;
@@ -165,10 +171,13 @@ technique CRT_Royale
 			PixelShader = freezeFramePS;
 
 			RenderTarget = texFreezeFrame;
+
+			// Explicitly disable clearing render targets
+			//   scanlineBlendPass will not work properly if this ever defaults to true
 			ClearRenderTargets = false;
 		}
 		// crt-royale-geometry-aa-last-pass.fxh
-		pass p11
+		pass geometryPass
 		{
 			VertexShader = vertexShader11;
 			PixelShader = pixelShader11;
@@ -176,7 +185,7 @@ technique CRT_Royale
 			RenderTarget = texGeometry;
 		}
 		// content-crop.fxh
-		pass uncrop
+		pass uncropPass
 		{
 			VertexShader = PostProcessVS;
 			PixelShader = uncropContentPixelShader;

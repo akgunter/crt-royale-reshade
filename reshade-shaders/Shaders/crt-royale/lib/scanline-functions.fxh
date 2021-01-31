@@ -82,15 +82,13 @@ float3 get_gaussian_sigma(const float3 color, const float sigma_range)
     if(beam_spot_shape_function < 0.5)
     {
         //  Use a power function:
-        return float3(beam_min_sigma, beam_min_sigma, beam_min_sigma) + sigma_range *
-            pow(color, float3(beam_spot_power, beam_spot_power, beam_spot_power));
+        return beam_min_sigma + sigma_range * pow(color, beam_spot_power);
     }
     else
     {
         //  Use a spherical function:
-        const float3 color_minus_1 = color - float3(1.0, 1.0, 1.0);
-        return float3(beam_min_sigma, beam_min_sigma, beam_min_sigma) + sigma_range *
-            sqrt(float3(1.0, 1.0, 1.0) - color_minus_1*color_minus_1);
+        const float3 color_minus_1 = color - 1;
+        return beam_min_sigma + sigma_range * sqrt(1.0 - color_minus_1*color_minus_1);
     }
 }
 
@@ -120,7 +118,7 @@ float3 get_generalized_gaussian_beta(const float3 color,
     //      beta widen and sharpen peaks at the risk of aliasing.
     //  Unlike high beam_spot_powers, high beam_shape_powers actually soften shape
     //  transitions, whereas lower ones sharpen them (at the risk of aliasing).
-    return beam_min_shape + shape_range * pow(color, float3(beam_shape_power, beam_shape_power, beam_shape_power));
+    return beam_min_shape + shape_range * pow(color, beam_shape_power);
 }
 
 float3 get_raw_interpolated_color(const float3 color0,
@@ -169,18 +167,18 @@ float3 get_interpolated_linear_color(const float3 color0, const float3 color1,
     #ifdef SCANLINES_BRANCH_FOR_LINEAR_RGB_WEIGHT
         //  beam_horiz_linear_rgb_weight is static, so we can branch:
         #ifdef GAMMA_ENCODE_EVERY_FBO
-            const float3 gamma_mixed_color = pow(get_raw_interpolated_color(
-                color0, color1, color2, color3, weights), float3(intermediate_gamma, intermediate_gamma, intermediate_gamma));
+            const float3 gamma_mixed_color = pow(
+                get_raw_interpolated_color(color0, color1, color2, color3, weights),
+                intermediate_gamma);
             if(beam_horiz_linear_rgb_weight > 0.0)
             {
                 const float3 linear_mixed_color = get_raw_interpolated_color(
-                    pow(color0, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
-                    pow(color1, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
-                    pow(color2, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
-                    pow(color3, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
+                    pow(color0, intermediate_gamma),
+                    pow(color1, intermediate_gamma),
+                    pow(color2, intermediate_gamma),
+                    pow(color3, intermediate_gamma),
                     weights);
-                return lerp(gamma_mixed_color, linear_mixed_color,
-                    beam_horiz_linear_rgb_weight);
+                return lerp(gamma_mixed_color, linear_mixed_color, beam_horiz_linear_rgb_weight);
             }
             else
             {
@@ -192,13 +190,12 @@ float3 get_interpolated_linear_color(const float3 color0, const float3 color1,
             if(beam_horiz_linear_rgb_weight < 1.0)
             {
                 const float3 gamma_mixed_color = get_raw_interpolated_color(
-                    pow(color0, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
-                    pow(color1, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
-                    pow(color2, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
-                    pow(color3, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
+                    pow(color0, inv_intermediate_gamma),
+                    pow(color1, inv_intermediate_gamma),
+                    pow(color2, inv_intermediate_gamma),
+                    pow(color3, inv_intermediate_gamma),
                     weights);
-                return lerp(gamma_mixed_color, linear_mixed_color,
-                    beam_horiz_linear_rgb_weight);
+                return lerp(gamma_mixed_color, linear_mixed_color, beam_horiz_linear_rgb_weight);
             }
             else
             {
@@ -211,22 +208,21 @@ float3 get_interpolated_linear_color(const float3 color0, const float3 color1,
             const float3 gamma_mixed_color = pow(get_raw_interpolated_color(
                 color0, color1, color2, color3, weights), intermediate_gamma);
             const float3 linear_mixed_color = get_raw_interpolated_color(
-                pow(color0, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
-                pow(color1, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
-                pow(color2, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
-                pow(color3, float3(intermediate_gamma, intermediate_gamma, intermediate_gamma)),
+                pow(color0, intermediate_gamma),
+                pow(color1, intermediate_gamma),
+                pow(color2, intermediate_gamma),
+                pow(color3, intermediate_gamma),
                 weights);
-            return lerp(gamma_mixed_color, linear_mixed_color,
-                beam_horiz_linear_rgb_weight);
+            return lerp(gamma_mixed_color, linear_mixed_color, beam_horiz_linear_rgb_weight);
         #else
             //  Inputs: color0-3 are colors in linear RGB.
             const float3 linear_mixed_color = get_raw_interpolated_color(
                 color0, color1, color2, color3, weights);
             const float3 gamma_mixed_color = get_raw_interpolated_color(
-                    pow(color0, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
-                    pow(color1, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
-                    pow(color2, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
-                    pow(color3, float3(inv_intermediate_gamma, inv_intermediate_gamma, inv_intermediate_gamma)),
+                    pow(color0, inv_intermediate_gamma),
+                    pow(color1, inv_intermediate_gamma),
+                    pow(color2, inv_intermediate_gamma),
+                    pow(color3, inv_intermediate_gamma),
                     weights);
             // wtf fixme
 //			const float beam_horiz_linear_rgb_weight1 = 1.0;
@@ -274,7 +270,7 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
     const float2 curr_texel = tex_uv * tex_size;
     //  Use under_half to fix a rounding bug right around exact texel locations.
     const float2 prev_texel =
-        floor(curr_texel - float2(under_half, under_half)) + float2(0.5, 0.5);
+        floor(curr_texel - under_half) +  0.5;
     const float2 prev_texel_hor = float2(prev_texel.x, curr_texel.y);
     const float2 prev_texel_hor_uv = prev_texel_hor * texture_size_inv;
     const float prev_dist = curr_texel.x - prev_texel_hor.x;
@@ -318,10 +314,8 @@ float3 sample_rgb_scanline_horizontal(const sampler2D tex,
     //  Rely on a helper to make convergence easier.
     if(beam_misconvergence)
     {
-        const float3 convergence_offsets_rgb =
-            get_convergence_offsets_x_vector();
-        const float3 offset_u_rgb =
-            convergence_offsets_rgb * texture_size_inv.xxx;
+        const float3 convergence_offsets_rgb = get_convergence_offsets_x_vector();
+        const float3 offset_u_rgb = convergence_offsets_rgb * texture_size_inv.xxx;
         const float2 scanline_uv_r = tex_uv - float2(offset_u_rgb.r, 0.0);
         const float2 scanline_uv_g = tex_uv - float2(offset_u_rgb.g, 0.0);
         const float2 scanline_uv_b = tex_uv - float2(offset_u_rgb.b, 0.0);
@@ -335,8 +329,7 @@ float3 sample_rgb_scanline_horizontal(const sampler2D tex,
     }
     else
     {
-        return sample_single_scanline_horizontal(tex, tex_uv, tex_size,
-            texture_size_inv);
+        return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
     }
 }
 
@@ -346,7 +339,6 @@ float3 get_bobbed_scanline_sample(
     const float input_gamma
 ) {
     // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
-
     float3 interpolated_line;
     for (int i = 0; i < scanline_num_pixels; i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
@@ -357,12 +349,6 @@ float3 get_bobbed_scanline_sample(
     return interpolated_line;
 }
 
-
-float2 get_curr_texel(const float2 tex_uv, const float2 tex_size)
-{
-    // Rescale tex_uv to match the texture's dimensions
-    return floor(tex_uv * tex_size + under_half);
-}
 
 float get_curr_scanline_idx(
     const float texcoord_y,
@@ -376,67 +362,37 @@ float get_curr_scanline_idx(
     return floor(curr_line_texel_y / scanline_num_pixels);
 }
 
-float2 get_frame_and_line_field_idx(const float cur_scanline_idx)
+float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
 {
     // Given a scanline index, determine which field it belongs to.
     // Also determine which field is being drawn this frame.
 
     const float modulus = enable_interlacing + 1.0;
     const float frame_field_idx = fmod(frame_count + interlace_bff, modulus);
-    const float line_field_idx = fmod(cur_scanline_idx, modulus);
+    const float line_field_idx = fmod(curr_scanline_idx, modulus);
 
     return float2(frame_field_idx, line_field_idx);
 }
 
-float curr_line_is_wrong_field(float cur_scanline_idx)
+float curr_line_is_wrong_field(
+    const float texcoord_y,
+    const float tex_size_y
+) {
+    // Return 1.0 if the current scanline is in the current field.
+    // 0.0 otherwise
+    const float curr_scanline_idx = get_curr_scanline_idx(texcoord_y, tex_size_y);
+    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
+    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
+}
+
+float curr_line_is_wrong_field(float curr_scanline_idx)
 {
     // Return 1.0 if the current scanline is in the current field.
     // 0.0 otherwise
 
-    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
+    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
     return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
 }
-
-float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
-{
-    // Return 1.0 if the current scanline is in the current field.
-    // 0.0 otherwise
-
-    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
-}
-
-float get_scanline_pair_start(const float curr_scanline_idx, const float frame_field_idx)
-{
-    const float modulus = enable_interlacing + 1.0;
-    const float scanline_pair_start = curr_scanline_idx - fmod(curr_scanline_idx, modulus) + frame_field_idx;
-    const float upper_line_start = scanline_pair_start * scanline_num_pixels;
-    return upper_line_start;
-}
-
-float get_beam_center(const float texel_y, const float scanline_idx, const float wrong_field)
-{
-    if (scanline_num_pixels > 1) {
-        const float true_center = scanline_idx * scanline_num_pixels + scanline_num_pixels / 2.0;
-        const float direction = texel_y <= true_center ? -1 : 1;
-        const float parity_correction = direction * (1 - fmod(scanline_num_pixels, 2.0)) * 0.5;
-
-        return true_center + parity_correction + wrong_field * direction * scanline_num_pixels;
-    }
-    else {
-        return scanline_idx - wrong_field;
-    }
-}
-
-float3 get_dist_from_beam(const float texel_y, const float3 beam_center, const float wrong_field)
-{
-    if (scanline_num_pixels > 1) {
-        return 0.5 * abs(texel_y - beam_center) / scanline_num_pixels;
-    }
-    else {
-        return 0.5 * float3(texel_y != beam_center.r, texel_y != beam_center.g, texel_y != beam_center.b);
-    }
-}
-
 
 float3 get_beam_strength(float3 dist, float3 color,
     const float sigma_range, const float shape_range)
@@ -451,22 +407,5 @@ float3 get_beam_strength(float3 dist, float3 color,
 
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
-
-void get_scanline_base_params(
-    const float2 texcoord,
-    const float2 tex_size,
-
-    out float2 curr_texel,
-    out float curr_scanline_idx,
-    out float2 frame_and_line_field_idx,
-    out float wrong_field
-) {
-
-    curr_texel = get_curr_texel(texcoord, tex_size);
-    curr_scanline_idx = get_curr_scanline_idx(texcoord.y, tex_size.y);
-    frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
-    wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
-}
-
 
 #endif  //  _SCANLINE_FUNCTIONS_H

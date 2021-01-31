@@ -60,14 +60,14 @@ static const float2 content_size = float2(CONTENT_WIDTH_INTERNAL, CONTENT_HEIGHT
 
 
 // Initial Color Buffer
-texture2D texColorBuffer : COLOR;
-sampler2D samplerColor {
-	Texture = texColorBuffer;
+// texture2D texColorBuffer : COLOR;
+// sampler2D samplerColor {
+// 	Texture = texColorBuffer;
 
-	MagFilter = NONE;
-	MinFilter = NONE;
-	MipFilter = NONE;
-};
+// 	MagFilter = NONE;
+// 	MinFilter = NONE;
+// 	MipFilter = NONE;
+// };
 
 // Yes, the WIDTH/HEIGHT/SIZE defines are kinda weird.
 // Yes, we have to have them or something similar. This is for D3D11 which
@@ -110,6 +110,16 @@ texture2D texVerticalScanlines {
 };
 sampler2D samplerVerticalScanlines { Texture = texVerticalScanlines; };
 
+#define TEX_VERTICALOFFSET_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_VERTICALOFFSET_HEIGHT CONTENT_WIDTH_INTERNAL
+#define TEX_VERTICALOFFSET_SIZE int2(TEX_VERTICALOFFSET_WIDTH, TEX_VERTICALOFFSET_HEIGHT)
+texture2D texVerticalOffset {
+	Width = TEX_VERTICALOFFSET_WIDTH;
+	Height = TEX_VERTICALOFFSET_HEIGHT;
+	
+	Format = RGBA16;
+};
+sampler2D samplerVerticalOffset { Texture = texVerticalOffset; };
 
 // Pass 2 Buffer (BLOOM_APPROX)
 #define TEX_BLOOMAPPROX_WIDTH 320

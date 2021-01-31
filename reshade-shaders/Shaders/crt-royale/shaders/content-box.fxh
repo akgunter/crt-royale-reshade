@@ -98,7 +98,7 @@ void contentBoxPixelShader(
         color = box_color;
     }
     else {
-        color = tex2D(samplerColor, texcoord);
+        color = tex2D(ReShade::BackBuffer, texcoord);
     }
 }
 
