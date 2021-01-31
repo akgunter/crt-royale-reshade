@@ -295,6 +295,13 @@ uniform float border_compress <
 
 
 // ==== ELECTRON BEAM ====
+static const float beam_min_sigma = beam_min_sigma_static;
+static const float beam_max_sigma = beam_max_sigma_static;
+static const float beam_spot_power = beam_spot_power_static;
+static const float beam_min_shape = beam_min_shape_static;
+static const float beam_max_shape = beam_max_shape_static;
+static const float beam_shape_power = beam_shape_power_static;
+/*
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
     ui_type    = "drag";
@@ -333,6 +340,7 @@ uniform float beam_shape_power <
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_shape_power_static;
+*/
 uniform float beam_horiz_sigma <
     ui_label   = "Beam Horiz Sigma";
     ui_type    = "drag";

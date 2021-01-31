@@ -37,27 +37,32 @@ void pixelShader1(
     //  Calculate {sigma, shape}_range outside of scanline_contrib so it's only
     //  done once per pixel (not 6 times) with runtime params.  Don't reuse the
     //  vertex shader calculations, so static versions can be constant-folded.
-    const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
-    const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
+    // const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
+    // const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
     
     const float wrong_field = curr_line_is_wrong_field(texcoord.y, orig_linearized_size.y);
+
 
     // If we're in the current field, draw the beam
     //   wrong_field is always 0 when we aren't interlacing
     if (!wrong_field) {
+        // Double the intensity when interlacing to maintain the same apparent brightness
+        const float contrib_factor = enable_interlacing + 1.0;
+
+
         // float beam_center_0 = get_beam_center(texel_0, scanline_idx_0);
-        // const float2 beam_coord_0 = float2(texcoord.x, beam_center_0 / orig_linearized_size.y); 
-        const float3 scanline_0_color = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb;
+        // const float2 beam_coord_0 = float2(texcoord.x, beam_center_0 / orig_linearized_size.y);
+        const float3 scanline_color_0 = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb;
         
+        /*
         const float3 beam_dist_0 = 0;
         const float3 scanline_contrib_0 = get_beam_strength(
             beam_dist_0,
-            scanline_0_color, sigma_range, shape_range
+            scanline_color_0, sigma_range, shape_range
         );
+        */
 
-        // Double the intensity when interlacing to maintain the same apparent brightness
-        const float contrib_factor = enable_interlacing + 1.0;
-        float3 scanline_intensity = contrib_factor * scanline_0_color;
+        float3 scanline_intensity = contrib_factor * scanline_color_0;
 
         // Temporarily auto-dim the output to avoid clipping.
         color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());

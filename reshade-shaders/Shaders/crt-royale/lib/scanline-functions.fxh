@@ -408,4 +408,6 @@ float3 get_beam_strength(float3 dist, float3 color,
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
 
+
+
 #endif  //  _SCANLINE_FUNCTIONS_H
