@@ -96,7 +96,7 @@ uniform float mask_triad_size_desired <
     ui_label   = "Mask Triad Width";
     ui_tooltip = "The width of a triad";
     ui_type    = "slider";
-    ui_min     = 3.0;
+    ui_min     = 1.0;
     ui_max     = 18.0;
     ui_step    = 0.1;
 > = mask_triad_size_desired_static;
@@ -167,10 +167,10 @@ uniform float bloom_excess <
 
 
 // ==== INTERLACING ====
-uniform int enable_interlacing <
+uniform bool enable_interlacing <
     ui_label   = "Enable Interlacing";
-    ui_type    = "combo";
-    ui_items   = "No\0Yes\0";
+    // ui_type    = "combo";
+    // ui_items   = "No\0Yes\0";
 > = true;
 uniform float scanline_num_pixels <
     ui_label   = "Scanline Thickness";
@@ -195,16 +195,16 @@ uniform float scanline_blend_gamma <
     ui_max     = 5.0;
     ui_step    = 0.01;
 > = 0.93;
-uniform int interlace_bff <
-    ui_type    = "combo";
+uniform bool interlace_bff <
+    // ui_type    = "combo";
     ui_label   = "Draw Back-Field First";
     ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
-    ui_items   = "No\0Yes\0";
+    // ui_items   = "No\0Yes\0";
 > = interlace_bff_static;
 uniform float3 convergence_offset_x <
     ui_label   = "Convergence Offset X RGB";
     ui_tooltip = "Shift the color channels horizontally";
-    ui_type    = "slider";
+    ui_type    = "drag";
     ui_min     = -4;
     ui_max     = 4;
     ui_step    = 0.05;
@@ -212,7 +212,7 @@ uniform float3 convergence_offset_x <
 uniform float3 convergence_offset_y <
     ui_label   = "Convergence Offset Y RGB";
     ui_tooltip = "Shift the color channels vertically";
-    ui_type    = "slider";
+    ui_type    = "drag";
     ui_min     = -4;
     ui_max     = 4;
     ui_step    = 0.05;
@@ -245,7 +245,7 @@ uniform float geom_view_dist <
 > = geom_view_dist_static;
 uniform float2 geom_tilt_angle <
     ui_label   = "Geom Tilt Angle XY";
-    ui_type    = "slider";
+    ui_type    = "drag";
     ui_min     = -pi;
     ui_max     = pi;
     ui_step    = 0.01;
@@ -266,7 +266,7 @@ uniform float2 geom_overscan <
 // ==== ANTI-ALIASING ====
 uniform float2 aa_subpixel_r_offset_runtime <
     ui_label   = "AA Subpixel R Offet XY";
-    ui_type    = "slider";
+    ui_type    = "drag";
     ui_min     = -0.5;
     ui_max     = 0.5;
     ui_step    = 0.01;

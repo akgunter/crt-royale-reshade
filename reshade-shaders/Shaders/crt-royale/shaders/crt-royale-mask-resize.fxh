@@ -21,7 +21,7 @@
 #include "../lib/phosphor-mask-resizing.fxh"
 #include "shared-objects.fxh"
 
-static const int num_sinc_lobes = 3;
+static const int num_sinc_lobes = mask_sinc_lobes;
 
 void maskResizeVertVS(
     in const uint id : SV_VertexID,
