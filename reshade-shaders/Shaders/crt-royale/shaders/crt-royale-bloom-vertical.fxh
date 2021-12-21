@@ -26,7 +26,7 @@
 #include "../lib/phosphor-mask-resizing.fxh"
 #include "../lib/bloom-functions.fxh"
 
-void vertexShader9(
+void bloomVerticalVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -34,9 +34,7 @@ void vertexShader9(
     out float2 bloom_dxdy : TEXCOORD1,
     out float bloom_sigma_runtime : TEXCOORD2
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    PostProcessVS(id, position, texcoord);
    
     float2 input_size = tex2Dsize(samplerBrightpass);
     float2 output_size = TEX_BLOOMVERTICAL_SIZE;
@@ -57,7 +55,7 @@ void vertexShader9(
 }
 
 
-void pixelShader9(
+void bloomVerticalPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 bloom_dxdy : TEXCOORD1,

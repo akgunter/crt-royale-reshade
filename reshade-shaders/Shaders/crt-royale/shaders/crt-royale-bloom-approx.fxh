@@ -147,7 +147,7 @@ float3 tex2Dresize_gaussian4x4(sampler2D tex, float2 tex_uv, float2 dxdy, float2
 }
 
 
-void pixelShader2(
+void approximateBloomPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
 
@@ -329,8 +329,12 @@ void pixelShader2(
         out_color = float3(out_color_r.r, out_color_g.g, out_color_b.b);
     }
     */
-    //  Encode and output the blurred image:
-    color = encode_output(float4(tex2D_linearize(samplerOrigLinearized, tex_uv, get_intermediate_gamma())), get_intermediate_gamma());
+
+
+    //  Encode and output the blurred image
+    //    Currently the bloom-approx logic is completely disabled
+    const float4 input_color = tex2D_linearize(samplerOrigLinearized, tex_uv, get_intermediate_gamma());
+    color = encode_output(input_color, get_intermediate_gamma());
     // color = tex2D(samplerOrigLinearized, tex_uv);
 
     // color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());

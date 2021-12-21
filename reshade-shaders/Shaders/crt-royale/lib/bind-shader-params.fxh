@@ -172,6 +172,15 @@ uniform bool enable_interlacing <
     // ui_type    = "combo";
     // ui_items   = "No\0Yes\0";
 > = true;
+uniform int scanline_deinterlacing_mode <
+    ui_label   = "Deinterlacing Mode";
+    ui_tooltip = "Selects the deinterlacing algorithm. Choose the setting that looks the best to you. For crt-royale's original appearance, choose None or Weaving.";
+    ui_type    = "combo";
+    ui_items   = "None\0"
+                 "Weaving\0"
+                 "Bobbed Blending\0"
+                 "Static\0";
+> = 0;
 uniform float scanline_num_pixels <
     ui_label   = "Scanline Thickness";
     ui_type    = "slider";

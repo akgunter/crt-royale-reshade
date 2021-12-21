@@ -27,7 +27,7 @@
 #include "shared-objects.fxh"
 
 
-void newPixelShader7(
+void applyPhosphorMaskPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     
@@ -47,9 +47,10 @@ void newPixelShader7(
 
     //  Horizontally sample the current row (a vertically interpolated scanline)
     //  and account for horizontal convergence offsets, given in units of texels.
-    const float3 scanline_color_dim = sample_rgb_scanline_horizontal(
-        samplerVerticalOffset, texcoord,
-        scanline_texture_size, scanline_texture_size_inv);
+    // const float3 scanline_color_dim = sample_rgb_scanline_horizontal(
+    //     samplerVerticalOffset, texcoord,
+    //     scanline_texture_size, scanline_texture_size_inv);
+    const float3 scanline_color_dim = tex2D(samplerVerticalOffset, texcoord).rgb;
     const float auto_dim_factor = levels_autodim_temp;
 
     const float2 true_tile_size = get_downsizing_factor_and_true_tile_size().yz;

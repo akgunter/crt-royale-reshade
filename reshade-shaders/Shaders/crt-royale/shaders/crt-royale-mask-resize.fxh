@@ -32,9 +32,7 @@ void maskResizeVertVS(
     out float4 source_mask_size_inv_and_tile_size : TEXCOORD1,
     out float3 downsizing_factor_and_true_tile_size : TEXCOORD2
 ) {
-    texcoord.x = (id == 2) ? 2.0 : 0.0;
-    texcoord.y = (id == 1) ? 2.0 : 0.0;
-    position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    PostProcessVS(id, position, texcoord);
     
     source_mask_size_inv_and_tile_size = float4(1.0 / mask_size, TEX_MASKHORIZONTAL_SIZE);
     downsizing_factor_and_true_tile_size = get_downsizing_factor_and_true_tile_size();

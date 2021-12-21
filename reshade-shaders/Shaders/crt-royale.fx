@@ -25,9 +25,9 @@
 
 #if !CONTENT_BOX_VISIBLE
 	#include "crt-royale/shaders/content-crop.fxh"
-	#include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
-	#include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
-	// #include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing-new.fxh"
+	// #include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
+	// #include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
+	#include "crt-royale/shaders/crt-royale-electron-beams.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
@@ -62,25 +62,24 @@ technique CRT_Royale
 
 			RenderTarget = texCrop;
 		}
-		// crt-royale-first-pass-linearize-crt-gamma-bob-fields.fx
+		// crt-royale-electron-beams.fx
 		pass linearizeAndBobPass
 		{
-			VertexShader = vertexShader0;
-			PixelShader = pixelShader0;
+			VertexShader = linearizeAndBobVS;
+			PixelShader = linearizeAndBobPS;
 
 			RenderTarget = texOrigLinearized;
 		}
-		// crt-royale-scanlines-vertical-interlacing.fxh
-		pass verticalBeamPass
+		pass electronBeamPass
 		{
 			VertexShader = PostProcessVS;
-			PixelShader = pixelShader1;
+			PixelShader = scanWithElectronBeams;
 
 			RenderTarget = texVerticalScanlines;
 		}
-		pass verticalOffsetPass {
+		pass beamMisaslignmentPass {
 			VertexShader = PostProcessVS;
-			PixelShader = verticalOffsetPS;
+			PixelShader = beamMisaslignmentPS;
 
 			RenderTarget = texVerticalOffset;
 		}
@@ -88,23 +87,23 @@ technique CRT_Royale
 		pass bloomApproxPass
 		{
 			VertexShader = PostProcessVS;
-			PixelShader = pixelShader2;
+			PixelShader = approximateBloomPS;
 			
 			RenderTarget = texBloomApprox;
 		}
 		// blur9fast-vertical.fxh
 		pass blurVerticalPass
 		{
-			VertexShader = vertexShader3;
-			PixelShader = pixelShader3;
+			VertexShader = blurVerticalVS;
+			PixelShader = blurVerticalPS;
 			
 			RenderTarget = texBlurVertical;
 		}
 		// blur9fast-horizontal.fxh
 		pass blurHorizontalPass
 		{
-			VertexShader = vertexShader4;
-			PixelShader = pixelShader4;
+			VertexShader = blurHorizontalVS;
+			PixelShader = blurHorizontalPS;
 			
 			RenderTarget = texBlurHorizontal;
 		}
@@ -116,7 +115,6 @@ technique CRT_Royale
 			
 			RenderTarget = texMaskResizeVertical;
 		}
-		// crt-royale-mask-resize.fxh
 		pass phosphorMaskResizeHorizontalPass
 		{
 			VertexShader = maskResizeHorizVS;
@@ -124,42 +122,42 @@ technique CRT_Royale
 			
 			RenderTarget = texMaskResizeHorizontal;
 		}
-		// crt-royale-scanlines-horizontal-apply-mask-new.fxh
+		// crt-royale-scanlines-horizontal-apply-mask.fxh
 		pass phosphorMaskPass
 		{
 			VertexShader = PostProcessVS;
-			PixelShader = newPixelShader7;
+			PixelShader = applyPhosphorMaskPS;
 			
 			RenderTarget = texMaskedScanlines;
 		}
 		// crt-royale-brightpass.fxh
 		pass brightpassPass
 		{
-			VertexShader = vertexShader8;
-			PixelShader = pixelShader8;
+			VertexShader = brightpassVS;
+			PixelShader = brightpassPS;
 			
 			RenderTarget = texBrightpass;
 		}
 		// crt-royale-bloom-vertical.fxh
 		pass bloomVerticalPass
 		{
-			VertexShader = vertexShader9;
-			PixelShader = pixelShader9;
+			VertexShader = bloomVerticalVS;
+			PixelShader = bloomVerticalPS;
 			
 			RenderTarget = texBloomVertical;
 		}
 		// crt-royale-bloom-horizontal-reconstitute.fxh
 		pass bloomHorizontalPass
 		{
-			VertexShader = vertexShader10;
-			PixelShader = pixelShader10;
+			VertexShader = bloomHorizontalVS;
+			PixelShader = bloomHorizontalPS;
 			
 			RenderTarget = texBloomHorizontal;
 		}
 		// crt-royale-blend-frames.fxh
 		pass scanlineBlendPass
 		{
-			VertexShader = PostProcessVS;
+			VertexShader = lerpScanlinesVS;
 			PixelShader = lerpScanlinesPS;
 			
 			RenderTarget = texBlendScanline;
@@ -179,8 +177,8 @@ technique CRT_Royale
 		// crt-royale-geometry-aa-last-pass.fxh
 		pass geometryPass
 		{
-			VertexShader = vertexShader11;
-			PixelShader = pixelShader11;
+			VertexShader = geometryVS;
+			PixelShader = geometryPS;
 
 			RenderTarget = texGeometry;
 		}

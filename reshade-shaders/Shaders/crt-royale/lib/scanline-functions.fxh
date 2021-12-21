@@ -306,6 +306,36 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
         tex, prev_texel_hor_uv, uv_step_x, final_weights);
 }
 
+float3 sample_rgb_scanline(
+    const sampler2D tex,
+    const float2 tex_uv, const float2 tex_size,
+    const float2 texture_size_inv
+) {
+    if (beam_misconvergence) {
+        const float3 convergence_offsets_rgb_x = get_convergence_offsets_x_vector();
+        const float3 convergence_offsets_rgb_y = get_convergence_offsets_y_vector();
+
+        const float3 offset_u_rgb = convergence_offsets_rgb_x * texture_size_inv.x;
+        const float3 offset_v_rgb = convergence_offsets_rgb_y * texture_size_inv.y;
+
+        const float2 scanline_uv_r = tex_uv - float2(offset_u_rgb.r, offset_v_rgb.r);
+        const float2 scanline_uv_g = tex_uv - float2(offset_u_rgb.g, offset_v_rgb.g);
+        const float2 scanline_uv_b = tex_uv - float2(offset_u_rgb.b, offset_v_rgb.b);
+        
+        const float3 sample_r = sample_single_scanline_horizontal(
+            tex, scanline_uv_r, tex_size, texture_size_inv);
+        const float3 sample_g = sample_single_scanline_horizontal(
+            tex, scanline_uv_g, tex_size, texture_size_inv);
+        const float3 sample_b = sample_single_scanline_horizontal(
+            tex, scanline_uv_b, tex_size, texture_size_inv);
+
+        return float3(sample_r.r, sample_g.g, sample_b.b);
+    }
+    else {
+        return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
+    }
+}
+
 float3 sample_rgb_scanline_horizontal(const sampler2D tex,
     const float2 tex_uv, const float2 tex_size,
     const float2 texture_size_inv)
@@ -339,7 +369,7 @@ float3 get_bobbed_scanline_sample(
     const float input_gamma
 ) {
     // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
-    float3 interpolated_line;
+    float3 interpolated_line = 0.0;
     for (int i = 0; i < scanline_num_pixels; i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
         interpolated_line += tex2Dlod_linearize(tex, coord, input_gamma).rgb;
@@ -359,7 +389,7 @@ float get_curr_scanline_idx(
     // thickness `scanline_num_pixels` belonging to a single field.
 
     const float curr_line_texel_y = floor(texcoord_y * tex_size_y + under_half);
-    return floor(curr_line_texel_y / scanline_num_pixels);
+    return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
 }
 
 float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
@@ -368,30 +398,33 @@ float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
     // Also determine which field is being drawn this frame.
 
     const float modulus = enable_interlacing + 1.0;
-    const float frame_field_idx = fmod(frame_count + interlace_bff, modulus);
+
+    const float alternate_between_frames = float(scanline_deinterlacing_mode != 3);
+    const float frame_field_idx = alternate_between_frames * fmod(frame_count + interlace_bff, modulus);
     const float line_field_idx = fmod(curr_scanline_idx, modulus);
 
     return float2(frame_field_idx, line_field_idx);
+}
+
+float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
+{
+    // Return 1.0 if the current scanline is in the current field.
+    // 0.0 otherwise
+    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
+}
+
+float curr_line_is_wrong_field(float curr_scanline_idx)
+{
+    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
+    return curr_line_is_wrong_field(frame_and_line_field_idx);
 }
 
 float curr_line_is_wrong_field(
     const float texcoord_y,
     const float tex_size_y
 ) {
-    // Return 1.0 if the current scanline is in the current field.
-    // 0.0 otherwise
     const float curr_scanline_idx = get_curr_scanline_idx(texcoord_y, tex_size_y);
-    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
-    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
-}
-
-float curr_line_is_wrong_field(float curr_scanline_idx)
-{
-    // Return 1.0 if the current scanline is in the current field.
-    // 0.0 otherwise
-
-    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
-    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
+    return curr_line_is_wrong_field(curr_scanline_idx);
 }
 
 float3 get_beam_strength(float3 dist, float3 color,

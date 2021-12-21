@@ -26,7 +26,7 @@
 
 #include "shared-objects.fxh"
 
-void vertexShader0(
+void linearizeAndBobVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -34,9 +34,10 @@ void vertexShader0(
     out float interlaced : TEXCOORD1,
     out float2 v_step : TEXCOORD2
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    PostProcessVS(id, position, texcoord);
+	// texcoord.x = (id == 2) ? 2.0 : 0.0;
+	// texcoord.y = (id == 1) ? 2.0 : 0.0;
+	// position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
     
     const float2 input_video_size = content_size;
     
@@ -45,7 +46,7 @@ void vertexShader0(
     v_step = float2(0.0, 1.0 / input_video_size.y);
 }
 
-void pixelShader0(
+void linearizeAndBobPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float interlaced : TEXCOORD1,
@@ -101,4 +102,70 @@ void pixelShader0(
 
         color = encode_output(float4(in_field_interpolated_line, 1.0), get_intermediate_gamma());
     }
+}
+
+void scanWithElectronBeams(
+    in const float4 position : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+    
+    out float4 color : SV_Target
+) {
+    const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
+    
+    //  Calculate {sigma, shape}_range outside of scanline_contrib so it's only
+    //  done once per pixel (not 6 times) with runtime params.  Don't reuse the
+    //  vertex shader calculations, so static versions can be constant-folded.
+    // const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
+    // const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
+    
+    const float wrong_field = curr_line_is_wrong_field(texcoord.y, orig_linearized_size.y);
+
+
+    // If we're in the current field, draw the beam
+    //   wrong_field is always 0 when we aren't interlacing
+    if (!wrong_field) {
+        // Double the intensity when interlacing to maintain the same apparent brightness
+        const float contrib_factor = enable_interlacing + 1.0;
+
+
+        // float beam_center_0 = get_beam_center(texel_0, scanline_idx_0);
+        // const float2 beam_coord_0 = float2(texcoord.x, beam_center_0 / orig_linearized_size.y);
+        const float3 scanline_color_0 = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb;
+        
+        /*
+        const float3 beam_dist_0 = 0;
+        const float3 scanline_contrib_0 = get_beam_strength(
+            beam_dist_0,
+            scanline_color_0, sigma_range, shape_range
+        );
+        */
+
+        float3 scanline_intensity = contrib_factor * scanline_color_0;
+
+        // Temporarily auto-dim the output to avoid clipping.
+        color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
+    }
+    // If we're not in the current field, don't draw the beam
+    //   It's tempting to add a gaussian here to account for bleeding, but it usually ends up
+    //   either doing nothing or making the colors wrong.
+    else {
+        color = float4(0, 0, 0, 1);
+    }
+}
+
+void beamMisaslignmentPS(
+    in const float4 position : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_TARGET
+) {
+    const float2 scanline_texture_size = tex2Dsize(samplerVerticalScanlines);
+    const float2 scanline_texture_size_inv = 1.0 / scanline_texture_size;
+
+    const float3 offset_sample = sample_rgb_scanline(
+        samplerVerticalScanlines, texcoord,
+        scanline_texture_size, scanline_texture_size_inv
+    );
+
+    color = float4(offset_sample, 1);
 }

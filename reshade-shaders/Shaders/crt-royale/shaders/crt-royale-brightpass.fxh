@@ -30,16 +30,14 @@
 #include "../lib/blur-functions.fxh"
 
 
-void vertexShader8(
+void brightpassVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
     out float bloom_sigma_runtime : TEXCOORD1
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    PostProcessVS(id, position, texcoord);
 
     float2 output_size = TEX_BRIGHTPASS_SIZE;
     //  Calculate a runtime bloom_sigma in case it's needed:
@@ -50,7 +48,7 @@ void vertexShader8(
         mask_tile_size_x / mask_triads_per_tile, bloom_diff_thresh_);
 }
 
-void pixelShader8(
+void brightpassPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float bloom_sigma_runtime : TEXCOORD1,

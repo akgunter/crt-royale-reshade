@@ -49,17 +49,15 @@
 
 #include "shared-objects.fxh"
 
-void vertexShader4(
+void blurHorizontalVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
     out float2 blur_dxdy : TEXCOORD1
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
-    
+    PostProcessVS(id, position, texcoord);
+
     //  Get the uv sample distance between output pixels.  Blurs are not generic
     //  Gaussian resizers, and correct blurs require:
     //  1.) OutputSize == InputSize * 2^m, where m is an integer <= 0.
@@ -75,7 +73,7 @@ void vertexShader4(
     blur_dxdy = float2(dxdy.x, 0.0);
 }
 
-void pixelShader4(
+void blurHorizontalPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 blur_dxdy : TEXCOORD1,
