@@ -400,7 +400,9 @@ float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
     const float modulus = enable_interlacing + 1.0;
 
     const float alternate_between_frames = float(scanline_deinterlacing_mode != 3);
-    const float frame_field_idx = alternate_between_frames * fmod(frame_count + interlace_bff, modulus);
+    const float non_alternating_idx = interlace_bff;
+    const float alternating_idx = fmod(frame_count + interlace_bff, modulus);
+    const float frame_field_idx = lerp(non_alternating_idx, alternating_idx, alternate_between_frames);
     const float line_field_idx = fmod(curr_scanline_idx, modulus);
 
     return float2(frame_field_idx, line_field_idx);

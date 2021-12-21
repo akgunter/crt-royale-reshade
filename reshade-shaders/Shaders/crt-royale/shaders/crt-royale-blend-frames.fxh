@@ -25,24 +25,31 @@ void lerpScanlinesPS(
     
     out float4 color : SV_Target
 ) {
+    // Weaving
+    // Sample texcoord from this frame and the previous frame
+    // If we're in the correct field, use the current sample
+    // If we're in the wrong field, average the current and prev samples
+    //   In this case, we're probably averaging a color with 0.
     if (enable_interlacing && scanline_deinterlacing_mode == 1) {
         const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
         const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
         
-        const float4 cur_line_color = tex2D(samplerBloomHorizontal, texcoord);
+        const float4 cur_line_color = tex2D(samplerVerticalOffset, texcoord);
         const float4 cur_line_prev_color = tex2D(samplerFreezeFrame, texcoord);
 
         const float4 avg_color = (cur_line_color + cur_line_prev_color) / 2.0;
-        
-        const float use_blend_params = float(
-            scanline_deinterlacing_mode > 0 && scanline_deinterlacing_mode < 4
-        );
-        const float blend_strength = scanline_blend_strength * use_blend_params;
-        const float base_blend_gamma = lerp(1.0, scanline_blend_gamma, use_blend_params);
 
-        const float4 raw_out_color = lerp(cur_line_color, avg_color, blend_strength);
-        color = encode_output(raw_out_color, lerp(1.0, base_blend_gamma, scanline_blend_strength));
+        // Multiply by 1.5, so each pair of scanlines has total brightness 2
+        const float4 raw_out_color = lerp(1.5*cur_line_color, avg_color, wrong_field);
+        color = encode_output(raw_out_color, scanline_blend_gamma);
     }
+    // Blended Weaving
+    // Sample texcoord from this frame
+    // From the previous frame, sample the current scanline's sibling
+    //   Do this by shifting up or down by a line
+    // If we're in the correct field, use the current sample
+    // If we're in the wrong field, average the current and prev samples
+    //   In this case, we're averaging two fully illuminated colors
     else if (enable_interlacing && scanline_deinterlacing_mode == 2) {
         const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
         const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
@@ -54,15 +61,16 @@ void lerpScanlinesPS(
         const float2 curr_offset = lerp(0, raw_offset, wrong_field);
         const float2 prev_offset = lerp(raw_offset, 0, wrong_field);
 
-        const float4 cur_line_color = tex2D(samplerBloomHorizontal, texcoord + curr_offset);
-        const float4 cur_line_prev_color = tex2D(samplerFreezeFrame, texcoord + prev_offset);
+        const float4 cur_line_color = tex2D(samplerVerticalOffset, texcoord + curr_offset);
+        const float4 prev_line_color = tex2D(samplerFreezeFrame, texcoord + prev_offset);
 
-        const float4 avg_color = (cur_line_color + cur_line_prev_color) / 2.0;
+        const float4 avg_color = (cur_line_color + prev_line_color) / 2.0;
         const float4 raw_out_color = lerp(cur_line_color, avg_color, wrong_field);
         color = encode_output(raw_out_color, scanline_blend_gamma);
     }
+    // No temporal blending
     else {
-        color = tex2D(samplerBloomHorizontal, texcoord);
+        color = tex2D(samplerVerticalOffset, texcoord);
     }
 }
 
@@ -72,5 +80,5 @@ void freezeFramePS(
 
     out float4 color : SV_Target
 ) {
-    color = tex2D(samplerBloomHorizontal, texcoord);
+    color = tex2D(samplerVerticalOffset, texcoord);
 }

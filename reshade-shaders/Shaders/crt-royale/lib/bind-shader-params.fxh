@@ -178,7 +178,7 @@ uniform int scanline_deinterlacing_mode <
     ui_type    = "combo";
     ui_items   = "None\0"
                  "Weaving\0"
-                 "Bobbed Blending\0"
+                 "Blended Weaving\0"
                  "Static\0";
 > = 0;
 uniform float scanline_num_pixels <
@@ -193,7 +193,7 @@ uniform float scanline_blend_strength <
     ui_tooltip = "Removes VSync artifacting by blending the current and previous frames";
     ui_type    = "slider";
     ui_min     = 0.0;
-    ui_max     = 1.0;
+    ui_max     = 5.0;
     ui_step    = 0.01;
 > = 0.0;
 uniform float scanline_blend_gamma <

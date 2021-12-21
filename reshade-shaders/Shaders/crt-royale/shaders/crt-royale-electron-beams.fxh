@@ -125,7 +125,11 @@ void scanWithElectronBeams(
     //   wrong_field is always 0 when we aren't interlacing
     if (!wrong_field) {
         // Double the intensity when interlacing to maintain the same apparent brightness
-        const float contrib_factor = enable_interlacing + 1.0;
+        const float interlacing_factor = enable_interlacing * float(
+            scanline_deinterlacing_mode != 1 &&
+            scanline_deinterlacing_mode != 2
+        );
+        const float contrib_factor = interlacing_factor + 1.0;
 
 
         // float beam_center_0 = get_beam_center(texel_0, scanline_idx_0);

@@ -25,14 +25,11 @@
 
 #if !CONTENT_BOX_VISIBLE
 	#include "crt-royale/shaders/content-crop.fxh"
-	// #include "crt-royale/shaders/crt-royale-first-pass-linearize-crt-gamma-bob-fields.fxh"
-	// #include "crt-royale/shaders/crt-royale-scanlines-vertical-interlacing.fxh"
 	#include "crt-royale/shaders/crt-royale-electron-beams.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
-	#include "crt-royale/shaders/crt-royale-mask-resize.fxh"
-	#include "crt-royale/shaders/crt-royale-scanlines-horizontal-apply-mask.fxh"
+	#include "crt-royale/shaders/crt-royale-phosphor-mask.fxh"
 	#include "crt-royale/shaders/crt-royale-brightpass.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
@@ -107,7 +104,27 @@ technique CRT_Royale
 			
 			RenderTarget = texBlurHorizontal;
 		}
-		// crt-royale-mask-resize.fxh
+		// crt-royale-blend-frames.fxh
+		pass scanlineBlendPass
+		{
+			VertexShader = lerpScanlinesVS;
+			PixelShader = lerpScanlinesPS;
+			
+			RenderTarget = texBlendScanline;
+		}
+		// crt-royale-blend-frames.fxh
+		pass freezeFramePass
+		{
+			VertexShader = PostProcessVS;
+			PixelShader = freezeFramePS;
+
+			RenderTarget = texFreezeFrame;
+
+			// Explicitly disable clearing render targets
+			//   scanlineBlendPass will not work properly if this ever defaults to true
+			ClearRenderTargets = false;
+		}
+		// crt-royale-phosphor-mask.fxh
 		pass phosphorMaskResizeVerticalPass
 		{
 			VertexShader = maskResizeVertVS;
@@ -122,7 +139,6 @@ technique CRT_Royale
 			
 			RenderTarget = texMaskResizeHorizontal;
 		}
-		// crt-royale-scanlines-horizontal-apply-mask.fxh
 		pass phosphorMaskPass
 		{
 			VertexShader = PostProcessVS;
@@ -153,26 +169,6 @@ technique CRT_Royale
 			PixelShader = bloomHorizontalPS;
 			
 			RenderTarget = texBloomHorizontal;
-		}
-		// crt-royale-blend-frames.fxh
-		pass scanlineBlendPass
-		{
-			VertexShader = lerpScanlinesVS;
-			PixelShader = lerpScanlinesPS;
-			
-			RenderTarget = texBlendScanline;
-		}
-		// crt-royale-blend-frames.fxh
-		pass freezeFramePass
-		{
-			VertexShader = PostProcessVS;
-			PixelShader = freezeFramePS;
-
-			RenderTarget = texFreezeFrame;
-
-			// Explicitly disable clearing render targets
-			//   scanlineBlendPass will not work properly if this ever defaults to true
-			ClearRenderTargets = false;
 		}
 		// crt-royale-geometry-aa-last-pass.fxh
 		pass geometryPass
