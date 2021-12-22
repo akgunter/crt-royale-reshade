@@ -335,7 +335,7 @@ uniform float3 convergence_offset_y <
     ui_step    = 0.05;
 > = 0;
 uniform int beam_shape_mode <
-    ui_lable   = "Beam Shape Mode";
+    ui_label   = "Beam Shape Mode";
     ui_category = "Electron Beam";
     ui_type    = "combo";
     ui_items   = "Digital\0"
