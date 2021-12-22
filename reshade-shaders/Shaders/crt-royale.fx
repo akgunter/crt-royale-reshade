@@ -69,8 +69,8 @@ technique CRT_Royale
 		}
 		pass electronBeamPass
 		{
-			VertexShader = PostProcessVS;
-			PixelShader = scanWithElectronBeams;
+			VertexShader = fancyScanWithElectronBeamsVS;
+			PixelShader = fancyScanWithElectronBeamsPS;
 
 			RenderTarget = texVerticalScanlines;
 		}

@@ -52,6 +52,7 @@ static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
     uniform int mask_type <
         ui_label   = "Mask Type";
         ui_tooltip = "Selects the phosphor shape";
+        ui_category = "Phosphor Mask";
         ui_type    = "combo";
         ui_items   = "Grille\0"
                      "Slot\0"
@@ -72,6 +73,7 @@ static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
 uniform int mask_sample_mode_desired <
     ui_label   = "Mask Sample Mode";
     ui_tooltip = "Selects the phosphor downsampling method";
+    ui_category = "Phosphor Mask";
     ui_type    = "combo";
     ui_items   = "Smooth (Lanczos)\0"
                  "Sharp (Point)\0"
@@ -80,6 +82,7 @@ uniform int mask_sample_mode_desired <
 uniform float lanczos_weight_at_center <
     ui_label   = "Downsampling Sharpness";
     ui_tooltip = "Tunes the sharpness of the Smooth Mask Sample Mode";
+    ui_category = "Phosphor Mask";
     ui_type    = "slider";
     ui_min     = 0.1;
     ui_max     = 50.0;
@@ -88,6 +91,7 @@ uniform float lanczos_weight_at_center <
 uniform int mask_specify_num_triads <
     ui_label   = "Mask Size Param";
     ui_tooltip = "Switch between using Mask Triad Size or Mask Num Triads";
+    ui_category = "Phosphor Mask";
     ui_type    = "combo";
     ui_items   = "Triad Width\0"
                  "Num Triads Across\0";
@@ -95,6 +99,7 @@ uniform int mask_specify_num_triads <
 uniform float mask_triad_size_desired <
     ui_label   = "Mask Triad Width";
     ui_tooltip = "The width of a triad";
+    ui_category = "Phosphor Mask";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 18.0;
@@ -103,6 +108,7 @@ uniform float mask_triad_size_desired <
 uniform float mask_num_triads_desired <
     ui_label   = "Mask Num Triads Across";
     ui_tooltip = "The number of triads in the viewport (horizontally)";
+    ui_category = "Phosphor Mask";
     ui_type    = "drag";
     ui_min     = 1.0;
     ui_max     = 1280.0;
@@ -113,6 +119,7 @@ uniform float mask_num_triads_desired <
 uniform float crt_gamma <
     ui_label   = "CRT Gamma";
     ui_tooltip = "The gamma-level of the original content";
+    ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -121,6 +128,7 @@ uniform float crt_gamma <
 uniform float lcd_gamma <
     ui_label   = "LCD Gamma";
     ui_tooltip = "The gamma-level of your display";
+    ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -128,6 +136,7 @@ uniform float lcd_gamma <
 > = lcd_gamma_static;
 uniform float levels_contrast <
     ui_label   = "Levels Contrast";
+    ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 4.0;
@@ -136,6 +145,7 @@ uniform float levels_contrast <
 uniform float halation_weight <
     ui_label   = "Halation";
     ui_tooltip = "Desaturation due to eletrons exciting the wrong phosphors";
+    ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;
@@ -144,6 +154,7 @@ uniform float halation_weight <
 uniform float diffusion_weight <
     ui_label   = "Diffusion";
     ui_tooltip = "Blurring due to refraction from the screen's glass";
+    ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;
@@ -152,6 +163,7 @@ uniform float diffusion_weight <
 uniform float bloom_underestimate_levels <
     ui_label   = "Bloom Underestimation";
     ui_tooltip = "Scale the bloom effect's intensity";
+    ui_category = "Colors and Effects";
     ui_type    = "drag";
     ui_min     = FIX_ZERO(0.0);
     ui_step    = 0.01;
@@ -159,122 +171,15 @@ uniform float bloom_underestimate_levels <
 uniform float bloom_excess <
     ui_label   = "Bloom Excess";
     ui_tooltip = "Extra bloom applied to all colors";
+    ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = bloom_excess_static;
-
-
-// ==== INTERLACING ====
-uniform bool enable_interlacing <
-    ui_label   = "Enable Interlacing";
-    // ui_type    = "combo";
-    // ui_items   = "No\0Yes\0";
-> = true;
-uniform int scanline_deinterlacing_mode <
-    ui_label   = "Deinterlacing Mode";
-    ui_tooltip = "Selects the deinterlacing algorithm. Choose the setting that looks the best to you. For crt-royale's original appearance, choose None or Weaving.";
-    ui_type    = "combo";
-    ui_items   = "None\0"
-                 "Weaving\0"
-                 "Blended Weaving\0"
-                 "Static\0";
-> = 0;
-uniform float scanline_num_pixels <
-    ui_label   = "Scanline Thickness";
-    ui_type    = "slider";
-    ui_min     = 1.0;
-    ui_max     = 10.0;
-    ui_step    = 1.0;
-> = 2.0;
-uniform float scanline_blend_strength <
-    ui_label   = "Scanline Blend Strength";
-    ui_tooltip = "Removes VSync artifacting by blending the current and previous frames";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 5.0;
-    ui_step    = 0.01;
-> = 0.0;
-uniform float scanline_blend_gamma <
-    ui_label   = "Scanline Blend Gamma";
-    ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
-    ui_type    = "slider";
-    ui_min     = 0.01;
-    ui_max     = 5.0;
-    ui_step    = 0.01;
-> = 0.93;
-uniform bool interlace_bff <
-    // ui_type    = "combo";
-    ui_label   = "Draw Back-Field First";
-    ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
-    // ui_items   = "No\0Yes\0";
-> = interlace_bff_static;
-uniform float3 convergence_offset_x <
-    ui_label   = "Convergence Offset X RGB";
-    ui_tooltip = "Shift the color channels horizontally";
-    ui_type    = "drag";
-    ui_min     = -4;
-    ui_max     = 4;
-    ui_step    = 0.05;
-> = 0;
-uniform float3 convergence_offset_y <
-    ui_label   = "Convergence Offset Y RGB";
-    ui_tooltip = "Shift the color channels vertically";
-    ui_type    = "drag";
-    ui_min     = -4;
-    ui_max     = 4;
-    ui_step    = 0.05;
-> = 0;
-
-// ==== GEOMETRY ====
-uniform int geom_mode_runtime <
-    ui_label   = "Geom Mode";
-    ui_tooltip = "Select screen curvature";
-    ui_type    = "combo";
-    ui_items   = "Flat\0"
-                 "Spherical\0"
-                 "Spherical (Alt)\0"
-                 "Cylindrical (Trinitron)\0";
-> = geom_mode_static;
-uniform float geom_radius <
-    ui_label   = "Geom Radius";
-    ui_tooltip = "Select screen curvature radius";
-    ui_type    = "slider";
-    ui_min     = 1.0 / (2.0 * pi);
-    ui_max     = 1024;
-    ui_step    = 0.01;
-> = geom_radius_static;
-uniform float geom_view_dist <
-    ui_label   = "Geom View Distance";
-    ui_type    = "slider";
-    ui_min     = 0.5;
-    ui_max     = 1024;
-    ui_step    = 0.01;
-> = geom_view_dist_static;
-uniform float2 geom_tilt_angle <
-    ui_label   = "Geom Tilt Angle XY";
-    ui_type    = "drag";
-    ui_min     = -pi;
-    ui_max     = pi;
-    ui_step    = 0.01;
-> = geom_tilt_angle_static;
-uniform float2 geom_aspect_ratio <
-    ui_label   = "Geom Aspect Ratio XY";
-    ui_type    = "drag";
-    ui_min     = 1.0;
-    ui_step    = 0.01;
-> = float2(geom_aspect_ratio_static, 1);
-uniform float2 geom_overscan <
-    ui_label   = "Geom Overscan XY";
-    ui_type    = "drag";
-    ui_min     = FIX_ZERO(0.0);
-    ui_step    = 0.01;
-> = geom_overscan_static;
-
-// ==== ANTI-ALIASING ====
 uniform float2 aa_subpixel_r_offset_runtime <
     ui_label   = "AA Subpixel R Offet XY";
+    ui_category = "Colors and Effects";
     ui_type    = "drag";
     ui_min     = -0.5;
     ui_max     = 0.5;
@@ -284,9 +189,104 @@ uniform float2 aa_subpixel_r_offset_runtime <
 static const float aa_cubic_c = aa_cubic_c_static;
 static const float aa_gauss_sigma = aa_gauss_sigma_static;
 
+
+// ==== INTERLACING ====
+uniform bool enable_interlacing <
+    ui_label   = "Enable Interlacing";
+    ui_category = "Interlacing";
+    // ui_type    = "combo";
+    // ui_items   = "No\0Yes\0";
+> = true;
+uniform int scanline_deinterlacing_mode <
+    ui_label   = "Deinterlacing Mode";
+    ui_tooltip = "Selects the deinterlacing algorithm. For crt-royale's original appearance, choose None.";
+    ui_category = "Interlacing";
+    ui_type    = "combo";
+    ui_items   = "None\0"
+                 "Weaving\0"
+                 "Blended Weaving\0"
+                 "Static\0";
+> = 0;
+uniform float scanline_num_pixels <
+    ui_label   = "Scanline Thickness";
+    ui_category = "Interlacing";
+    ui_type    = "slider";
+    ui_min     = 1.0;
+    ui_max     = 30.0;
+    ui_step    = 1.0;
+> = 2.0;
+uniform float scanline_blend_gamma <
+    ui_label   = "Scanline Blend Gamma";
+    ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
+    ui_category = "Interlacing";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 5.0;
+    ui_step    = 0.01;
+> = 1.0;
+uniform bool interlace_bff <
+    // ui_type    = "combo";
+    ui_label   = "Draw Back-Field First";
+    ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
+    ui_category = "Interlacing";
+    // ui_items   = "No\0Yes\0";
+> = interlace_bff_static;
+
+// ==== GEOMETRY ====
+uniform int geom_mode_runtime <
+    ui_label   = "Geom Mode";
+    ui_tooltip = "Select screen curvature";
+    ui_category = "Screen Geometry";
+    ui_type    = "combo";
+    ui_items   = "Flat\0"
+                 "Spherical\0"
+                 "Spherical (Alt)\0"
+                 "Cylindrical (Trinitron)\0";
+> = geom_mode_static;
+uniform float geom_radius <
+    ui_label   = "Geom Radius";
+    ui_tooltip = "Select screen curvature radius";
+    ui_category = "Screen Geometry";
+    ui_type    = "slider";
+    ui_min     = 1.0 / (2.0 * pi);
+    ui_max     = 1024;
+    ui_step    = 0.01;
+> = geom_radius_static;
+uniform float geom_view_dist <
+    ui_label   = "Geom View Distance";
+    ui_category = "Screen Geometry";
+    ui_type    = "slider";
+    ui_min     = 0.5;
+    ui_max     = 1024;
+    ui_step    = 0.01;
+> = geom_view_dist_static;
+uniform float2 geom_tilt_angle <
+    ui_label   = "Geom Tilt Angle XY";
+    ui_category = "Screen Geometry";
+    ui_type    = "drag";
+    ui_min     = -pi;
+    ui_max     = pi;
+    ui_step    = 0.01;
+> = geom_tilt_angle_static;
+uniform float2 geom_aspect_ratio <
+    ui_label   = "Geom Aspect Ratio XY";
+    ui_category = "Screen Geometry";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_step    = 0.01;
+> = float2(geom_aspect_ratio_static, 1);
+uniform float2 geom_overscan <
+    ui_label   = "Geom Overscan XY";
+    ui_category = "Screen Geometry";
+    ui_type    = "drag";
+    ui_min     = FIX_ZERO(0.0);
+    ui_step    = 0.01;
+> = geom_overscan_static;
+
 // ==== BORDER ====
 uniform float border_size <
     ui_label   = "Border Size";
+    ui_category = "Screen Border";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 0.5;
@@ -294,12 +294,14 @@ uniform float border_size <
 > = border_size_static;
 uniform float border_darkness <
     ui_label   = "Border Darkness";
+    ui_category = "Screen Border";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = border_darkness_static;
 uniform float border_compress <
     ui_label   = "Border Compress";
+    ui_category = "Screen Border";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
@@ -307,15 +309,41 @@ uniform float border_compress <
 
 
 // ==== ELECTRON BEAM ====
-static const float beam_min_sigma = beam_min_sigma_static;
-static const float beam_max_sigma = beam_max_sigma_static;
+// static const float beam_min_sigma = beam_min_sigma_static;
+// static const float beam_max_sigma = beam_max_sigma_static;
 static const float beam_spot_power = beam_spot_power_static;
-static const float beam_min_shape = beam_min_shape_static;
-static const float beam_max_shape = beam_max_shape_static;
+// static const float beam_min_shape = beam_min_shape_static;
+// static const float beam_max_shape = beam_max_shape_static;
 static const float beam_shape_power = beam_shape_power_static;
-/*
+
+uniform float3 convergence_offset_x <
+    ui_label   = "Convergence Offset X RGB";
+    ui_tooltip = "Shift the color channels horizontally";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -4;
+    ui_max     = 4;
+    ui_step    = 0.05;
+> = 0;
+uniform float3 convergence_offset_y <
+    ui_label   = "Convergence Offset Y RGB";
+    ui_tooltip = "Shift the color channels vertically";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -4;
+    ui_max     = 4;
+    ui_step    = 0.05;
+> = 0;
+uniform int beam_shape_mode <
+    ui_lable   = "Beam Shape Mode";
+    ui_category = "Electron Beam";
+    ui_type    = "combo";
+    ui_items   = "Digital\0"
+                 "Gaussian\0";
+> = 0;
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
+    ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
@@ -323,18 +351,22 @@ uniform float beam_min_sigma <
 uniform float beam_max_sigma <
     ui_label   = "Beam Max Sigma";
     ui_tooltip = "Must be >= Beam Min Sigma";
+    ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_max_sigma_static;
+/*
 uniform float beam_spot_power <
     ui_label   = "Beam Spot Power";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_spot_power_static;
+*/
 uniform float beam_min_shape <
     ui_label   = "Beam Min Shape";
+    ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
@@ -342,10 +374,12 @@ uniform float beam_min_shape <
 uniform float beam_max_shape <
     ui_label   = "Beam Max Shape";
     ui_tooltip = "Must be >= Beam Min Shape";
+    ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_max_shape_static;
+/*
 uniform float beam_shape_power <
     ui_label   = "Beam Shape Power";
     ui_type    = "drag";
@@ -356,14 +390,17 @@ uniform float beam_shape_power <
 uniform int beam_horiz_filter <
     ui_label   = "Beam Horiz Filter";
     ui_tooltip = "Default is Quilez";
+    ui_category = "Electron Beam";
     ui_type    = "combo";
-    ui_items   = "Quilez (Fast)\0"
+    ui_items   = "None\0"
+                 "Quilez (Fast)\0"
                  "Gaussian (Tunable)\0"
                  "Lanczos (Sharp)\0";
 > = beam_horiz_filter_static;
 uniform float beam_horiz_sigma <
     ui_label   = "Beam Horiz Sigma";
     ui_tooltip = "Requires Gaussian Horiz Filter";
+    ui_category = "Electron Beam";
     ui_type    = "slider";
     ui_min     = 0.01;
     ui_max     = 0.67;
@@ -371,6 +408,7 @@ uniform float beam_horiz_sigma <
 > = beam_horiz_sigma_static;
 uniform float beam_horiz_linear_rgb_weight <
     ui_label   = "Beam Horiz Linear RGB Weight";
+    ui_category = "Electron Beam";
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 1.0;

@@ -269,8 +269,7 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
     //  Snap to the previous texel and get sample dists from 2/4 nearby texels:
     const float2 curr_texel = tex_uv * tex_size;
     //  Use under_half to fix a rounding bug right around exact texel locations.
-    const float2 prev_texel =
-        floor(curr_texel - under_half) +  0.5;
+    const float2 prev_texel = floor(curr_texel - under_half) +  0.5;
     const float2 prev_texel_hor = float2(prev_texel.x, curr_texel.y);
     const float2 prev_texel_hor_uv = prev_texel_hor * texture_size_inv;
     const float prev_dist = curr_texel.x - prev_texel_hor.x;
@@ -278,14 +277,18 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
         1.0 - prev_dist, 2.0 - prev_dist);
     //  Get Quilez, Lanczos2, or Gaussian resize weights for 2/4 nearby texels:
     float4 weights;
-    if(beam_horiz_filter < 0.5)
+    if (beam_horiz_filter < 0.5) {
+        //  None:
+        weights = float4(0, 1, 0, 0);
+    }
+    else if(beam_horiz_filter < 1.5)
     {
         //  Quilez:
         const float x = sample_dists.y;
         const float w2 = x*x*x*(x*(x*6.0 - 15.0) + 10.0);
         weights = float4(0.0, 1.0 - w2, w2, 0.0);
     }
-    else if(beam_horiz_filter < 1.5)
+    else if(beam_horiz_filter < 2.5)
     {
         //  Gaussian:
         float inner_denom_inv = 1.0/(2.0*beam_horiz_sigma*beam_horiz_sigma);
@@ -322,17 +325,24 @@ float3 sample_rgb_scanline(
         const float2 scanline_uv_g = tex_uv - float2(offset_u_rgb.g, offset_v_rgb.g);
         const float2 scanline_uv_b = tex_uv - float2(offset_u_rgb.b, offset_v_rgb.b);
         
+        const float4 sample_r = tex2D(tex, scanline_uv_r);
+        const float4 sample_g = tex2D(tex, scanline_uv_g);
+        const float4 sample_b = tex2D(tex, scanline_uv_b);
+
+        /*
         const float3 sample_r = sample_single_scanline_horizontal(
             tex, scanline_uv_r, tex_size, texture_size_inv);
         const float3 sample_g = sample_single_scanline_horizontal(
             tex, scanline_uv_g, tex_size, texture_size_inv);
         const float3 sample_b = sample_single_scanline_horizontal(
             tex, scanline_uv_b, tex_size, texture_size_inv);
+        */
 
         return float3(sample_r.r, sample_g.g, sample_b.b);
     }
     else {
-        return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
+        return tex2D(tex, tex_uv).rgb;
+        // return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
     }
 }
 
@@ -392,6 +402,22 @@ float get_curr_scanline_idx(
     return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
 }
 
+float get_scanline_center(
+    const float line_texel_y,
+    const float scanline_idx
+) {
+    const float scanline_start_y = scanline_idx * scanline_num_pixels;
+
+    const float half_num_pixels = scanline_num_pixels / 2;
+    const float half_size = floor(half_num_pixels + under_half);
+    const float num_pixels_is_even = float(half_size >= half_num_pixels);
+
+    const float upper_center = scanline_start_y + half_size;
+    const float shift = num_pixels_is_even * float(line_texel_y > upper_center);
+
+    return upper_center + shift;
+}
+
 float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
 {
     // Given a scanline index, determine which field it belongs to.
@@ -432,7 +458,7 @@ float curr_line_is_wrong_field(
 float3 get_beam_strength(float3 dist, float3 color,
     const float sigma_range, const float shape_range)
 {
-    //  See scanline_gaussian integral_contrib() for detailed comments!
+    //  See scanline_gaussian_integral_contrib() for detailed comments!
     //  gaussian sample = 1/(sigma*sqrt(2*pi)) * e**(-(x**2)/(2*sigma**2))
     const float3 sigma = get_gaussian_sigma(color, sigma_range);
     //  Avoid repeated divides:
@@ -442,7 +468,6 @@ float3 get_beam_strength(float3 dist, float3 color,
 
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
-
 
 
 #endif  //  _SCANLINE_FUNCTIONS_H
