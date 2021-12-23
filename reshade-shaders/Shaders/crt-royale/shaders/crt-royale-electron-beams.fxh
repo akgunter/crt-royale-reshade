@@ -189,7 +189,7 @@ void fancyScanWithElectronBeamsPS(
         // Sample the nearest in-field scanline
         const float3 scanline_color = sample_single_scanline_horizontal(
             samplerOrigLinearized,
-            texcoord, orig_linearized_size,
+            source_scanline_center_xy, orig_linearized_size,
             1 / orig_linearized_size
         );
         // const float4 scanline_color = decode_input(
@@ -210,63 +210,8 @@ void fancyScanWithElectronBeamsPS(
         );
 
         // Output the corrected color
-        color = encode_output(float4(beam_strength*scanline_color, 1), get_intermediate_gamma());
-    }
-}
-
-void scanWithElectronBeamsPS(
-    in const float4 position : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    
-    out float4 color : SV_Target
-) {
-    const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
-    
-    //  Calculate {sigma, shape}_range outside of scanline_contrib so it's only
-    //  done once per pixel (not 6 times) with runtime params.  Don't reuse the
-    //  vertex shader calculations, so static versions can be constant-folded.
-    // const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
-    // const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
-    
-    const float wrong_field = curr_line_is_wrong_field(texcoord.y, orig_linearized_size.y);
-
-
-    // If we're in the current field, draw the beam
-    //   wrong_field is always 0 when we aren't interlacing
-    if (!wrong_field) {
-        // Double the intensity when interlacing to maintain the same apparent brightness
-        const float interlacing_factor = enable_interlacing * float(
-            scanline_deinterlacing_mode != 1 &&
-            scanline_deinterlacing_mode != 2
-        );
-        const float contrib_factor = interlacing_factor + 1.0;
-
-        // float curr_scanline_start_y = curr_scanline_idx * scanline_num_pixels / content_size.y;
-
-
-        // float beam_center_0 = get_beam_center(texel_0, scanline_idx_0);
-        // const float2 beam_coord_0 = float2(texcoord.x, beam_center_0 / orig_linearized_size.y);
-        const float3 scanline_color_0 = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb;
-        
-        /*
-        const float3 beam_dist_0 = 0;
-        const float3 scanline_contrib_0 = get_beam_strength(
-            beam_dist_0,
-            scanline_color_0, sigma_range, shape_range
-        );
-        */
-
-        float3 scanline_intensity = contrib_factor * scanline_color_0;
-        // float3 scanline_intensity = scanline_contrib_0 * scanline_color_0;
-
-        // Temporarily auto-dim the output to avoid clipping.
-        color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
-    }
-    // If we're not in the current field, don't draw the beam
-    //   It's tempting to add a gaussian here to account for bleeding, but it usually ends up
-    //   either doing nothing or making the colors wrong.
-    else {
-        color = float4(0, 0, 0, 1);
+        // color = encode_output(float4(beam_strength*scanline_color, 1), get_intermediate_gamma());
+        color = encode_output(float4(beam_strength, 1), get_intermediate_gamma());
     }
 }
 
