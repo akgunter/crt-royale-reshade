@@ -78,7 +78,7 @@ technique CRT_Royale
 			VertexShader = PostProcessVS;
 			PixelShader = beamMisaslignmentPS;
 
-			RenderTarget = texVerticalOffset;
+			RenderTarget = texBeamMisalignment;
 		}
 		// crt-royale-bloom-approx.fxh
 		pass bloomApproxPass

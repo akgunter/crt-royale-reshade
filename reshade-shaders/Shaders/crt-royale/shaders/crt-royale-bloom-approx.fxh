@@ -154,7 +154,7 @@ void approximateBloomPS(
     out float4 color : SV_Target
 ) {
     const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
-    const float2 vertical_scanlines_size = tex2Dsize(samplerVerticalOffset);
+    const float2 vertical_scanlines_size = tex2Dsize(samplerBeamMisalignment);
     const float2 output_size = TEX_BLOOMAPPROX_SIZE;
 
     // const float2 video_uv = vTexCoord * texture_size / video_size;

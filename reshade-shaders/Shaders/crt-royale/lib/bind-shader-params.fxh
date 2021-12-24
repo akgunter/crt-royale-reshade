@@ -115,6 +115,158 @@ uniform float mask_num_triads_desired <
     ui_step    = 1.0;
 > = mask_num_triads_desired_static;
 
+
+// ==== INTERLACING ====
+uniform bool enable_interlacing <
+    ui_label   = "Enable Interlacing";
+    ui_category = "Interlacing";
+    // ui_type    = "combo";
+    // ui_items   = "No\0Yes\0";
+> = true;
+uniform int scanline_deinterlacing_mode <
+    ui_label   = "Deinterlacing Mode";
+    ui_tooltip = "Selects the deinterlacing algorithm. For crt-royale's original appearance, choose None.";
+    ui_category = "Interlacing";
+    ui_type    = "combo";
+    ui_items   = "None\0"
+                 "Weaving\0"
+                 "Blended Weaving\0"
+                 "Static\0";
+> = 0;
+uniform float scanline_num_pixels <
+    ui_label   = "Scanline Thickness";
+    ui_category = "Interlacing";
+    ui_type    = "slider";
+    ui_min     = 1.0;
+    ui_max     = 30.0;
+    ui_step    = 1.0;
+> = 2.0;
+uniform float scanline_blend_gamma <
+    ui_label   = "Scanline Blend Gamma";
+    ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
+    ui_category = "Interlacing";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 5.0;
+    ui_step    = 0.01;
+> = 1.0;
+uniform bool interlace_bff <
+    // ui_type    = "combo";
+    ui_label   = "Draw Back-Field First";
+    ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
+    ui_category = "Interlacing";
+    // ui_items   = "No\0Yes\0";
+> = interlace_bff_static;
+
+// ==== ELECTRON BEAM ====
+// static const float beam_min_sigma = beam_min_sigma_static;
+// static const float beam_max_sigma = beam_max_sigma_static;
+static const float beam_spot_power = beam_spot_power_static;
+// static const float beam_min_shape = beam_min_shape_static;
+// static const float beam_max_shape = beam_max_shape_static;
+static const float beam_shape_power = beam_shape_power_static;
+
+uniform float3 convergence_offset_x <
+    ui_label   = "Convergence Offset X RGB";
+    ui_tooltip = "Shift the color channels horizontally";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -4;
+    ui_max     = 4;
+    ui_step    = 0.05;
+> = 0;
+uniform float3 convergence_offset_y <
+    ui_label   = "Convergence Offset Y RGB";
+    ui_tooltip = "Shift the color channels vertically";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -4;
+    ui_max     = 4;
+    ui_step    = 0.05;
+> = 0;
+uniform int beam_shape_mode <
+    ui_label   = "Beam Shape Mode";
+    ui_category = "Electron Beam";
+    ui_type    = "combo";
+    ui_items   = "Digital\0"
+                 "Gaussian\0"
+                 "Multi-Source Gaussian\0";
+> = 1;
+uniform float beam_min_sigma <
+    ui_label   = "Beam Min Sigma";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = beam_min_sigma_static;
+uniform float beam_max_sigma <
+    ui_label   = "Beam Max Sigma";
+    ui_tooltip = "Must be >= Beam Min Sigma";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = beam_max_sigma_static;
+/*
+uniform float beam_spot_power <
+    ui_label   = "Beam Spot Power";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = beam_spot_power_static;
+*/
+uniform float beam_min_shape <
+    ui_label   = "Beam Min Shape";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = beam_min_shape_static;
+uniform float beam_max_shape <
+    ui_label   = "Beam Max Shape";
+    ui_tooltip = "Must be >= Beam Min Shape";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = beam_max_shape_static;
+/*
+uniform float beam_shape_power <
+    ui_label   = "Beam Shape Power";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+> = beam_shape_power_static;
+*/
+uniform int beam_horiz_filter <
+    ui_label   = "Beam Horiz Filter";
+    ui_tooltip = "Default is Quilez";
+    ui_category = "Electron Beam";
+    ui_type    = "combo";
+    ui_items   = "None\0"
+                 "Quilez (Fast)\0"
+                 "Gaussian (Tunable)\0"
+                 "Lanczos (Sharp)\0";
+> = beam_horiz_filter_static;
+uniform float beam_horiz_sigma <
+    ui_label   = "Beam Horiz Sigma";
+    ui_tooltip = "Requires Gaussian Horiz Filter";
+    ui_category = "Electron Beam";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 0.67;
+    ui_step    = 0.01;
+> = beam_horiz_sigma_static;
+uniform float beam_horiz_linear_rgb_weight <
+    ui_label   = "Beam Horiz Linear RGB Weight";
+    ui_category = "Electron Beam";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 1.0;
+    ui_step    = 0.01;
+> = beam_horiz_linear_rgb_weight_static;
+
+
 // ==== IMAGE COLORIZATION ====
 uniform float crt_gamma <
     ui_label   = "CRT Gamma";
@@ -190,48 +342,6 @@ static const float aa_cubic_c = aa_cubic_c_static;
 static const float aa_gauss_sigma = aa_gauss_sigma_static;
 
 
-// ==== INTERLACING ====
-uniform bool enable_interlacing <
-    ui_label   = "Enable Interlacing";
-    ui_category = "Interlacing";
-    // ui_type    = "combo";
-    // ui_items   = "No\0Yes\0";
-> = true;
-uniform int scanline_deinterlacing_mode <
-    ui_label   = "Deinterlacing Mode";
-    ui_tooltip = "Selects the deinterlacing algorithm. For crt-royale's original appearance, choose None.";
-    ui_category = "Interlacing";
-    ui_type    = "combo";
-    ui_items   = "None\0"
-                 "Weaving\0"
-                 "Blended Weaving\0"
-                 "Static\0";
-> = 0;
-uniform float scanline_num_pixels <
-    ui_label   = "Scanline Thickness";
-    ui_category = "Interlacing";
-    ui_type    = "slider";
-    ui_min     = 1.0;
-    ui_max     = 30.0;
-    ui_step    = 1.0;
-> = 2.0;
-uniform float scanline_blend_gamma <
-    ui_label   = "Scanline Blend Gamma";
-    ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
-    ui_category = "Interlacing";
-    ui_type    = "slider";
-    ui_min     = 0.01;
-    ui_max     = 5.0;
-    ui_step    = 0.01;
-> = 1.0;
-uniform bool interlace_bff <
-    // ui_type    = "combo";
-    ui_label   = "Draw Back-Field First";
-    ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
-    ui_category = "Interlacing";
-    // ui_items   = "No\0Yes\0";
-> = interlace_bff_static;
-
 // ==== GEOMETRY ====
 uniform int geom_mode_runtime <
     ui_label   = "Geom Mode";
@@ -306,114 +416,6 @@ uniform float border_compress <
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = border_compress_static;
-
-
-// ==== ELECTRON BEAM ====
-// static const float beam_min_sigma = beam_min_sigma_static;
-// static const float beam_max_sigma = beam_max_sigma_static;
-static const float beam_spot_power = beam_spot_power_static;
-// static const float beam_min_shape = beam_min_shape_static;
-// static const float beam_max_shape = beam_max_shape_static;
-static const float beam_shape_power = beam_shape_power_static;
-
-uniform float3 convergence_offset_x <
-    ui_label   = "Convergence Offset X RGB";
-    ui_tooltip = "Shift the color channels horizontally";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = -4;
-    ui_max     = 4;
-    ui_step    = 0.05;
-> = 0;
-uniform float3 convergence_offset_y <
-    ui_label   = "Convergence Offset Y RGB";
-    ui_tooltip = "Shift the color channels vertically";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = -4;
-    ui_max     = 4;
-    ui_step    = 0.05;
-> = 0;
-uniform int beam_shape_mode <
-    ui_label   = "Beam Shape Mode";
-    ui_category = "Electron Beam";
-    ui_type    = "combo";
-    ui_items   = "Digital\0"
-                 "Gaussian\0";
-> = 0;
-uniform float beam_min_sigma <
-    ui_label   = "Beam Min Sigma";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = beam_min_sigma_static;
-uniform float beam_max_sigma <
-    ui_label   = "Beam Max Sigma";
-    ui_tooltip = "Must be >= Beam Min Sigma";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = beam_max_sigma_static;
-/*
-uniform float beam_spot_power <
-    ui_label   = "Beam Spot Power";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = beam_spot_power_static;
-*/
-uniform float beam_min_shape <
-    ui_label   = "Beam Min Shape";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = beam_min_shape_static;
-uniform float beam_max_shape <
-    ui_label   = "Beam Max Shape";
-    ui_tooltip = "Must be >= Beam Min Shape";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = beam_max_shape_static;
-/*
-uniform float beam_shape_power <
-    ui_label   = "Beam Shape Power";
-    ui_type    = "drag";
-    ui_min     = 0.0;
-    ui_step    = 0.01;
-> = beam_shape_power_static;
-*/
-uniform int beam_horiz_filter <
-    ui_label   = "Beam Horiz Filter";
-    ui_tooltip = "Default is Quilez";
-    ui_category = "Electron Beam";
-    ui_type    = "combo";
-    ui_items   = "None\0"
-                 "Quilez (Fast)\0"
-                 "Gaussian (Tunable)\0"
-                 "Lanczos (Sharp)\0";
-> = beam_horiz_filter_static;
-uniform float beam_horiz_sigma <
-    ui_label   = "Beam Horiz Sigma";
-    ui_tooltip = "Requires Gaussian Horiz Filter";
-    ui_category = "Electron Beam";
-    ui_type    = "slider";
-    ui_min     = 0.01;
-    ui_max     = 0.67;
-    ui_step    = 0.01;
-> = beam_horiz_sigma_static;
-uniform float beam_horiz_linear_rgb_weight <
-    ui_label   = "Beam Horiz Linear RGB Weight";
-    ui_category = "Electron Beam";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 1.0;
-    ui_step    = 0.01;
-> = beam_horiz_linear_rgb_weight_static;
 
 
 
