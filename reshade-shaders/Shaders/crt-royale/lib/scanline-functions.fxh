@@ -325,24 +325,26 @@ float3 sample_rgb_scanline(
         const float2 scanline_uv_g = tex_uv - float2(offset_u_rgb.g, offset_v_rgb.g);
         const float2 scanline_uv_b = tex_uv - float2(offset_u_rgb.b, offset_v_rgb.b);
         
+        /*
         const float4 sample_r = tex2D(tex, scanline_uv_r);
         const float4 sample_g = tex2D(tex, scanline_uv_g);
         const float4 sample_b = tex2D(tex, scanline_uv_b);
+        */
 
-        /*
+        /**/
         const float3 sample_r = sample_single_scanline_horizontal(
             tex, scanline_uv_r, tex_size, texture_size_inv);
         const float3 sample_g = sample_single_scanline_horizontal(
             tex, scanline_uv_g, tex_size, texture_size_inv);
         const float3 sample_b = sample_single_scanline_horizontal(
             tex, scanline_uv_b, tex_size, texture_size_inv);
-        */
+        /**/
 
         return float3(sample_r.r, sample_g.g, sample_b.b);
     }
     else {
-        return tex2D(tex, tex_uv).rgb;
-        // return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
+        // return tex2D(tex, tex_uv).rgb;
+        return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
     }
 }
 

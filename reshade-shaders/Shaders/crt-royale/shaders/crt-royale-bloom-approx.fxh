@@ -153,8 +153,8 @@ void approximateBloomPS(
 
     out float4 color : SV_Target
 ) {
-    const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
-    const float2 vertical_scanlines_size = tex2Dsize(samplerBeamMisalignment);
+    const float2 orig_linearized_size = tex2Dsize(samplerBeamConvergence);
+    const float2 vertical_scanlines_size = tex2Dsize(samplerBeamConvergence);
     const float2 output_size = TEX_BLOOMAPPROX_SIZE;
 
     // const float2 video_uv = vTexCoord * texture_size / video_size;
@@ -239,7 +239,7 @@ void approximateBloomPS(
 //    const sampler2D texture = ORIG_LINEARIZED.texture;
 //    const float2 tex_uv = tex_uv;
 //    const float2 blur_dxdy = blur_dxdy;
-    // const float2 texture_size_ = tex2Dsize(samplerOrigLinearized);
+    // const float2 texture_size_ = tex2Dsize(samplerBeamConvergence);
 //    const float2 texture_size_inv = texture_size_inv;
 //    const float2 tex_uv_to_pixel_scale = tex_uv_to_pixel_scale;
     float2 tex_uv_r, tex_uv_g, tex_uv_b;
@@ -268,19 +268,19 @@ void approximateBloomPS(
         //  Use a 4x4 Gaussian resize.  This is slower but technically correct.
         if(beam_misconvergence)
         {
-            out_color_r = tex2Dresize_gaussian4x4(samplerOrigLinearized, tex_uv_r,
+            out_color_r = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_r,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_g = tex2Dresize_gaussian4x4(samplerOrigLinearized, tex_uv_g,
+            out_color_g = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_g,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_b = tex2Dresize_gaussian4x4(samplerOrigLinearized, tex_uv_b,
+            out_color_b = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_b,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
         }
         else
         {
-            out_color = tex2Dresize_gaussian4x4(samplerOrigLinearized, tex_uv,
+            out_color = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv,
                 blur_dxdy, orig_linearized_size, texture_size_inv,
                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
         }
@@ -292,16 +292,16 @@ void approximateBloomPS(
         //  nicely with convergence offsets, but it has its charms.
         if(beam_misconvergence)
         {
-            out_color_r = tex2Dblur3x3resize(samplerOrigLinearized, tex_uv_r,
+            out_color_r = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_r,
                 blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_g = tex2Dblur3x3resize(samplerOrigLinearized, tex_uv_g,
+            out_color_g = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_g,
                 blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_b = tex2Dblur3x3resize(samplerOrigLinearized, tex_uv_b,
+            out_color_b = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_b,
                 blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
         }
         else
         {
-            out_color = tex2Dblur3x3resize(samplerOrigLinearized, tex_uv, blur_dxdy, get_intermediate_gamma());
+            out_color = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv, blur_dxdy, get_intermediate_gamma());
         }
     }
     else
@@ -314,13 +314,13 @@ void approximateBloomPS(
         //  keep bloom_approx_scale_x/min_allowed_viewport_triads < ~1.1658025.)
         if(beam_misconvergence)
         {
-            out_color_r = tex2D_linearize(samplerOrigLinearized, tex_uv_r, get_intermediate_gamma()).rgb;
-            out_color_g = tex2D_linearize(samplerOrigLinearized, tex_uv_g, get_intermediate_gamma()).rgb;
-            out_color_b = tex2D_linearize(samplerOrigLinearized, tex_uv_b, get_intermediate_gamma()).rgb;
+            out_color_r = tex2D_linearize(samplerBeamConvergence, tex_uv_r, get_intermediate_gamma()).rgb;
+            out_color_g = tex2D_linearize(samplerBeamConvergence, tex_uv_g, get_intermediate_gamma()).rgb;
+            out_color_b = tex2D_linearize(samplerBeamConvergence, tex_uv_b, get_intermediate_gamma()).rgb;
         }
         else
         {
-            out_color = tex2D_linearize(samplerOrigLinearized, tex_uv, get_intermediate_gamma()).rgb;
+            out_color = tex2D_linearize(samplerBeamConvergence, tex_uv, get_intermediate_gamma()).rgb;
         }
     }
     //  Pack the colors from the red/green/blue beams into a single vector:
@@ -333,9 +333,9 @@ void approximateBloomPS(
 
     //  Encode and output the blurred image
     //    Currently the bloom-approx logic is completely disabled
-    const float4 input_color = tex2D_linearize(samplerOrigLinearized, tex_uv, get_intermediate_gamma());
+    const float4 input_color = tex2D_linearize(samplerBeamConvergence, tex_uv, get_intermediate_gamma());
     color = encode_output(input_color, get_intermediate_gamma());
-    // color = tex2D(samplerOrigLinearized, tex_uv);
+    // color = tex2D(samplerBeamConvergence, tex_uv);
 
     // color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());
 }

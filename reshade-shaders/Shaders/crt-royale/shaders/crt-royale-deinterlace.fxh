@@ -5,7 +5,7 @@
 #include "../lib/scanline-functions.fxh"
 
 
-void lerpScanlinesVS(
+void deinterlaceVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -18,7 +18,7 @@ void lerpScanlinesVS(
 }
 
 
-void lerpScanlinesPS(
+void deinterlacePS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 v_step : TEXCOORD1,
@@ -34,7 +34,7 @@ void lerpScanlinesPS(
         const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
         const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
         
-        const float4 cur_line_color = tex2D(samplerBeamMisalignment, texcoord);
+        const float4 cur_line_color = tex2D(samplerBeamConvergence, texcoord);
         const float4 cur_line_prev_color = tex2D(samplerFreezeFrame, texcoord);
 
         const float4 avg_color = (cur_line_color + cur_line_prev_color) / 2.0;
@@ -61,7 +61,7 @@ void lerpScanlinesPS(
         const float2 curr_offset = lerp(0, raw_offset, wrong_field);
         const float2 prev_offset = lerp(raw_offset, 0, wrong_field);
 
-        const float4 cur_line_color = tex2D(samplerBeamMisalignment, texcoord + curr_offset);
+        const float4 cur_line_color = tex2D(samplerBeamConvergence, texcoord + curr_offset);
         const float4 prev_line_color = tex2D(samplerFreezeFrame, texcoord + prev_offset);
 
         const float4 avg_color = (cur_line_color + prev_line_color) / 2.0;
@@ -70,7 +70,7 @@ void lerpScanlinesPS(
     }
     // No temporal blending
     else {
-        color = tex2D(samplerBeamMisalignment, texcoord);
+        color = tex2D(samplerBeamConvergence, texcoord);
     }
 }
 
@@ -80,5 +80,5 @@ void freezeFramePS(
 
     out float4 color : SV_Target
 ) {
-    color = tex2D(samplerBeamMisalignment, texcoord);
+    color = tex2D(samplerBeamConvergence, texcoord);
 }

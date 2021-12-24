@@ -26,7 +26,7 @@
 
 #include "shared-objects.fxh"
 
-void linearizeAndBobVS(
+void simulateInterpolationVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -40,7 +40,7 @@ void linearizeAndBobVS(
     v_step = float2(0.0, 1.0 / content_size.y);
 }
 
-void linearizeAndBobPS(
+void simulateInterpolationPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float interlaced : TEXCOORD1,
@@ -66,7 +66,7 @@ void linearizeAndBobPS(
     color = encode_output(float4(selected_color, 1.0), get_intermediate_gamma());
 }
 
-void fancyScanWithElectronBeamsVS(
+void simulateEletronBeamsVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -75,18 +75,18 @@ void fancyScanWithElectronBeamsVS(
 ) {
     PostProcessVS(id, position, texcoord);
     
-    v_step = float2(0.0, 1.0 / tex2Dsize(samplerOrigLinearized).y);
+    v_step = float2(0.0, 1.0 / tex2Dsize(samplerInterlaced).y);
 }
 
 
-void fancyScanWithElectronBeamsPS(
+void simulateEletronBeamsPS(
     in const float4 position : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 v_step : TEXCOORD1,
     
     out float4 color : SV_Target
 ) {
-    const float2 orig_linearized_size = tex2Dsize(samplerOrigLinearized);
+    const float2 orig_linearized_size = tex2Dsize(samplerInterlaced);
 
     const float wrong_field = curr_line_is_wrong_field(texcoord.y, orig_linearized_size.y);
 
@@ -96,23 +96,22 @@ void fancyScanWithElectronBeamsPS(
         // If we're in the current field, draw the beam
         //   wrong_field is always 0 when we aren't interlacing
         // Double the intensity when interlacing to maintain the same apparent brightness
-        const float interlacing_brightness_factor = enable_interlacing * float(
+        const float interlacing_brightness_factor = 1 + enable_interlacing * float(
             scanline_deinterlacing_mode != 1 &&
             scanline_deinterlacing_mode != 2
         );
-        const float contrib_factor = interlacing_brightness_factor + 1.0;
 
-        // const float3 scanline_color = tex2D_linearize(samplerOrigLinearized, texcoord, get_intermediate_gamma()).rgb;
+        // const float3 scanline_color = tex2D_linearize(samplerInterlaced, texcoord, get_intermediate_gamma()).rgb;
         const float3 scanline_color = sample_single_scanline_horizontal(
-            samplerOrigLinearized,
+            samplerInterlaced,
             texcoord, orig_linearized_size,
             1 / orig_linearized_size
         );
 
-        const float3 scanline_intensity = (1 - wrong_field) * contrib_factor * scanline_color;
+        const float3 scanline_intensity = (1 - wrong_field) * interlacing_brightness_factor * scanline_color;
 
         // Temporarily auto-dim the output to avoid clipping.
-        color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
+        color = encode_output(float4(scanline_intensity * beam_intensity, 1.0), get_intermediate_gamma());
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
@@ -151,12 +150,12 @@ void fancyScanWithElectronBeamsPS(
 
         // Sample the nearest in-field scanline
         const float3 scanline_color = sample_single_scanline_horizontal(
-            samplerOrigLinearized,
+            samplerInterlaced,
             source_scanline_center_xy, orig_linearized_size,
             1 / orig_linearized_size
         );
         // const float4 scanline_color = decode_input(
-        //     tex2D(samplerOrigLinearized, source_scanline_center_xy),
+        //     tex2D(samplerInterlaced, source_scanline_center_xy),
         //     get_intermediate_gamma()
         // );
 
@@ -174,7 +173,7 @@ void fancyScanWithElectronBeamsPS(
         );
 
         // Output the corrected color
-        color = encode_output(float4(beam_strength * levels_autodim_temp * 1.5, 1), get_intermediate_gamma());
+        color = encode_output(float4(beam_strength * beam_intensity, 1), get_intermediate_gamma());
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
@@ -216,17 +215,17 @@ void fancyScanWithElectronBeamsPS(
         const float2 lower_scanline_center_xy = float2(texcoord.x, scanline_centers_y.z);
 
         const float3 upper_scanline_color = sample_single_scanline_horizontal(
-            samplerOrigLinearized,
+            samplerInterlaced,
             upper_scanline_center_xy, orig_linearized_size,
             1 / orig_linearized_size
         );
         const float3 curr_scanline_color = sample_single_scanline_horizontal(
-            samplerOrigLinearized,
+            samplerInterlaced,
             curr_scanline_center_xy, orig_linearized_size,
             1 / orig_linearized_size
         );
         const float3 lower_scanline_color = sample_single_scanline_horizontal(
-            samplerOrigLinearized,
+            samplerInterlaced,
             lower_scanline_center_xy, orig_linearized_size,
             1 / orig_linearized_size
         );        
@@ -259,21 +258,21 @@ void fancyScanWithElectronBeamsPS(
         );
 
         // Output the corrected color
-        color = encode_output(float4(beam_strength * levels_autodim_temp * 1.5, 1), get_intermediate_gamma());   
+        color = encode_output(float4(beam_strength * beam_intensity, 1), get_intermediate_gamma());   
     }
 }
 
-void beamMisaslignmentPS(
+void beamConvergencePS(
     in const float4 position : SV_Position,
     in const float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_TARGET
 ) {
-    const float2 scanline_texture_size = tex2Dsize(samplerVerticalScanlines);
+    const float2 scanline_texture_size = tex2Dsize(samplerElectronBeams);
     const float2 scanline_texture_size_inv = 1.0 / scanline_texture_size;
 
     const float3 offset_sample = sample_rgb_scanline(
-        samplerVerticalScanlines, texcoord,
+        samplerElectronBeams, texcoord,
         scanline_texture_size, scanline_texture_size_inv
     );
 

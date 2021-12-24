@@ -171,8 +171,8 @@ uniform float3 convergence_offset_x <
     ui_tooltip = "Shift the color channels horizontally";
     ui_category = "Electron Beam";
     ui_type    = "drag";
-    ui_min     = -4;
-    ui_max     = 4;
+    ui_min     = -10;
+    ui_max     = 10;
     ui_step    = 0.05;
 > = 0;
 uniform float3 convergence_offset_y <
@@ -180,8 +180,8 @@ uniform float3 convergence_offset_y <
     ui_tooltip = "Shift the color channels vertically";
     ui_category = "Electron Beam";
     ui_type    = "drag";
-    ui_min     = -4;
-    ui_max     = 4;
+    ui_min     = -10;
+    ui_max     = 10;
     ui_step    = 0.05;
 > = 0;
 uniform int beam_shape_mode <
@@ -192,6 +192,15 @@ uniform int beam_shape_mode <
                  "Gaussian\0"
                  "Multi-Source Gaussian\0";
 > = 1;
+uniform float beam_intensity <
+    ui_label = "Beam Intensity";
+    ui_tooltip = "0.5 recommended for Digital Beam Shape and 0.7 for Gaussian. Adjust from there.";
+    ui_category = "Electron Beam";
+    ui_type = "slider";
+    ui_min = 0.01;
+    ui_max = 2.0;
+    ui_step = 0.01;
+> = 0.7;
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
     ui_category = "Electron Beam";

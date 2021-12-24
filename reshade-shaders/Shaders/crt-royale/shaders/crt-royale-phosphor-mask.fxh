@@ -129,7 +129,7 @@ void applyPhosphorMaskPS(
     
     out float4 color : SV_Target
 ) {
-    const float2 scanline_texture_size = tex2Dsize(samplerBlendScanline);
+    const float2 scanline_texture_size = tex2Dsize(samplerDeinterlace);
     // const float2 output_size = tex2Dsize(samplerMaskedScanlines);
     const float2 output_size = TEX_MASKEDSCANLINES_SIZE;
 
@@ -146,7 +146,7 @@ void applyPhosphorMaskPS(
     // const float3 scanline_color_dim = sample_rgb_scanline_horizontal(
     //     samplerVerticalOffset, texcoord,
     //     scanline_texture_size, scanline_texture_size_inv);
-    const float3 scanline_color_dim = tex2D(samplerBlendScanline, texcoord).rgb;
+    const float3 scanline_color_dim = tex2D(samplerDeinterlace, texcoord).rgb;
     const float auto_dim_factor = levels_autodim_temp;
 
     const float2 true_tile_size = get_downsizing_factor_and_true_tile_size().yz;
