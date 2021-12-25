@@ -161,7 +161,7 @@ uniform bool interlace_bff <
 // ==== ELECTRON BEAM ====
 // static const float beam_min_sigma = beam_min_sigma_static;
 // static const float beam_max_sigma = beam_max_sigma_static;
-static const float beam_spot_power = beam_spot_power_static;
+// static const float beam_spot_power = beam_spot_power_static;
 // static const float beam_min_shape = beam_min_shape_static;
 // static const float beam_max_shape = beam_max_shape_static;
 static const float beam_shape_power = beam_shape_power_static;
@@ -216,14 +216,13 @@ uniform float beam_max_sigma <
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_max_sigma_static;
-/*
 uniform float beam_spot_power <
     ui_label   = "Beam Spot Power";
+    ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_spot_power_static;
-*/
 uniform float beam_min_shape <
     ui_label   = "Beam Min Shape";
     ui_category = "Electron Beam";
