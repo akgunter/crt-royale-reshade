@@ -482,9 +482,36 @@ float3 get_beam_strength(float3 dist, float3 color,
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
 
-float3 get_fancy_beam_strength(float3 dist, float3 color,
-    const float sigma_range, const float shape_range)
-{
+float3 get_fancy_beam_strength(
+    float dist,
+    float3 color,
+    const float sigma_range,
+    const float shape_range
+) {
+    // entry point in original is scanline_contrib()
+    // this is based on scanline_generalized_gaussian_sampled_contrib() from original
+
+    //  See scanline_generalized_gaussian_integral_contrib() for details!
+    //  generalized sample =
+    //      beta/(2*alpha*gamma(1/beta)) * e**(-(|x|/alpha)**beta)
+    const float3 alpha = sqrt(2.0) * get_gaussian_sigma(color, sigma_range);
+    const float3 beta = get_generalized_gaussian_beta(color, shape_range);
+    //  Avoid repeated divides:
+    const float3 alpha_inv = 1.0 / alpha;
+    const float3 beta_inv = 1.0 / beta;
+    const float3 scale = color * beta * 0.5 * alpha_inv /
+        gamma_impl(beta_inv, beta);
+    
+    return scale * exp(-pow(abs(dist*alpha_inv), beta));
+}
+
+float3 get_fancy_beam_strength(
+    float dist,
+    float prev_dist,
+    float3 color,
+    const float sigma_range,
+    const float shape_range
+) {
     // entry point in original is scanline_contrib()
     // this is based on scanline_generalized_gaussian_sampled_contrib() from original
 
@@ -499,7 +526,10 @@ float3 get_fancy_beam_strength(float3 dist, float3 color,
     const float3 scale = color * beta * 0.5 * alpha_inv /
         gamma_impl(beta_inv, beta);
 
-    return scale * exp(-pow(abs(dist*alpha_inv), beta));
+    const float3 strength_at_sample = scale * exp(-pow(abs(dist*alpha_inv), beta));
+    const float3 strength_at_prev_sample = scale * exp(-pow(abs(prev_dist*alpha_inv), beta));
+
+    return 0.5 * (strength_at_sample + strength_at_prev_sample);
 }
 
 

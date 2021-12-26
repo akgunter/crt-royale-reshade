@@ -167,7 +167,13 @@ void simulateEletronBeamsPS(
 
         const float beam_dist_v = abs(curr_line_texel_v - source_scanline_center_v);
         const float beam_dist_y = beam_dist_v / max_beam_dist;
-        const float3 beam_strength = get_beam_strength(
+        
+        // const float prev_dist_offset_v = source_offset_direction * 
+        //     float(beam_dist_v > 0) * max(0.5, sign(beam_dist_y));
+        // const float prev_dist_offset_y = prev_dist_offset_v / max_beam_dist;
+        // const float prev_dist_y = beam_dist_y + prev_dist_offset_y;
+
+        const float3 beam_strength = get_fancy_beam_strength(
             beam_dist_y, scanline_color,
             sigma_range, shape_range
         );
