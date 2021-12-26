@@ -111,7 +111,7 @@ void simulateEletronBeamsPS(
         const float3 scanline_intensity = (1 - wrong_field) * interlacing_brightness_factor * scanline_color;
 
         // Temporarily auto-dim the output to avoid clipping.
-        color = encode_output(float4(scanline_intensity * beam_intensity, 1.0), get_intermediate_gamma());
+        color = encode_output(float4(scanline_intensity * levels_autodim_temp, 1.0), get_intermediate_gamma());
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
@@ -173,7 +173,7 @@ void simulateEletronBeamsPS(
         );
 
         // Output the corrected color
-        color = encode_output(float4(beam_strength * beam_intensity, 1), get_intermediate_gamma());
+        color = encode_output(float4(beam_strength * levels_autodim_temp, 1), get_intermediate_gamma());
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
@@ -258,7 +258,7 @@ void simulateEletronBeamsPS(
         );
 
         // Output the corrected color
-        color = encode_output(float4(beam_strength * beam_intensity, 1), get_intermediate_gamma());   
+        color = encode_output(float4(beam_strength * levels_autodim_temp, 1), get_intermediate_gamma());   
     }
 }
 

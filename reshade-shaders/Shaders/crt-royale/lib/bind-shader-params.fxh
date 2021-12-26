@@ -119,23 +119,23 @@ uniform float mask_num_triads_desired <
 // ==== INTERLACING ====
 uniform bool enable_interlacing <
     ui_label   = "Enable Interlacing";
-    ui_category = "Interlacing";
+    ui_category = "Interlacing and Scanlines";
     // ui_type    = "combo";
     // ui_items   = "No\0Yes\0";
 > = true;
 uniform int scanline_deinterlacing_mode <
     ui_label   = "Deinterlacing Mode";
     ui_tooltip = "Selects the deinterlacing algorithm. For crt-royale's original appearance, choose None.";
-    ui_category = "Interlacing";
+    ui_category = "Interlacing and Scanlines";
     ui_type    = "combo";
     ui_items   = "None\0"
                  "Weaving\0"
                  "Blended Weaving\0"
                  "Static\0";
-> = 0;
+> = 1;
 uniform float scanline_num_pixels <
     ui_label   = "Scanline Thickness";
-    ui_category = "Interlacing";
+    ui_category = "Interlacing and Scanlines";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 30.0;
@@ -144,7 +144,7 @@ uniform float scanline_num_pixels <
 uniform float scanline_blend_gamma <
     ui_label   = "Scanline Blend Gamma";
     ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
-    ui_category = "Interlacing";
+    ui_category = "Interlacing and Scanlines";
     ui_type    = "slider";
     ui_min     = 0.01;
     ui_max     = 5.0;
@@ -154,7 +154,7 @@ uniform bool interlace_bff <
     // ui_type    = "combo";
     ui_label   = "Draw Back-Field First";
     ui_tooltip = "Draw odd-numbered scanlines first (often has no effect)";
-    ui_category = "Interlacing";
+    ui_category = "Interlacing and Scanlines";
     // ui_items   = "No\0Yes\0";
 > = interlace_bff_static;
 
@@ -192,6 +192,7 @@ uniform int beam_shape_mode <
                  "Gaussian\0"
                  "Multi-Source Gaussian\0";
 > = 1;
+/*
 uniform float beam_intensity <
     ui_label = "Beam Intensity";
     ui_tooltip = "0.5 recommended for Digital Beam Shape and 0.7 for Gaussian. Adjust from there.";
@@ -201,6 +202,7 @@ uniform float beam_intensity <
     ui_max = 2.0;
     ui_step = 0.01;
 > = 0.7;
+*/
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
     ui_category = "Electron Beam";
@@ -210,7 +212,7 @@ uniform float beam_min_sigma <
 > = beam_min_sigma_static;
 uniform float beam_max_sigma <
     ui_label   = "Beam Max Sigma";
-    ui_tooltip = "Must be >= Beam Min Sigma";
+    ui_tooltip = "Should be >= Beam Min Sigma";
     ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
@@ -232,7 +234,7 @@ uniform float beam_min_shape <
 > = beam_min_shape_static;
 uniform float beam_max_shape <
     ui_label   = "Beam Max Shape";
-    ui_tooltip = "Must be >= Beam Min Shape";
+    ui_tooltip = "Should be >= Beam Min Shape";
     ui_category = "Electron Beam";
     ui_type    = "drag";
     ui_min     = 0.0;
@@ -296,6 +298,7 @@ uniform float lcd_gamma <
 > = lcd_gamma_static;
 uniform float levels_contrast <
     ui_label   = "Levels Contrast";
+    ui_tooltip = "2.0 recommended for Gaussian Beam Shapes. 1.0 for Digital.";
     ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 0.0;
@@ -337,14 +340,16 @@ uniform float bloom_excess <
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = bloom_excess_static;
-uniform float2 aa_subpixel_r_offset_runtime <
-    ui_label   = "AA Subpixel R Offet XY";
-    ui_category = "Colors and Effects";
-    ui_type    = "drag";
-    ui_min     = -0.5;
-    ui_max     = 0.5;
-    ui_step    = 0.01;
-> = aa_subpixel_r_offset_static;
+#if _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
+    uniform float2 aa_subpixel_r_offset_runtime <
+        ui_label   = "AA Subpixel R Offet XY";
+        ui_category = "Colors and Effects";
+        ui_type    = "drag";
+        ui_min     = -0.5;
+        ui_max     = 0.5;
+        ui_step    = 0.01;
+    > = aa_subpixel_r_offset_static;
+#endif
 
 static const float aa_cubic_c = aa_cubic_c_static;
 static const float aa_gauss_sigma = aa_gauss_sigma_static;
@@ -424,8 +429,6 @@ uniform float border_compress <
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = border_compress_static;
-
-
 
 
 

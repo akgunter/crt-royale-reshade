@@ -23,6 +23,8 @@
 	#define CONTENT_BOX_VISIBLE 0
 #endif
 
+#include "crt-royale/shaders/content-box.fxh"
+
 #if !CONTENT_BOX_VISIBLE
 	#include "crt-royale/shaders/content-crop.fxh"
 	#include "crt-royale/shaders/crt-royale-electron-beams.fxh"
@@ -35,8 +37,6 @@
 	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
 	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
-#else
-	#include "crt-royale/shaders/content-box.fxh"
 #endif
 
 

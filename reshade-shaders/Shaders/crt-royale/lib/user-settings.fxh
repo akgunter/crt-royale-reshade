@@ -152,8 +152,10 @@
 #define _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_9_PIXELS 3
 #define _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_12_PIXELS 4
 
-#ifndef PHOSPHOR_BLOOM_TRIAD_SIZE_MODE
-    #define PHOSPHOR_BLOOM_TRIAD_SIZE_MODE _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS  // [0 - 4]
+#if !_RUNTIME_PHOSPHOR_BLOOM_SIGMA
+    #ifndef PHOSPHOR_BLOOM_TRIAD_SIZE_MODE
+        #define PHOSPHOR_BLOOM_TRIAD_SIZE_MODE _PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS  // [0 - 4]
+    #endif
 #endif
 
 //  Here's a helpful chart:
@@ -176,7 +178,7 @@ static const float lcd_gamma_static = 2.2;                  //  range [1, 5]
 
 //  LEVELS MANAGEMENT:
 //  Control the final multiplicative image contrast:
-static const float levels_contrast_static = 1.0;            //  range [0, 4)
+static const float levels_contrast_static = 2.0;            //  range [0, 4)
 //  We auto-dim to avoid clipping between passes and restore brightness
 //  later.  Control the dim factor here: Lower values clip less but crush
 //  blacks more (static only for now).
