@@ -375,7 +375,7 @@ float3 sample_rgb_scanline_horizontal(const sampler2D tex,
     }
 }
 
-float3 get_bobbed_scanline_sample(
+float3 get_averaged_scanline_sample(
     sampler2D tex, const float2 texcoord,
     const float scanline_start_y, const float v_step_y,
     const float input_gamma

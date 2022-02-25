@@ -66,7 +66,7 @@ void brightpassPS(
     //  Sample BLOOM_APPROX to estimate what a straight blur of masked scanlines
     //  would look like, so we can estimate how much energy we'll receive from
     //  blooming neighbors:
-    const float3 phosphor_blur_approx = levels_contrast * tex2D_linearize(samplerBloomApprox, texcoord, get_intermediate_gamma()).rgb;
+    const float3 phosphor_blur_approx = levels_contrast * tex2D_linearize(samplerBloomApproxHoriz, texcoord, get_intermediate_gamma()).rgb;
 
     //  Compute the blur weight for the center texel and the maximum energy we
     //  expect to receive from neighbors:

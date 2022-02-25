@@ -26,7 +26,7 @@
 
 #include "shared-objects.fxh"
 
-void simulateInterpolationVS(
+void simulateInterlacingVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -40,7 +40,7 @@ void simulateInterpolationVS(
     v_step = float2(0.0, 1.0 / content_size.y);
 }
 
-void simulateInterpolationPS(
+void simulateInterlacingPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float interlaced : TEXCOORD1,
@@ -54,7 +54,7 @@ void simulateInterpolationPS(
     float curr_scanline_start_y = (
         curr_scanline_idx * scanline_num_pixels + TEXCOORD_OFFSET
     ) / content_size.y;
-    float3 in_field_interpolated_line = get_bobbed_scanline_sample(
+    float3 in_field_interpolated_line = get_averaged_scanline_sample(
         samplerCrop, texcoord,
         curr_scanline_start_y, v_step.y,
         get_input_gamma()

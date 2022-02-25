@@ -22,6 +22,7 @@
 
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
+#include "../lib/phosphor-mask-resizing.fxh"
 #include "../lib/scanline-functions.fxh"
 #include "../lib/blur-functions.fxh"
 #include "../lib/bloom-functions.fxh"
@@ -147,195 +148,264 @@ float3 tex2Dresize_gaussian4x4(sampler2D tex, float2 tex_uv, float2 dxdy, float2
 }
 
 
-void approximateBloomPS(
+// void approximateBloomPS(
+//     in const float4 pos : SV_Position,
+//     in const float2 texcoord : TEXCOORD0,
+
+//     out float4 color : SV_Target
+// ) {
+//     const float2 orig_linearized_size = tex2Dsize(samplerBeamConvergence);
+//     const float2 vertical_scanlines_size = tex2Dsize(samplerBeamConvergence);
+//     const float2 output_size = TEX_BLOOMAPPROX_SIZE;
+
+//     // const float2 video_uv = vTexCoord * texture_size / video_size;
+//     // const float2 tex_uv = video_uv * ORIG_LINEARIZEDvideo_size / ORIG_LINEARIZEDtexture_size;
+//     const float2 tex_uv = texcoord;
+
+//     /*
+//     //  The last pass (vertical scanlines) had a viewport y scale, so we can
+//     //  use it to calculate a better runtime sigma:
+//     const float estimated_viewport_size_x =
+//         vertical_scanlines_size.y * geom_aspect_ratio_x/geom_aspect_ratio_y;
+
+//     //  Get the uv sample distance between output pixels.  We're using a resize
+//     //  blur, so arbitrary upsizing will be acceptable if filter_linearN =
+//     //  "true," and arbitrary downsizing will be acceptable if mipmap_inputN =
+//     //  "true" too.  The blur will be much more accurate if a true 4x4 Gaussian
+//     //  resize is used instead of tex2Dblur3x3_resize (which samples between
+//     //  texels even for upsizing).
+//     const float2 dxdy_min_scale = orig_linearized_size / output_size;
+//     const float2 texture_size_inv = 1.0 / orig_linearized_size;
+
+
+//     float2 blur_dxdy;
+//     if(bloom_approx_filter > 1.5)   //  4x4 true Gaussian resize
+//     {
+//         //  For upsizing, we'll snap to texels and sample the nearest 4.
+//         const float2 dxdy_scale = max(dxdy_min_scale, float2(1.0, 1.0));
+//         blur_dxdy = dxdy_scale * texture_size_inv;
+//     }
+//     else
+//     {
+//         const float2 dxdy_scale = dxdy_min_scale;
+//         blur_dxdy = dxdy_scale * texture_size_inv;
+//     }
+//     //  tex2Dresize_gaussian4x4 needs to know a bit more than the other filters:
+//     const float2 tex_uv_to_pixel_scale = output_size; // * ORIG_LINEARIZEDtexture_size / ORIG_LINEARIZEDvideo_size;
+//     //texture_size_inv = texture_size_inv;
+
+//     //  Detecting interlacing again here lets us apply convergence offsets in
+//     //  this pass.  il_step_multiple contains the (texel, scanline) step
+//     //  multiple: 1 for progressive, 2 for interlaced.
+//     const float y_step = 1.0 + enable_interlacing;
+//     const float2 il_step_multiple = float2(1.0, y_step);
+//     //  Get the uv distance between (texels, same-field scanlines):
+//     const float2 uv_scanline_step = il_step_multiple / orig_linearized_size;
+
+//     //  Would a viewport-relative size work better for this pass?  (No.)
+//     //  PROS:
+//     //  1.) Instead of writing an absolute size to user-cgp-constants.h, we'd
+//     //      write a viewport scale.  That number could be used to directly scale
+//     //      the viewport-resolution bloom sigma and/or triad size to a smaller
+//     //      scale.  This way, we could calculate an optimal dynamic sigma no
+//     //      matter how the dot pitch is specified.
+//     //  CONS:
+//     //  1.) Texel smearing would be much worse at small viewport sizes, but
+//     //      performance would be much worse at large viewport sizes, so there
+//     //      would be no easy way to calculate a decent scale.
+//     //  2.) Worse, we could no longer get away with using a constant-size blur!
+//     //      Instead, we'd have to face all the same difficulties as the real
+//     //      phosphor bloom, which requires static #ifdefs to decide the blur
+//     //      size based on the expected triad size...a dynamic value.
+//     //  3.) Like the phosphor bloom, we'd have less control over making the blur
+//     //      size correct for an optical blur.  That said, we likely overblur (to
+//     //      maintain brightness) more than the eye would do by itself: 20/20
+//     //      human vision distinguishes ~1 arc minute, or 1/60 of a degree.  The
+//     //      highest viewing angle recommendation I know of is THX's 40.04 degree
+//     //      recommendation, at which 20/20 vision can distinguish about 2402.4
+//     //      lines.  Assuming the "TV lines" definition, that means 1201.2
+//     //      distinct light lines and 1201.2 distinct dark lines can be told
+//     //      apart, i.e. 1201.2 pairs of lines.  This would correspond to 1201.2
+//     //      pairs of alternating lit/unlit phosphors, so 2402.4 phosphors total
+//     //      (if they're alternately lit).  That's a max of 800.8 triads.  Using
+//     //      a more popular 30 degree viewing angle recommendation, 20/20 vision
+//     //      can distinguish 1800 lines, or 600 triads of alternately lit
+//     //      phosphors.  In contrast, we currently blur phosphors all the way
+//     //      down to 341.3 triads to ensure full brightness.
+//     //  4.) Realistically speaking, we're usually just going to use bilinear
+//     //      filtering in this pass anyway, but it only works well to limit
+//     //      bandwidth if it's done at a small constant scale.
+    
+//     //  Get the constants we need to sample:
+// //    const sampler2D texture = ORIG_LINEARIZED.texture;
+// //    const float2 tex_uv = tex_uv;
+// //    const float2 blur_dxdy = blur_dxdy;
+//     // const float2 texture_size_ = tex2Dsize(samplerBeamConvergence);
+// //    const float2 texture_size_inv = texture_size_inv;
+// //    const float2 tex_uv_to_pixel_scale = tex_uv_to_pixel_scale;
+//     float2 tex_uv_r, tex_uv_g, tex_uv_b;
+
+//     if(beam_misconvergence)
+//     {
+//         const float2 convergence_offsets_r = get_convergence_offsets_r_vector();
+//         const float2 convergence_offsets_g = get_convergence_offsets_g_vector();
+//         const float2 convergence_offsets_b = get_convergence_offsets_b_vector();
+//         tex_uv_r = tex_uv - convergence_offsets_r * uv_scanline_step;
+//         tex_uv_g = tex_uv - convergence_offsets_g * uv_scanline_step;
+//         tex_uv_b = tex_uv - convergence_offsets_b * uv_scanline_step;
+//     }
+//     //  Get the blur sigma:
+//     const float bloom_approx_sigma = get_bloom_approx_sigma(output_size.x,
+//         estimated_viewport_size_x);
+
+
+//     //  Sample the resized and blurred texture, and apply convergence offsets if
+//     //  necessary.  Applying convergence offsets here triples our samples from
+//     //  16/9/1 to 48/27/3, but faster and easier than sampling BLOOM_APPROX and
+//     //  HALATION_BLUR 3 times at full resolution every time they're used.
+//     float3 out_color_r, out_color_g, out_color_b, out_color;
+//     if(bloom_approx_filter > 1.5)
+//     {
+//         //  Use a 4x4 Gaussian resize.  This is slower but technically correct.
+//         if(beam_misconvergence)
+//         {
+//             out_color_r = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_r,
+//                 blur_dxdy, orig_linearized_size, texture_size_inv,
+//                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
+//             out_color_g = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_g,
+//                 blur_dxdy, orig_linearized_size, texture_size_inv,
+//                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
+//             out_color_b = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_b,
+//                 blur_dxdy, orig_linearized_size, texture_size_inv,
+//                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
+//         }
+//         else
+//         {
+//             out_color = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv,
+//                 blur_dxdy, orig_linearized_size, texture_size_inv,
+//                 tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
+//         }
+//     }
+//     else if(bloom_approx_filter > 0.5)
+//     {
+//         //  Use a 3x3 resize blur.  This is the softest option, because we're
+//         //  blurring already blurry bilinear samples.  It doesn't play quite as
+//         //  nicely with convergence offsets, but it has its charms.
+//         if(beam_misconvergence)
+//         {
+//             out_color_r = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_r,
+//                 blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
+//             out_color_g = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_g,
+//                 blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
+//             out_color_b = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_b,
+//                 blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
+//         }
+//         else
+//         {
+//             out_color = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv, blur_dxdy, get_intermediate_gamma());
+//         }
+//     }
+//     else
+//     {
+//         //  Use bilinear sampling.  This approximates a 4x4 Gaussian resize MUCH
+//         //  better than tex2Dblur3x3_resize for the very small sigmas we're
+//         //  likely to use at small output resolutions.  (This estimate becomes
+//         //  too sharp above ~400x300, but the blurs break down above that
+//         //  resolution too, unless min_allowed_viewport_triads is high enough to
+//         //  keep bloom_approx_scale_x/min_allowed_viewport_triads < ~1.1658025.)
+//         if(beam_misconvergence)
+//         {
+//             out_color_r = tex2D_linearize(samplerBeamConvergence, tex_uv_r, get_intermediate_gamma()).rgb;
+//             out_color_g = tex2D_linearize(samplerBeamConvergence, tex_uv_g, get_intermediate_gamma()).rgb;
+//             out_color_b = tex2D_linearize(samplerBeamConvergence, tex_uv_b, get_intermediate_gamma()).rgb;
+//         }
+//         else
+//         {
+//             out_color = tex2D_linearize(samplerBeamConvergence, tex_uv, get_intermediate_gamma()).rgb;
+//         }
+//     }
+//     //  Pack the colors from the red/green/blue beams into a single vector:
+//     if(beam_misconvergence)
+//     {
+//         out_color = float3(out_color_r.r, out_color_g.g, out_color_b.b);
+//     }
+//     */
+
+
+//     //  Encode and output the blurred image
+//     //    Currently the bloom-approx logic is completely disabled
+//     const float4 input_color = tex2D_linearize(samplerBeamConvergence, tex_uv, get_intermediate_gamma());
+//     color = encode_output(input_color, get_intermediate_gamma());
+//     // color = tex2D(samplerBeamConvergence, tex_uv);
+
+//     // color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());
+// }
+
+
+
+static const int num_sinc_lobes = mask_sinc_lobes;
+
+
+void approximateBloomVertVS(
+    in const uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+
+    out float2 source_size_inv : TEXCOORD1,
+    out float downsizing_factor_y : TEXCOORD2
+) {
+    PostProcessVS(id, position, texcoord);
+    
+    source_size_inv = 1.0 / TEX_BEAMCONVERGENCE_SIZE;
+    downsizing_factor_y = float(TEX_BLOOMAPPROXVERT_HEIGHT) / TEX_BEAMCONVERGENCE_HEIGHT;
+}
+
+void approximateBloomVertPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
 
+    in const float2 source_size_inv : TEXCOORD1,
+    in const float downsizing_factor_y : TEXCOORD2,
+
     out float4 color : SV_Target
 ) {
-    const float2 orig_linearized_size = tex2Dsize(samplerBeamConvergence);
-    const float2 vertical_scanlines_size = tex2Dsize(samplerBeamConvergence);
-    const float2 output_size = TEX_BLOOMAPPROX_SIZE;
 
-    // const float2 video_uv = vTexCoord * texture_size / video_size;
-    // const float2 tex_uv = video_uv * ORIG_LINEARIZEDvideo_size / ORIG_LINEARIZEDtexture_size;
-    const float2 tex_uv = texcoord;
+    color = lanczos_downsample_vert(
+        samplerBeamConvergence, source_size_inv,
+        texcoord, downsizing_factor_y, num_sinc_lobes,
+        1.0
+    );
+}
 
-    /*
-    //  The last pass (vertical scanlines) had a viewport y scale, so we can
-    //  use it to calculate a better runtime sigma:
-    const float estimated_viewport_size_x =
-        vertical_scanlines_size.y * geom_aspect_ratio_x/geom_aspect_ratio_y;
+void approximateBloomHorizVS(
+    in const uint id : SV_VertexID,
 
-    //  Get the uv sample distance between output pixels.  We're using a resize
-    //  blur, so arbitrary upsizing will be acceptable if filter_linearN =
-    //  "true," and arbitrary downsizing will be acceptable if mipmap_inputN =
-    //  "true" too.  The blur will be much more accurate if a true 4x4 Gaussian
-    //  resize is used instead of tex2Dblur3x3_resize (which samples between
-    //  texels even for upsizing).
-    const float2 dxdy_min_scale = orig_linearized_size / output_size;
-    const float2 texture_size_inv = 1.0 / orig_linearized_size;
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
 
-
-    float2 blur_dxdy;
-    if(bloom_approx_filter > 1.5)   //  4x4 true Gaussian resize
-    {
-        //  For upsizing, we'll snap to texels and sample the nearest 4.
-        const float2 dxdy_scale = max(dxdy_min_scale, float2(1.0, 1.0));
-        blur_dxdy = dxdy_scale * texture_size_inv;
-    }
-    else
-    {
-        const float2 dxdy_scale = dxdy_min_scale;
-        blur_dxdy = dxdy_scale * texture_size_inv;
-    }
-    //  tex2Dresize_gaussian4x4 needs to know a bit more than the other filters:
-    const float2 tex_uv_to_pixel_scale = output_size; // * ORIG_LINEARIZEDtexture_size / ORIG_LINEARIZEDvideo_size;
-    //texture_size_inv = texture_size_inv;
-
-    //  Detecting interlacing again here lets us apply convergence offsets in
-    //  this pass.  il_step_multiple contains the (texel, scanline) step
-    //  multiple: 1 for progressive, 2 for interlaced.
-    const float y_step = 1.0 + enable_interlacing;
-    const float2 il_step_multiple = float2(1.0, y_step);
-    //  Get the uv distance between (texels, same-field scanlines):
-    const float2 uv_scanline_step = il_step_multiple / orig_linearized_size;
-
-    //  Would a viewport-relative size work better for this pass?  (No.)
-    //  PROS:
-    //  1.) Instead of writing an absolute size to user-cgp-constants.h, we'd
-    //      write a viewport scale.  That number could be used to directly scale
-    //      the viewport-resolution bloom sigma and/or triad size to a smaller
-    //      scale.  This way, we could calculate an optimal dynamic sigma no
-    //      matter how the dot pitch is specified.
-    //  CONS:
-    //  1.) Texel smearing would be much worse at small viewport sizes, but
-    //      performance would be much worse at large viewport sizes, so there
-    //      would be no easy way to calculate a decent scale.
-    //  2.) Worse, we could no longer get away with using a constant-size blur!
-    //      Instead, we'd have to face all the same difficulties as the real
-    //      phosphor bloom, which requires static #ifdefs to decide the blur
-    //      size based on the expected triad size...a dynamic value.
-    //  3.) Like the phosphor bloom, we'd have less control over making the blur
-    //      size correct for an optical blur.  That said, we likely overblur (to
-    //      maintain brightness) more than the eye would do by itself: 20/20
-    //      human vision distinguishes ~1 arc minute, or 1/60 of a degree.  The
-    //      highest viewing angle recommendation I know of is THX's 40.04 degree
-    //      recommendation, at which 20/20 vision can distinguish about 2402.4
-    //      lines.  Assuming the "TV lines" definition, that means 1201.2
-    //      distinct light lines and 1201.2 distinct dark lines can be told
-    //      apart, i.e. 1201.2 pairs of lines.  This would correspond to 1201.2
-    //      pairs of alternating lit/unlit phosphors, so 2402.4 phosphors total
-    //      (if they're alternately lit).  That's a max of 800.8 triads.  Using
-    //      a more popular 30 degree viewing angle recommendation, 20/20 vision
-    //      can distinguish 1800 lines, or 600 triads of alternately lit
-    //      phosphors.  In contrast, we currently blur phosphors all the way
-    //      down to 341.3 triads to ensure full brightness.
-    //  4.) Realistically speaking, we're usually just going to use bilinear
-    //      filtering in this pass anyway, but it only works well to limit
-    //      bandwidth if it's done at a small constant scale.
+    out float2 source_size_inv : TEXCOORD1,
+    out float downsizing_factor_x : TEXCOORD2
+) {
+    PostProcessVS(id, position, texcoord);
     
-    //  Get the constants we need to sample:
-//    const sampler2D texture = ORIG_LINEARIZED.texture;
-//    const float2 tex_uv = tex_uv;
-//    const float2 blur_dxdy = blur_dxdy;
-    // const float2 texture_size_ = tex2Dsize(samplerBeamConvergence);
-//    const float2 texture_size_inv = texture_size_inv;
-//    const float2 tex_uv_to_pixel_scale = tex_uv_to_pixel_scale;
-    float2 tex_uv_r, tex_uv_g, tex_uv_b;
+    source_size_inv = 1.0 / TEX_BLOOMAPPROXVERT_SIZE;
+    downsizing_factor_x = float(TEX_BLOOMAPPROXHORIZ_WIDTH) / TEX_BEAMCONVERGENCE_WIDTH;
+}
 
-    if(beam_misconvergence)
-    {
-        const float2 convergence_offsets_r = get_convergence_offsets_r_vector();
-        const float2 convergence_offsets_g = get_convergence_offsets_g_vector();
-        const float2 convergence_offsets_b = get_convergence_offsets_b_vector();
-        tex_uv_r = tex_uv - convergence_offsets_r * uv_scanline_step;
-        tex_uv_g = tex_uv - convergence_offsets_g * uv_scanline_step;
-        tex_uv_b = tex_uv - convergence_offsets_b * uv_scanline_step;
-    }
-    //  Get the blur sigma:
-    const float bloom_approx_sigma = get_bloom_approx_sigma(output_size.x,
-        estimated_viewport_size_x);
+void approximateBloomHorizPS(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
 
+    in const float2 source_size_inv : TEXCOORD1,
+    in const float downsizing_factor_x : TEXCOORD2,
 
-    //  Sample the resized and blurred texture, and apply convergence offsets if
-    //  necessary.  Applying convergence offsets here triples our samples from
-    //  16/9/1 to 48/27/3, but faster and easier than sampling BLOOM_APPROX and
-    //  HALATION_BLUR 3 times at full resolution every time they're used.
-    float3 out_color_r, out_color_g, out_color_b, out_color;
-    if(bloom_approx_filter > 1.5)
-    {
-        //  Use a 4x4 Gaussian resize.  This is slower but technically correct.
-        if(beam_misconvergence)
-        {
-            out_color_r = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_r,
-                blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_g = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_g,
-                blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_b = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv_b,
-                blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
-        }
-        else
-        {
-            out_color = tex2Dresize_gaussian4x4(samplerBeamConvergence, tex_uv,
-                blur_dxdy, orig_linearized_size, texture_size_inv,
-                tex_uv_to_pixel_scale, bloom_approx_sigma, get_intermediate_gamma());
-        }
-    }
-    else if(bloom_approx_filter > 0.5)
-    {
-        //  Use a 3x3 resize blur.  This is the softest option, because we're
-        //  blurring already blurry bilinear samples.  It doesn't play quite as
-        //  nicely with convergence offsets, but it has its charms.
-        if(beam_misconvergence)
-        {
-            out_color_r = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_r,
-                blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_g = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_g,
-                blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
-            out_color_b = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv_b,
-                blur_dxdy, bloom_approx_sigma, get_intermediate_gamma());
-        }
-        else
-        {
-            out_color = tex2Dblur3x3resize(samplerBeamConvergence, tex_uv, blur_dxdy, get_intermediate_gamma());
-        }
-    }
-    else
-    {
-        //  Use bilinear sampling.  This approximates a 4x4 Gaussian resize MUCH
-        //  better than tex2Dblur3x3_resize for the very small sigmas we're
-        //  likely to use at small output resolutions.  (This estimate becomes
-        //  too sharp above ~400x300, but the blurs break down above that
-        //  resolution too, unless min_allowed_viewport_triads is high enough to
-        //  keep bloom_approx_scale_x/min_allowed_viewport_triads < ~1.1658025.)
-        if(beam_misconvergence)
-        {
-            out_color_r = tex2D_linearize(samplerBeamConvergence, tex_uv_r, get_intermediate_gamma()).rgb;
-            out_color_g = tex2D_linearize(samplerBeamConvergence, tex_uv_g, get_intermediate_gamma()).rgb;
-            out_color_b = tex2D_linearize(samplerBeamConvergence, tex_uv_b, get_intermediate_gamma()).rgb;
-        }
-        else
-        {
-            out_color = tex2D_linearize(samplerBeamConvergence, tex_uv, get_intermediate_gamma()).rgb;
-        }
-    }
-    //  Pack the colors from the red/green/blue beams into a single vector:
-    if(beam_misconvergence)
-    {
-        out_color = float3(out_color_r.r, out_color_g.g, out_color_b.b);
-    }
-    */
+    out float4 color : SV_Target
+) {
 
-
-    //  Encode and output the blurred image
-    //    Currently the bloom-approx logic is completely disabled
-    const float4 input_color = tex2D_linearize(samplerBeamConvergence, tex_uv, get_intermediate_gamma());
-    color = encode_output(input_color, get_intermediate_gamma());
-    // color = tex2D(samplerBeamConvergence, tex_uv);
-
-    // color = encode_output(float4(out_color, 1.0), get_intermediate_gamma());
+    color = lanczos_downsample_horiz(
+        samplerBloomApproxVert, source_size_inv,
+        texcoord, downsizing_factor_x, num_sinc_lobes,
+        1.0
+    );
 }

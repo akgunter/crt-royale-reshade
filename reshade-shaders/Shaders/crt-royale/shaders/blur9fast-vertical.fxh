@@ -80,7 +80,7 @@ void blurVerticalPS(
 
     out float4 color : SV_Target
 ) {
-    static const float3 blur_color = tex2Dblur9fast(samplerBloomApprox, texcoord, blur_dxdy, get_intermediate_gamma());
+    static const float3 blur_color = tex2Dblur9fast(samplerBloomApproxHoriz, texcoord, blur_dxdy, get_intermediate_gamma());
     //  Encode and output the blurred image:
     // color = encode_output(float4(blur_color, 1.0), 1.0);
     color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());

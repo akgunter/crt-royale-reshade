@@ -140,6 +140,7 @@ sampler2D samplerInterlaced { Texture = texInterlaced; };
 #endif
 
 
+/*
 // Pass 4 Buffer (bloomApproxPass)
 //   Cannot be conditioned on __RENDERER__ b/c there are no
 //     available buffers of the same size
@@ -154,14 +155,44 @@ texture2D texBloomApprox {
 	Format = RGBA16;
 };
 sampler2D samplerBloomApprox { Texture = texBloomApprox; };
+*/
 
+// Pass 4a Buffer (bloomApproxVerticalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in brightpassPass
+#define TEX_BLOOMAPPROXVERT_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BLOOMAPPROXVERT_HEIGHT 240
+#define TEX_BLOOMAPPROXVERT_SIZE int2(TEX_BLOOMAPPROXVERT_WIDTH, TEX_BLOOMAPPROXVERT_HEIGHT)
+texture2D texBloomApproxVert {
+	Width = TEX_BLOOMAPPROXVERT_WIDTH;
+	Height = TEX_BLOOMAPPROXVERT_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerBloomApproxVert { Texture = texBloomApproxVert; };
+
+// Pass 4b Buffer (bloomApproxHorizontalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in brightpassPass
+#define TEX_BLOOMAPPROXHORIZ_WIDTH 320
+#define TEX_BLOOMAPPROXHORIZ_HEIGHT 240
+#define TEX_BLOOMAPPROXHORIZ_SIZE int2(TEX_BLOOMAPPROXHORIZ_WIDTH, TEX_BLOOMAPPROXHORIZ_HEIGHT)
+texture2D texBloomApproxHoriz {
+	Width = TEX_BLOOMAPPROXHORIZ_WIDTH;
+	Height = TEX_BLOOMAPPROXHORIZ_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerBloomApproxHoriz { Texture = texBloomApproxHoriz; };
 
 // Pass 5 Buffer (blurVerticalPass)
 //   Cannot be conditioned on __RENDERER__ b/c there are no
 //     available buffers of the same size
 //   Last usage is blurHorizontalPass
-#define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROX_WIDTH
-#define TEX_BLURVERTICAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
+#define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROXHORIZ_WIDTH
+#define TEX_BLURVERTICAL_HEIGHT TEX_BLOOMAPPROXHORIZ_HEIGHT
 #define TEX_BLURVERTICAL_SIZE int2(TEX_BLURVERTICAL_WIDTH, TEX_BLURVERTICAL_HEIGHT)
 texture2D texBlurVertical {
 	Width = TEX_BLURVERTICAL_WIDTH;
@@ -176,8 +207,8 @@ sampler2D samplerBlurVertical { Texture = texBlurVertical; };
 //   Cannot be conditioned on __RENDERER__ b/c there are no
 //     available buffers of the same size
 //   Last usage is bloomHorizontalPass
-#define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROX_WIDTH
-#define TEX_BLURHORIZONTAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
+#define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROXHORIZ_WIDTH
+#define TEX_BLURHORIZONTAL_HEIGHT TEX_BLOOMAPPROXHORIZ_HEIGHT
 #define TEX_BLURHORIZONTAL_SIZE int2(TEX_BLURHORIZONTAL_WIDTH, TEX_BLURHORIZONTAL_HEIGHT)
 texture2D texBlurHorizontal {
 	Width = TEX_BLURHORIZONTAL_WIDTH;

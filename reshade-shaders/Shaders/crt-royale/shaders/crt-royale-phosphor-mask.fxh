@@ -63,19 +63,22 @@ void maskResizeVertPS(
     else if (mask_type == 0) {
         color = lanczos_downsample_vert(
             samplerMaskGrille, source_mask_size_inv,
-            texcoord, downsizing_factor, num_sinc_lobes
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
         );
     }
     else if (mask_type == 2) {
         color = lanczos_downsample_vert(
             samplerMaskShadow, source_mask_size_inv,
-            texcoord, downsizing_factor, num_sinc_lobes
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
         );
     }
     else {
         color = lanczos_downsample_vert(
             samplerMaskSlot, source_mask_size_inv,
-            texcoord, downsizing_factor, num_sinc_lobes
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
         );
     }
 }
@@ -117,7 +120,8 @@ void maskResizeHorizPS(
     else {
         color = lanczos_downsample_horiz(
             samplerMaskResizeVertical, source_mask_size_inv,
-            texcoord, downsizing_factor, num_sinc_lobes
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
         );
     }
 }

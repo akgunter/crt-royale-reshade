@@ -67,8 +67,8 @@ technique CRT_Royale
 		{
 			// Simulate interlacing by blending in-field rows
 			//   and blanking out out-of-field rows.
-			VertexShader = simulateInterpolationVS;
-			PixelShader = simulateInterpolationPS;
+			VertexShader = simulateInterlacingVS;
+			PixelShader = simulateInterlacingPS;
 
 			RenderTarget = texInterlaced;
 		}
@@ -90,6 +90,7 @@ technique CRT_Royale
 			RenderTarget = texBeamConvergence;
 		}
 		// crt-royale-bloom-approx.fxh
+		/*
 		pass bloomApproxPass
 		{
 			// The original crt-royale did a bunch of math in this pass
@@ -100,6 +101,29 @@ technique CRT_Royale
 			PixelShader = approximateBloomPS;
 			
 			RenderTarget = texBloomApprox;
+		}
+		*/
+		pass bloomApproxPassVert
+		{
+			// The original crt-royale did a bunch of math in this pass
+			//   and then threw it all away. So this is a no-op for now.
+			//   It still has a blur effect b/c its a smaller buffer.
+			// TODO: activate the math in this pass and see what happens.
+			VertexShader = approximateBloomVertVS;
+			PixelShader = approximateBloomVertPS;
+			
+			RenderTarget = texBloomApproxVert;
+		}
+		pass bloomApproxPassHoriz
+		{
+			// The original crt-royale did a bunch of math in this pass
+			//   and then threw it all away. So this is a no-op for now.
+			//   It still has a blur effect b/c its a smaller buffer.
+			// TODO: activate the math in this pass and see what happens.
+			VertexShader = approximateBloomHorizVS;
+			PixelShader = approximateBloomHorizPS;
+			
+			RenderTarget = texBloomApproxHoriz;
 		}
 		// blur9fast-vertical.fxh
 		pass blurVerticalPass
