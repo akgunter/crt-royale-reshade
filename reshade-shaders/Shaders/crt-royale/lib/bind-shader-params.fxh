@@ -141,6 +141,24 @@ uniform float scanline_num_pixels <
     ui_max     = 30.0;
     ui_step    = 1.0;
 > = 2.0;
+/*
+uniform float blur_dim_x <
+    ui_label   = "Blur Dim X";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 320;
+    ui_max     = 2560;
+    ui_step    = 10.0;
+> = 2560;
+uniform float blur_dim_y <
+    ui_label   = "Blur Dim Y";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 240;
+    ui_max     = 1440;
+    ui_step    = 10.0;
+> = 1440;
+*/
 uniform float scanline_blend_gamma <
     ui_label   = "Scanline Blend Gamma";
     ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";

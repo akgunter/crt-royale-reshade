@@ -109,7 +109,7 @@ technique CRT_Royale
 			//   and then threw it all away. So this is a no-op for now.
 			//   It still has a blur effect b/c its a smaller buffer.
 			// TODO: activate the math in this pass and see what happens.
-			VertexShader = approximateBloomVertVS;
+			VertexShader = approximateBloomVS;
 			PixelShader = approximateBloomVertPS;
 			
 			RenderTarget = texBloomApproxVert;
@@ -120,7 +120,7 @@ technique CRT_Royale
 			//   and then threw it all away. So this is a no-op for now.
 			//   It still has a blur effect b/c its a smaller buffer.
 			// TODO: activate the math in this pass and see what happens.
-			VertexShader = approximateBloomHorizVS;
+			VertexShader = approximateBloomVS;
 			PixelShader = approximateBloomHorizPS;
 			
 			RenderTarget = texBloomApproxHoriz;
