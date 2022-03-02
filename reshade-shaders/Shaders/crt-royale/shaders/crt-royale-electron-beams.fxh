@@ -136,9 +136,9 @@ void simulateEletronBeamsPS(
         // Lower on screen means larger y-coordinate
         const float curr_line_is_below_center = float(curr_line_texel_v > upper_center);
         const float shift_center = num_pixels_is_even * curr_line_is_below_center;
-
+        
         const float curr_scanline_center_v = upper_center + shift_center;
-        const float curr_scanline_center_y = (curr_scanline_center_v + TEXCOORD_OFFSET) / orig_linearized_size.y;
+        // const float curr_scanline_center_y = (curr_scanline_center_v + TEXCOORD_OFFSET) / orig_linearized_size.y;
 
         // Find the center of the nearest in-field scanline
         const float source_offset_direction = lerp(-1, 1, curr_line_is_below_center);
@@ -161,12 +161,18 @@ void simulateEletronBeamsPS(
 
         // Calculate the beam strength based upon distance from the scanline
         //   and intensity of the sampled color
-        const float scanlines_wider_than_1 = float(scanline_num_pixels > 1);
         const float max_beam_dist_factor = 1 + float(enable_interlacing);
         const float max_beam_dist = max(1, max_beam_dist_factor*half_size - 1);
 
-        const float beam_dist_v = abs(curr_line_texel_v - source_scanline_center_v);
+
+        // For even-sized scanlines, offset by 0.5; so we take distance at the center of the texel
+        const float beam_dist_v_offset = num_pixels_is_even * 0.5;
+        const float beam_dist_v_raw = curr_line_texel_v - source_scanline_center_v;
+        const float beam_dist_v_root = round(abs(beam_dist_v_raw) - beam_dist_v_offset);
+        const float beam_dist_v = sign(beam_dist_v_raw) * (beam_dist_v_root + beam_dist_v_offset);
+        // const float beam_dist_v = abs(curr_line_texel_v - source_scanline_center_v);
         const float beam_dist_y = beam_dist_v / max_beam_dist;
+
         
         // const float prev_dist_offset_v = source_offset_direction * 
         //     float(beam_dist_v > 0) * max(0.5, sign(beam_dist_y));
@@ -180,6 +186,7 @@ void simulateEletronBeamsPS(
 
         // Output the corrected color
         color = encode_output(float4(beam_strength * levels_autodim_temp, 1), get_intermediate_gamma());
+        // color = encode_output(float4(beam_dist_y, beam_dist_y, beam_dist_y, 1.0), get_lcd_gamma());
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
