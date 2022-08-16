@@ -382,17 +382,18 @@ float3 get_averaged_scanline_sample(
 ) {
     // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
     float3 interpolated_line = 0.0;
-    for (int i = 0; i < scanline_num_pixels; i++) {
+    for (int i = 0; i < scanline_num_pixels_fromtexcoord(texcoord); i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
         interpolated_line += tex2Dlod_linearize(tex, coord, input_gamma).rgb;
     }
-    interpolated_line /= float(scanline_num_pixels);
+    interpolated_line /= float(scanline_num_pixels_fromtexcoord(texcoord));
 
     return interpolated_line;
 }
 
 
 float get_curr_scanline_idx(
+    const float2 texcoord,
     const float texcoord_y,
     const float tex_size_y
 ) {
@@ -401,18 +402,20 @@ float get_curr_scanline_idx(
     // thickness `scanline_num_pixels` belonging to a single field.
 
     const float curr_line_texel_y = floor(texcoord_y * tex_size_y + under_half);
-    return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
+    return floor(curr_line_texel_y / scanline_num_pixels_fromtexcoord(texcoord) + FIX_ZERO(0.0));
 }
 
 float get_scanline_center(
+    const float2 texcoord,
     const float line_texel_y,
     const float scanline_idx
 ) {
-    const float scanline_start_y = scanline_idx * scanline_num_pixels;
+    const float scanline_start_y = scanline_idx * scanline_num_pixels_fromtexcoord(texcoord);
 
-    const float half_num_pixels = scanline_num_pixels / 2;
+    const float half_num_pixels = scanline_num_pixels_fromtexcoord(texcoord) / 2;
     const float half_size = floor(half_num_pixels + under_half);
-    const float num_pixels_is_even = float(half_size >= half_num_pixels);
+    // const float num_pixels_is_even = float(half_size >= half_num_pixels);
+    const float num_pixels_is_even = float(half_size < half_num_pixels);
 
     const float upper_center = scanline_start_y + half_size;
     const float shift = num_pixels_is_even * float(line_texel_y > upper_center);
@@ -458,10 +461,11 @@ float curr_line_is_wrong_field(float curr_scanline_idx)
 }
 
 float curr_line_is_wrong_field(
+    const float2 texcoord,
     const float texcoord_y,
     const float tex_size_y
 ) {
-    const float curr_scanline_idx = get_curr_scanline_idx(texcoord_y, tex_size_y);
+    const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord_y, tex_size_y);
     return curr_line_is_wrong_field(curr_scanline_idx);
 }
 

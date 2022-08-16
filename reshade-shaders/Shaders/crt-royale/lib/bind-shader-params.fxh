@@ -133,14 +133,38 @@ uniform int scanline_deinterlacing_mode <
                  "Blended Weaving\0"
                  "Static\0";
 > = 1;
-uniform float scanline_num_pixels <
-    ui_label   = "Scanline Thickness";
+uniform float scanline_num_pixels_left <
+    ui_label   = "Scanline Thickness (LEFT)";
     ui_category = "Interlacing and Scanlines";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 30.0;
     ui_step    = 1.0;
 > = 2.0;
+uniform float scanline_num_pixels_right <
+    ui_label   = "Scanline Thickness (RIGHT)";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 1.0;
+    ui_max     = 30.0;
+    ui_step    = 1.0;
+> = 2.0;
+uniform float beam_power_adj_left <
+    ui_label   = "Beam Power Adjustment (LEFT)";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 5.0;
+    ui_step    = 0.001;
+> = 1.0;
+uniform float beam_power_adj_right <
+    ui_label   = "Beam Power Adjustment (RIGHT)";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 5.0;
+    ui_step    = 0.001;
+> = 1.0;
 /*
 uniform float blur_dim_x <
     ui_label   = "Blur Dim X";
@@ -449,6 +473,15 @@ uniform float border_compress <
 > = border_compress_static;
 
 
+float scanline_num_pixels_fromtexcoord(const float2 texcoord) {
+    if (texcoord.x > 0.5) return scanline_num_pixels_right;
+    else return scanline_num_pixels_left;
+}
+
+float beam_power_adj_fromtexcoord(const float2 texcoord) {
+    if (texcoord.x > 0.5) return beam_power_adj_right;
+    else return beam_power_adj_left;
+}
 
 //  Provide accessors for vector constants that pack scalar uniforms:
 float2 get_aspect_vector(const float geom_aspect_ratio)

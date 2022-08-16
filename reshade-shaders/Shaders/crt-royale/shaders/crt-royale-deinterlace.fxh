@@ -14,7 +14,7 @@ void deinterlaceVS(
 ) {
     PostProcessVS(id, position, texcoord);
 
-    v_step = float2(0.0, scanline_num_pixels / TEX_FREEZEFRAME_HEIGHT);
+    v_step = float2(0.0, scanline_num_pixels_fromtexcoord(texcoord) / TEX_FREEZEFRAME_HEIGHT);
 }
 
 
@@ -31,7 +31,7 @@ void deinterlacePS(
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're probably averaging a color with 0.
     if (enable_interlacing && scanline_deinterlacing_mode == 1) {
-        const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
+        const float cur_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, CONTENT_HEIGHT_INTERNAL);
         const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
         
         const float4 cur_line_color = tex2D(samplerBeamConvergence, texcoord);
@@ -51,7 +51,7 @@ void deinterlacePS(
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're averaging two fully illuminated colors
     else if (enable_interlacing && scanline_deinterlacing_mode == 2) {
-        const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
+        const float cur_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, CONTENT_HEIGHT_INTERNAL);
         const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
         const float wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
         const float field_is_odd = fmod(cur_scanline_idx, 2);

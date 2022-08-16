@@ -50,9 +50,9 @@ void simulateInterlacingPS(
 ) {
     //  Sample the current line and an average of the previous/next line;
     //  tex2D_linearize will decode CRT gamma.  Don't bother branching:
-    float curr_scanline_idx = get_curr_scanline_idx(texcoord.y, content_size.y);
+    float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, content_size.y);
     float curr_scanline_start_y = (
-        curr_scanline_idx * scanline_num_pixels + TEXCOORD_OFFSET
+        curr_scanline_idx * scanline_num_pixels_fromtexcoord(texcoord) + TEXCOORD_OFFSET
     ) / content_size.y;
     float3 in_field_interpolated_line = get_averaged_scanline_sample(
         samplerCrop, texcoord,
@@ -88,7 +88,7 @@ void simulateEletronBeamsPS(
 ) {
     const float2 orig_linearized_size = tex2Dsize(samplerInterlaced);
 
-    const float wrong_field = curr_line_is_wrong_field(texcoord.y, orig_linearized_size.y);
+    const float wrong_field = curr_line_is_wrong_field(texcoord, texcoord.y, orig_linearized_size.y);
 
     // Digital shape
     //   Beam will be perfectly rectangular
@@ -125,11 +125,11 @@ void simulateEletronBeamsPS(
 
         // Find the texel position of the current scanline
         const float curr_line_texel_v = floor(texcoord.y * orig_linearized_size.y + under_half);
-        const float curr_scanline_idx = get_curr_scanline_idx(texcoord.y, orig_linearized_size.y);
-        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels;
+        const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, orig_linearized_size.y);
+        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels_fromtexcoord(texcoord);
 
         // Find the center of the current scanline
-        const float half_num_pixels = scanline_num_pixels / 2;
+        const float half_num_pixels = scanline_num_pixels_fromtexcoord(texcoord) / 2;
         const float half_size = floor(half_num_pixels + under_half);
         const float num_pixels_is_even = float(half_size >= half_num_pixels);
         const float upper_center = curr_scanline_start_v + half_size;
@@ -142,7 +142,7 @@ void simulateEletronBeamsPS(
 
         // Find the center of the nearest in-field scanline
         const float source_offset_direction = lerp(-1, 1, curr_line_is_below_center);
-        const float source_offset = source_offset_direction * wrong_field * scanline_num_pixels;
+        const float source_offset = source_offset_direction * wrong_field * scanline_num_pixels_fromtexcoord(texcoord);
 
         const float source_scanline_center_v = curr_scanline_center_v + source_offset;
         const float source_scanline_center_y = (source_scanline_center_v + TEXCOORD_OFFSET) / orig_linearized_size.y;
@@ -179,7 +179,7 @@ void simulateEletronBeamsPS(
         // const float prev_dist_offset_y = prev_dist_offset_v / max_beam_dist;
         // const float prev_dist_y = beam_dist_y + prev_dist_offset_y;
 
-        const float3 beam_strength = get_fancy_beam_strength(
+        const float3 beam_strength = beam_power_adj_fromtexcoord(texcoord) * get_fancy_beam_strength(
             beam_dist_y, scanline_color,
             sigma_range, shape_range
         );
@@ -200,18 +200,18 @@ void simulateEletronBeamsPS(
 
         // Find the texel position of the current scanline
         const float curr_line_texel_v = floor(texcoord.y * orig_linearized_size.y + under_half);
-        const float curr_scanline_idx = get_curr_scanline_idx(texcoord.y, orig_linearized_size.y);
-        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels;
+        const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, orig_linearized_size.y);
+        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels_fromtexcoord(texcoord);
 
         // Find the center of the current scanline
-        const float half_num_pixels = scanline_num_pixels / 2;
+        const float half_num_pixels = scanline_num_pixels_fromtexcoord(texcoord) / 2;
         const float half_size = floor(half_num_pixels + under_half);
         const float num_pixels_is_even = float(half_size >= half_num_pixels);
         const float upper_center = curr_scanline_start_v + half_size;
         // Lower on screen means larger y-coordinate
         const float curr_line_is_below_center = float(curr_line_texel_v > upper_center);
         const float shift_center = num_pixels_is_even * curr_line_is_below_center;
-        const float bounding_scanline_offset_v = (2 - wrong_field) * scanline_num_pixels;
+        const float bounding_scanline_offset_v = (2 - wrong_field) * scanline_num_pixels_fromtexcoord(texcoord);
 
         const float3 scanline_offsets_v = float3(
             -bounding_scanline_offset_v,
@@ -245,7 +245,7 @@ void simulateEletronBeamsPS(
 
         // Calculate the beam strength based upon distance from the scanline
         //   and intensity of the sampled color
-        const float scanlines_wider_than_1 = float(scanline_num_pixels > 1);
+        const float scanlines_wider_than_1 = float(scanline_num_pixels_fromtexcoord(texcoord) > 1);
         const float max_beam_dist_factor = 1 + float(enable_interlacing);
         const float max_beam_dist = max(1, max_beam_dist_factor*half_size - 1);
 
