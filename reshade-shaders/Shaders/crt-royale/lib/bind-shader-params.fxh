@@ -133,30 +133,14 @@ uniform int scanline_deinterlacing_mode <
                  "Blended Weaving\0"
                  "Static\0";
 > = 1;
-uniform float scanline_num_pixels_left <
-    ui_label   = "Scanline Thickness (LEFT)";
+uniform float scanline_num_pixels <
+    ui_label   = "Scanline Thickness";
     ui_category = "Interlacing and Scanlines";
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 30.0;
     ui_step    = 1.0;
 > = 2.0;
-uniform float scanline_num_pixels_right <
-    ui_label   = "Scanline Thickness (RIGHT)";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 1.0;
-    ui_max     = 30.0;
-    ui_step    = 1.0;
-> = 2.0;
-uniform float scanline_pixel_distance <
-    ui_label   = "Scanline Pixel Distance";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 30.0;
-    ui_step    = 0.5;
-> = 0.0;
 uniform float scanline_max_embedding_dist <
     ui_label   = "Scanline Max Embed Dist";
     ui_category = "Interlacing and Scanlines";
@@ -165,40 +149,6 @@ uniform float scanline_max_embedding_dist <
     ui_max     = 5.0;
     ui_step    = 0.1;
 > = 1.0;
-uniform float beam_power_adj_left <
-    ui_label   = "Beam Power Adjustment (LEFT)";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 5.0;
-    ui_step    = 0.001;
-> = 1.0;
-uniform float beam_power_adj_right <
-    ui_label   = "Beam Power Adjustment (RIGHT)";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 0.0;
-    ui_max     = 5.0;
-    ui_step    = 0.001;
-> = 1.0;
-/*
-uniform float blur_dim_x <
-    ui_label   = "Blur Dim X";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 320;
-    ui_max     = 2560;
-    ui_step    = 10.0;
-> = 2560;
-uniform float blur_dim_y <
-    ui_label   = "Blur Dim Y";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 240;
-    ui_max     = 1440;
-    ui_step    = 10.0;
-> = 1440;
-*/
 uniform float scanline_blend_gamma <
     ui_label   = "Scanline Blend Gamma";
     ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
@@ -248,21 +198,9 @@ uniform int beam_shape_mode <
     ui_type    = "combo";
     ui_items   = "Digital\0"
                  "Linear\0"
-                 "Multi-Source Linear\0"
                  "Gaussian\0"
                  "Multi-Source Gaussian\0";
 > = 1;
-/*
-uniform float beam_intensity <
-    ui_label = "Beam Intensity";
-    ui_tooltip = "0.5 recommended for Digital Beam Shape and 0.7 for Gaussian. Adjust from there.";
-    ui_category = "Electron Beam";
-    ui_type = "slider";
-    ui_min = 0.01;
-    ui_max = 2.0;
-    ui_step = 0.01;
-> = 0.7;
-*/
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
     ui_category = "Electron Beam";
@@ -358,7 +296,6 @@ uniform float lcd_gamma <
 > = lcd_gamma_static;
 uniform float levels_contrast <
     ui_label   = "Levels Contrast";
-    ui_tooltip = "2.0 recommended for Gaussian Beam Shapes. 1.0 for Digital.";
     ui_category = "Colors and Effects";
     ui_type    = "slider";
     ui_min     = 0.0;
@@ -490,17 +427,6 @@ uniform float border_compress <
     ui_step    = 0.01;
 > = border_compress_static;
 
-
-float scanline_num_pixels_fromtexcoord(const float2 texcoord) {
-    const float coord_is_left = float(texcoord.x <= 0.5);
-    return lerp(scanline_num_pixels_right, scanline_num_pixels_left, coord_is_left);
-    // return coord_is_left * scanline_num_pixels_left + (1 - coord_is_left) * scanline_num_pixels_right;
-}
-
-float beam_power_adj_fromtexcoord(const float2 texcoord) {
-    if (texcoord.x > 0.5) return beam_power_adj_right;
-    else return beam_power_adj_left;
-}
 
 //  Provide accessors for vector constants that pack scalar uniforms:
 float2 get_aspect_vector(const float geom_aspect_ratio)

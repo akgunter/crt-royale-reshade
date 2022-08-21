@@ -382,11 +382,11 @@ float3 get_averaged_scanline_sample(
 ) {
     // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
     float3 interpolated_line = 0.0;
-    for (int i = 0; i < scanline_num_pixels_fromtexcoord(texcoord); i++) {
+    for (int i = 0; i < scanline_num_pixels; i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
         interpolated_line += tex2Dlod_linearize(tex, coord, input_gamma).rgb;
     }
-    interpolated_line /= float(scanline_num_pixels_fromtexcoord(texcoord));
+    interpolated_line /= float(scanline_num_pixels);
 
     return interpolated_line;
 }
@@ -402,7 +402,7 @@ float get_curr_scanline_idx(
     // thickness `scanline_num_pixels` belonging to a single field.
 
     const float curr_line_texel_y = floor(texcoord_y * tex_size_y + under_half);
-    return floor(curr_line_texel_y / scanline_num_pixels_fromtexcoord(texcoord) + FIX_ZERO(0.0));
+    return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
 }
 
 float get_scanline_center(
@@ -410,9 +410,9 @@ float get_scanline_center(
     const float line_texel_y,
     const float scanline_idx
 ) {
-    const float scanline_start_y = scanline_idx * scanline_num_pixels_fromtexcoord(texcoord);
+    const float scanline_start_y = scanline_idx * scanline_num_pixels;
 
-    const float half_num_pixels = scanline_num_pixels_fromtexcoord(texcoord) / 2;
+    const float half_num_pixels = scanline_num_pixels / 2;
     const float half_size = floor(half_num_pixels + under_half);
     const float num_pixels_is_even = float(half_size >= half_num_pixels);
     // const float num_pixels_is_even = float(half_size < half_num_pixels);
@@ -510,9 +510,9 @@ float3 get_gaussian_beam_strength(
 }
 
 float3 get_gaussian_beam_strength(
-    float dist,
-    float prev_dist,
-    float3 color,
+    const float dist,
+    const float prev_dist,
+    const float3 color,
     const float sigma_range,
     const float shape_range
 ) {
@@ -537,22 +537,13 @@ float3 get_gaussian_beam_strength(
 }
 
 float3 get_linear_beam_strength(
-    float dist,
-    float3 color,
-    const float sigma_range,
-    const float shape_range,
-    const float num_pixels_is_even,
-    const float2 texcoord
+    const float dist,
+    const float3 color,
+    const float num_pixels,
+    const bool interlaced
 ) {
-    const float num_pixels = scanline_num_pixels_fromtexcoord(texcoord);
     const float3 p = color * (1 - abs(dist));
-    const float3 p_clamp = clamp(p, 0, color);
-    // const float3 odd_err = 2/num_pixels + pow((num_pixels - 1) / num_pixels, 2);
-    // const float3 err_factor = num_pixels_is_even * odd_err;
-
-    // return p_clamp / err_factor;
-    if (num_pixels == 1) return p_clamp / 2;
-    else return p_clamp;
+    return clamp(p, 0, color);
 }
 
 
