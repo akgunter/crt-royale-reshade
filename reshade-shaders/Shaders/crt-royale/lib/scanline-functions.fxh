@@ -414,8 +414,8 @@ float get_scanline_center(
 
     const float half_num_pixels = scanline_num_pixels_fromtexcoord(texcoord) / 2;
     const float half_size = floor(half_num_pixels + under_half);
-    // const float num_pixels_is_even = float(half_size >= half_num_pixels);
-    const float num_pixels_is_even = float(half_size < half_num_pixels);
+    const float num_pixels_is_even = float(half_size >= half_num_pixels);
+    // const float num_pixels_is_even = float(half_size < half_num_pixels);
 
     const float upper_center = scanline_start_y + half_size;
     const float shift = num_pixels_is_even * float(line_texel_y > upper_center);
@@ -486,7 +486,7 @@ float3 get_beam_strength(float3 dist, float3 color,
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
 
-float3 get_fancy_beam_strength(
+float3 get_gaussian_beam_strength(
     float dist,
     float3 color,
     const float sigma_range,
@@ -509,7 +509,7 @@ float3 get_fancy_beam_strength(
     return scale * exp(-pow(abs(dist*alpha_inv), beta));
 }
 
-float3 get_fancy_beam_strength(
+float3 get_gaussian_beam_strength(
     float dist,
     float prev_dist,
     float3 color,
@@ -534,6 +534,25 @@ float3 get_fancy_beam_strength(
     const float3 strength_at_prev_sample = scale * exp(-pow(abs(prev_dist*alpha_inv), beta));
 
     return 0.5 * (strength_at_sample + strength_at_prev_sample);
+}
+
+float3 get_linear_beam_strength(
+    float dist,
+    float3 color,
+    const float sigma_range,
+    const float shape_range,
+    const float num_pixels_is_even,
+    const float2 texcoord
+) {
+    const float num_pixels = scanline_num_pixels_fromtexcoord(texcoord);
+    const float3 p = color * (1 - abs(dist));
+    const float3 p_clamp = clamp(p, 0, color);
+    // const float3 odd_err = 2/num_pixels + pow((num_pixels - 1) / num_pixels, 2);
+    // const float3 err_factor = num_pixels_is_even * odd_err;
+
+    // return p_clamp / err_factor;
+    if (num_pixels == 1) return p_clamp / 2;
+    else return p_clamp;
 }
 
 

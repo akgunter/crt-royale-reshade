@@ -29,7 +29,7 @@ void deinterlacePS(
     // Sample texcoord from this frame and the previous frame
     // If we're in the correct field, use the current sample
     // If we're in the wrong field, average the current and prev samples
-    //   In this case, we're probably averaging a color with 0.
+    //   In this case, we're probably averaging a color with 0 and producing a brightness of 0.5.
     if (enable_interlacing && scanline_deinterlacing_mode == 1) {
         const float cur_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, CONTENT_HEIGHT_INTERNAL);
         const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);

@@ -149,6 +149,22 @@ uniform float scanline_num_pixels_right <
     ui_max     = 30.0;
     ui_step    = 1.0;
 > = 2.0;
+uniform float scanline_pixel_distance <
+    ui_label   = "Scanline Pixel Distance";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 0.0;
+    ui_max     = 30.0;
+    ui_step    = 0.5;
+> = 0.0;
+uniform float scanline_max_embedding_dist <
+    ui_label   = "Scanline Max Embed Dist";
+    ui_category = "Interlacing and Scanlines";
+    ui_type    = "slider";
+    ui_min     = 0.1;
+    ui_max     = 5.0;
+    ui_step    = 0.1;
+> = 1.0;
 uniform float beam_power_adj_left <
     ui_label   = "Beam Power Adjustment (LEFT)";
     ui_category = "Interlacing and Scanlines";
@@ -231,6 +247,8 @@ uniform int beam_shape_mode <
     ui_category = "Electron Beam";
     ui_type    = "combo";
     ui_items   = "Digital\0"
+                 "Linear\0"
+                 "Multi-Source Linear\0"
                  "Gaussian\0"
                  "Multi-Source Gaussian\0";
 > = 1;
@@ -474,8 +492,9 @@ uniform float border_compress <
 
 
 float scanline_num_pixels_fromtexcoord(const float2 texcoord) {
-    if (texcoord.x > 0.5) return scanline_num_pixels_right;
-    else return scanline_num_pixels_left;
+    const float coord_is_left = float(texcoord.x <= 0.5);
+    return lerp(scanline_num_pixels_right, scanline_num_pixels_left, coord_is_left);
+    // return coord_is_left * scanline_num_pixels_left + (1 - coord_is_left) * scanline_num_pixels_right;
 }
 
 float beam_power_adj_fromtexcoord(const float2 texcoord) {
