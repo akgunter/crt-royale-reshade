@@ -154,7 +154,8 @@ float3 get_downsizing_factor_and_true_tile_size() {
 
 float4 lanczos_downsample_horiz(
     const sampler2D tex, const float2 tex_invsize,
-    const float2 tex_uv, const float downsizing_factor, const int num_sinc_lobes
+    const float2 tex_uv, const float downsizing_factor, const int num_sinc_lobes,
+    const float weight_at_center
 ) {
 
     const int downsizing_factor_int = ceil(downsizing_factor);
@@ -174,7 +175,7 @@ float4 lanczos_downsample_horiz(
         const float sinc_x = i * sinc_dx;
         const float weight = i != 0 ?
             num_sinc_lobes * sin(pi*sinc_x) * sin(pi*sinc_x/float(num_sinc_lobes)) / (pi*pi * sinc_x*sinc_x) :
-            lanczos_weight_at_center;
+            weight_at_center;
 
         w_sum += weight;
         acc += tex2Dlod(tex, float4(coord, 0, 0)) * weight;
@@ -185,7 +186,8 @@ float4 lanczos_downsample_horiz(
 
 float4 lanczos_downsample_vert(
     const sampler2D tex, const float2 tex_invsize,
-    const float2 tex_uv, const float downsizing_factor, const int num_sinc_lobes
+    const float2 tex_uv, const float downsizing_factor, const int num_sinc_lobes,
+    const float weight_at_center
 ) {
 
     const int downsizing_factor_int = ceil(downsizing_factor);
@@ -205,7 +207,7 @@ float4 lanczos_downsample_vert(
         const float sinc_x = i * sinc_dx;
         const float weight = i != 0 ?
             num_sinc_lobes * sin(pi*sinc_x) * sin(pi*sinc_x/float(num_sinc_lobes)) / (pi*pi * sinc_x*sinc_x) :
-            lanczos_weight_at_center;
+            weight_at_center;
 
         w_sum += weight;
         acc += tex2Dlod(tex, float4(coord, 0, 0)) * weight;

@@ -47,6 +47,7 @@
 #define root_cond(c, a, b) float(c) * a + float(!c) * b
 
 
+
 ////////////////////////  COMMON MATHEMATICAL CONSTANTS  ///////////////////////
 
 static const float pi = 3.141592653589;

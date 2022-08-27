@@ -25,7 +25,6 @@
 #include "../lib/texture-settings.fxh"
 
 
-
 #if __RENDERER__ != 0x9000
     #define TEXCOORD_OFFSET 0.0
 #else
@@ -58,23 +57,21 @@
 static const float2 buffer_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
 static const float2 content_size = float2(CONTENT_WIDTH_INTERNAL, CONTENT_HEIGHT_INTERNAL);
 
+uniform int frame_count < source = "framecount"; >;
 
-// Initial Color Buffer
-// texture2D texColorBuffer : COLOR;
-// sampler2D samplerColor {
-// 	Texture = texColorBuffer;
-
-// 	MagFilter = NONE;
-// 	MinFilter = NONE;
-// 	MipFilter = NONE;
-// };
 
 // Yes, the WIDTH/HEIGHT/SIZE defines are kinda weird.
 // Yes, we have to have them or something similar. This is for D3D11 which
-// returns (0, 0) when you call tex2Dsize() on the pass's output texture.
+// returns (0, 0) when you call tex2Dsize() on the pass's render target.
 
 
-// Crop pass
+// Pass 0 Buffer (cropPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in interlacingPass
+//     electronBeamPass -> beamConvergencePass
+//     deinterlacePass -> phosphorMaskPass
+//     brightpassPass -> bloomHorizontalPass
 #define TEX_CROP_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_CROP_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_CROP_SIZE int2(TEX_CROP_WIDTH, TEX_CROP_HEIGHT)
@@ -86,42 +83,68 @@ texture2D texCrop {
 };
 sampler2D samplerCrop { Texture = texCrop; };
 
-// Pass 0 Buffer (ORIG_LINEARIZED)
-#define TEX_ORIGLINEARIZED_WIDTH CONTENT_WIDTH_INTERNAL
-#define TEX_ORIGLINEARIZED_HEIGHT CONTENT_HEIGHT_INTERNAL
-#define TEX_ORIGLINEARIZED_SIZE int2(TEX_ORIGLINEARIZED_WIDTH, TEX_ORIGLINEARIZED_HEIGHT)
-texture2D texOrigLinearized {
-	Width = TEX_ORIGLINEARIZED_WIDTH;
-	Height = TEX_ORIGLINEARIZED_HEIGHT;
+
+// Pass 1 Buffer (interlacingPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in electronBeamPass
+//     beamConvergencPass -> freezeFramePass
+//     phosphorMaskPass -> bloomHorizontalPass
+#define TEX_INTERLACED_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_INTERLACED_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_INTERLACED_SIZE int2(TEX_INTERLACED_WIDTH, TEX_INTERLACED_HEIGHT)
+texture2D texInterlaced {
+	Width = TEX_INTERLACED_WIDTH;
+	Height = TEX_INTERLACED_HEIGHT;
 
 	Format = RGBA16;
 };
-sampler2D samplerOrigLinearized { Texture = texOrigLinearized; };
+sampler2D samplerInterlaced { Texture = texInterlaced; };
 
-// Pass 1 Buffer (VERTICAL_SCANLINES)
-#define TEX_VERTICALSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL
-#define TEX_VERTICALSCANLINES_HEIGHT CONTENT_HEIGHT_INTERNAL
-#define TEX_VERTICALSCANLINES_SIZE int2(TEX_VERTICALSCANLINES_WIDTH, TEX_VERTICALSCANLINES_HEIGHT)
-texture2D texVerticalScanlines {
-	Width = TEX_VERTICALSCANLINES_WIDTH;
-	Height = TEX_VERTICALSCANLINES_HEIGHT;
 
-	Format = RGBA16;
-};
-sampler2D samplerVerticalScanlines { Texture = texVerticalScanlines; };
+// Pass 2 Buffer (electronBeamPass)
+//   Last usage is in beamConvergencePass
+#define TEX_ELECTRONBEAMS_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_ELECTRONBEAMS_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_ELECTRONBEAMS_SIZE int2(TEX_ELECTRONBEAMS_WIDTH, TEX_ELECTRONBEAMS_HEIGHT)
+#if __RENDERER__ != 0x9000
+	texture2D texElectronBeams {
+		Width = TEX_ELECTRONBEAMS_WIDTH;
+		Height = TEX_ELECTRONBEAMS_HEIGHT;
 
-#define TEX_VERTICALOFFSET_WIDTH CONTENT_WIDTH_INTERNAL
-#define TEX_VERTICALOFFSET_HEIGHT CONTENT_HEIGHT_INTERNAL
-#define TEX_VERTICALOFFSET_SIZE int2(TEX_VERTICALOFFSET_WIDTH, TEX_VERTICALOFFSET_HEIGHT)
-texture2D texVerticalOffset {
-	Width = TEX_VERTICALOFFSET_WIDTH;
-	Height = TEX_VERTICALOFFSET_HEIGHT;
-	
-	Format = RGBA16;
-};
-sampler2D samplerVerticalOffset { Texture = texVerticalOffset; };
+		Format = RGBA16;
+	};
+	sampler2D samplerElectronBeams { Texture = texElectronBeams; };
+#else
+	#define texElectronBeams texCrop
+	#define samplerElectronBeams samplerCrop
+#endif
 
-// Pass 2 Buffer (BLOOM_APPROX)
+
+// Pass 3 Buffer (beamConvergencPass)
+//   Last usage is freezeFramePass
+#define TEX_BEAMCONVERGENCE_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BEAMCONVERGENCE_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_BEAMCONVERGENCE_SIZE int2(TEX_BEAMCONVERGENCE_WIDTH, TEX_BEAMCONVERGENCE_HEIGHT)
+#if __RENDERER__ != 0x9000
+	texture2D texBeamConvergence {
+		Width = TEX_BEAMCONVERGENCE_WIDTH;
+		Height = TEX_BEAMCONVERGENCE_HEIGHT;
+		
+		Format = RGBA16;
+	};
+	sampler2D samplerBeamConvergence { Texture = texBeamConvergence; };
+#else
+	#define texBeamConvergence texInterlaced
+	#define samplerBeamConvergence samplerInterlaced
+#endif
+
+
+/*
+// Pass 4 Buffer (bloomApproxPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in brightpassPass
 #define TEX_BLOOMAPPROX_WIDTH 320
 #define TEX_BLOOMAPPROX_HEIGHT 240
 #define TEX_BLOOMAPPROX_SIZE int2(TEX_BLOOMAPPROX_WIDTH, TEX_BLOOMAPPROX_HEIGHT)
@@ -132,11 +155,48 @@ texture2D texBloomApprox {
 	Format = RGBA16;
 };
 sampler2D samplerBloomApprox { Texture = texBloomApprox; };
+*/
 
+// Pass 4a Buffer (bloomApproxVerticalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in brightpassPass
+#define TEX_BLOOMAPPROXVERT_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_BLOOMAPPROXVERT_HEIGHT 240
+// #define TEX_BLOOMAPPROXVERT_WIDTH CONTENT_WIDTH_INTERNAL
+// #define TEX_BLOOMAPPROXVERT_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_BLOOMAPPROXVERT_SIZE int2(TEX_BLOOMAPPROXVERT_WIDTH, TEX_BLOOMAPPROXVERT_HEIGHT)
+texture2D texBloomApproxVert {
+	Width = TEX_BLOOMAPPROXVERT_WIDTH;
+	Height = TEX_BLOOMAPPROXVERT_HEIGHT;
 
-// Pass 3 Buffer
-#define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROX_WIDTH
-#define TEX_BLURVERTICAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
+	Format = RGBA16;
+};
+sampler2D samplerBloomApproxVert { Texture = texBloomApproxVert; };
+
+// Pass 4b Buffer (bloomApproxHorizontalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is in brightpassPass
+#define TEX_BLOOMAPPROXHORIZ_WIDTH 320
+#define TEX_BLOOMAPPROXHORIZ_HEIGHT 240
+// #define TEX_BLOOMAPPROXHORIZ_WIDTH CONTENT_WIDTH_INTERNAL
+// #define TEX_BLOOMAPPROXHORIZ_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_BLOOMAPPROXHORIZ_SIZE int2(TEX_BLOOMAPPROXHORIZ_WIDTH, TEX_BLOOMAPPROXHORIZ_HEIGHT)
+texture2D texBloomApproxHoriz {
+	Width = TEX_BLOOMAPPROXHORIZ_WIDTH;
+	Height = TEX_BLOOMAPPROXHORIZ_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerBloomApproxHoriz { Texture = texBloomApproxHoriz; };
+
+// Pass 5 Buffer (blurVerticalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is blurHorizontalPass
+#define TEX_BLURVERTICAL_WIDTH TEX_BLOOMAPPROXHORIZ_WIDTH
+#define TEX_BLURVERTICAL_HEIGHT TEX_BLOOMAPPROXHORIZ_HEIGHT
 #define TEX_BLURVERTICAL_SIZE int2(TEX_BLURVERTICAL_WIDTH, TEX_BLURVERTICAL_HEIGHT)
 texture2D texBlurVertical {
 	Width = TEX_BLURVERTICAL_WIDTH;
@@ -147,9 +207,12 @@ texture2D texBlurVertical {
 sampler2D samplerBlurVertical { Texture = texBlurVertical; };
 
 
-// Pass 4 Buffer (HALATION_BLUR)
-#define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROX_WIDTH
-#define TEX_BLURHORIZONTAL_HEIGHT TEX_BLOOMAPPROX_HEIGHT
+// Pass 6 Buffer (blurHorizontalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is bloomHorizontalPass
+#define TEX_BLURHORIZONTAL_WIDTH TEX_BLOOMAPPROXHORIZ_WIDTH
+#define TEX_BLURHORIZONTAL_HEIGHT TEX_BLOOMAPPROXHORIZ_HEIGHT
 #define TEX_BLURHORIZONTAL_SIZE int2(TEX_BLURHORIZONTAL_WIDTH, TEX_BLURHORIZONTAL_HEIGHT)
 texture2D texBlurHorizontal {
 	Width = TEX_BLURHORIZONTAL_WIDTH;
@@ -160,7 +223,41 @@ texture2D texBlurHorizontal {
 sampler2D samplerBlurHorizontal { Texture = texBlurHorizontal; };
 
 
-// Pass 5 Mask Texture
+// Pass 7 (deinterlacePass)
+//   Last usage is phosphorMaskPass
+#define TEX_DEINTERLACE_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_DEINTERLACE_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_DEINTERLACE_SIZE int2(TEX_DEINTERLACE_WIDTH, TEX_DEINTERLACE_HEIGHT)
+#if __RENDERER__ != 0x9000
+	texture2D texDeinterlace {
+		Width = TEX_DEINTERLACE_WIDTH;
+		Height = TEX_DEINTERLACE_HEIGHT;
+
+		Format = RGBA16;
+	};
+	sampler2D samplerDeinterlace { Texture = texDeinterlace; };
+#else
+	#define texDeinterlace texCrop
+	#define samplerDeinterlace samplerCrop
+#endif
+
+// Pass 8 (freezeFramePass)
+// Do not condition this on __RENDERER__. It will not work if another
+//   pass corrupts it.
+#define TEX_FREEZEFRAME_WIDTH CONTENT_WIDTH_INTERNAL
+#define TEX_FREEZEFRAME_HEIGHT CONTENT_HEIGHT_INTERNAL
+#define TEX_FREEZEFRAME_SIZE int2(TEX_FREEZEFRAME_WIDTH, TEX_FREEZEFRAME_HEIGHT
+texture2D texFreezeFrame {
+	Width = TEX_FREEZEFRAME_WIDTH;
+	Height = TEX_FREEZEFRAME_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerFreezeFrame { Texture = texFreezeFrame; };
+
+// Pass 9 Mask Texture (phosphorMaskResizeVerticalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
 // TODO: Figure out how to set these to 144 insead of 512
 //       without losing data during downsampling
 #define TEX_MASKVERTICAL_WIDTH mask_size_xy
@@ -179,7 +276,9 @@ sampler2D samplerMaskResizeVertical {
 };
 
 
-// Pass 6 Mask Texture (MASK_RESIZE)
+// Pass 10 Mask Texture (phosphorMaskResizeHorizontalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
 // TODO: Figure out how to set these to 144 insead of 512
 //       without losing data during downsampling
 #define TEX_MASKHORIZONTAL_WIDTH mask_size_xy
@@ -198,7 +297,8 @@ sampler2D samplerMaskResizeHorizontal {
 };
 
 
-// Pass 7 Buffer (MASKED_SCANLINES)
+// Pass 11 Buffer (phosphorMaskPass)
+//   Last usage is bloomHorizontalPass
 #define TEX_MASKEDSCANLINES_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_MASKEDSCANLINES_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_MASKEDSCANLINES_SIZE int2(TEX_MASKEDSCANLINES_WIDTH, TEX_MASKEDSCANLINES_HEIGHT)
@@ -212,15 +312,13 @@ sampler2D samplerMaskResizeHorizontal {
 	};
 	sampler2D samplerMaskedScanlines { Texture = texMaskedScanlines; };
 #else
-	#define texMaskedScanlines texCrop
-	#define samplerMaskedScanlines samplerCrop
+	#define texMaskedScanlines texInterlaced
+	#define samplerMaskedScanlines samplerInterlaced
 #endif
 
 
-
-
-
-// Pass 8 Buffer (BRIGHTPASS)
+// Pass 12 Buffer (brightpassPass)
+//   Last usage is bloomHorizontalPass
 #define TEX_BRIGHTPASS_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BRIGHTPASS_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BRIGHTPASS_SIZE int2(TEX_BRIGHTPASS_WIDTH, TEX_BRIGHTPASS_HEIGHT)
@@ -234,19 +332,18 @@ sampler2D samplerMaskResizeHorizontal {
 	};
 	sampler2D samplerBrightpass { Texture = texBrightpass; };
 #else
-	#define texBrightpass texOrigLinearized
-	#define samplerBrightpass samplerOrigLinearized
+	#define texBrightpass texCrop
+	#define samplerBrightpass samplerCrop
 #endif
 
 
-
-
-
-// Pass 9 Buffer
+// Pass 13 Buffer (bloomVerticalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is bloomHorizontalPass
 #define TEX_BLOOMVERTICAL_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BLOOMVERTICAL_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BLOOMVERTICAL_SIZE int2(TEX_BLOOMVERTICAL_WIDTH, TEX_BLOOMVERTICAL_HEIGHT)
-
 texture2D texBloomVertical {
 	Width = TEX_BLOOMVERTICAL_WIDTH;
 	Height = TEX_BLOOMVERTICAL_HEIGHT;
@@ -256,7 +353,10 @@ texture2D texBloomVertical {
 sampler2D samplerBloomVertical { Texture = texBloomVertical; };
 
 
-// Pass 10 Buffer
+// Pass 14 Buffer (bloomHorizontalPass)
+//   Cannot be conditioned on __RENDERER__ b/c there are no
+//     available buffers of the same size
+//   Last usage is geometryPass
 #define TEX_BLOOMHORIZONTAL_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_BLOOMHORIZONTAL_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_BLOOMHORIZONTAL_SIZE int2(TEX_BLOOMHORIZONTAL_WIDTH, TEX_BLOOMHORIZONTAL_HEIGHT)
@@ -269,7 +369,8 @@ texture2D texBloomHorizontal {
 sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 
 
-// Pass 11 Buffer
+// Pass 15 Buffer (geometryPass)
+//   Last usage is uncropPass
 #define TEX_GEOMETRY_WIDTH CONTENT_WIDTH_INTERNAL
 #define TEX_GEOMETRY_HEIGHT CONTENT_HEIGHT_INTERNAL
 #define TEX_GEOMETRY_SIZE int2(TEX_GEOMETRY_WIDTH, TEX_GEOMETRY_HEIGHT)
@@ -286,33 +387,5 @@ sampler2D samplerBloomHorizontal { Texture = texBloomHorizontal; };
 	#define texGeometry texCrop
 	#define samplerGeometry samplerCrop
 #endif
-
-
-// Scanline Blend Buffer
-#define TEX_BLENDSCANLINE_WIDTH CONTENT_WIDTH_INTERNAL
-#define TEX_BLENDSCANLINE_HEIGHT CONTENT_HEIGHT_INTERNAL
-#define TEX_BLENDSCANLINE_SIZE int2(TEX_BLENDSCANLINE_WIDTH, TEX_BLENDSCANLINE_HEIGHT)
-texture2D texBlendScanline {
-	Width = TEX_BLENDSCANLINE_WIDTH;
-	Height = TEX_BLENDSCANLINE_HEIGHT;
-
-	Format = RGBA16;
-};
-sampler2D samplerBlendScanline { Texture = texBlendScanline; };
-
-// Frame Merge Buffer
-#define TEX_FREEZEFRAME_WIDTH CONTENT_WIDTH_INTERNAL
-#define TEX_FREEZEFRAME_HEIGHT CONTENT_HEIGHT_INTERNAL
-#define TEX_FREEZEFRAME_SIZE int2(TEX_FREEZEFRAME_WIDTH, TEX_FREEZEFRAME_HEIGHT
-texture2D texFreezeFrame {
-	Width = TEX_FREEZEFRAME_WIDTH;
-	Height = TEX_FREEZEFRAME_HEIGHT;
-
-	Format = RGBA16;
-};
-sampler2D samplerFreezeFrame { Texture = texFreezeFrame; };
-
-
-uniform int frame_count < source = "framecount"; >;
 
 #endif  // _SHARED_OBJECTS_H

@@ -24,7 +24,7 @@
 
 
 // The normalized center is 0.5 plus the normalized offset
-static const float2 content_center = float2(CONTENT_CENTER_X, CONTENT_CENTER_Y) / buffer_size + 0.5;
+static const float2 content_center = (TEXCOORD_OFFSET + float2(CONTENT_CENTER_X, CONTENT_CENTER_Y)) / buffer_size + 0.5;
 // The content's normalized diameter d is its size divided by the buffer's size. The radius is d/2.
 static const float2 content_radius = content_size / (2.0 * buffer_size);
 
@@ -53,14 +53,14 @@ void uncropContentPixelShader(
 
     out float4 color : SV_Target
 ) {
-    const bool is_in_boundary = (
+    const bool is_in_boundary = float(
         texcoord.x >= content_left && texcoord.x <= content_right &&
         texcoord.y >= content_upper && texcoord.y <= content_lower
     );
     const float2 texcoord_uncropped = (texcoord - content_offset) * buffer_size / content_size;
 
-    if (is_in_boundary) color = tex2D(samplerGeometry, texcoord_uncropped);
-    else color = float4(0, 0, 0, 1);
+    const float3 raw_color = tex2D(samplerGeometry, texcoord_uncropped).rgb;
+    color = float4(is_in_boundary * raw_color, 1);
 }
 
 #endif  //  _CONTENT_CROPPING

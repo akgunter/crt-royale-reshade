@@ -269,8 +269,7 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
     //  Snap to the previous texel and get sample dists from 2/4 nearby texels:
     const float2 curr_texel = tex_uv * tex_size;
     //  Use under_half to fix a rounding bug right around exact texel locations.
-    const float2 prev_texel =
-        floor(curr_texel - under_half) +  0.5;
+    const float2 prev_texel = floor(curr_texel - under_half) +  0.5;
     const float2 prev_texel_hor = float2(prev_texel.x, curr_texel.y);
     const float2 prev_texel_hor_uv = prev_texel_hor * texture_size_inv;
     const float prev_dist = curr_texel.x - prev_texel_hor.x;
@@ -278,14 +277,18 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
         1.0 - prev_dist, 2.0 - prev_dist);
     //  Get Quilez, Lanczos2, or Gaussian resize weights for 2/4 nearby texels:
     float4 weights;
-    if(beam_horiz_filter < 0.5)
+    if (beam_horiz_filter < 0.5) {
+        //  None:
+        weights = float4(0, 1, 0, 0);
+    }
+    else if(beam_horiz_filter < 1.5)
     {
         //  Quilez:
         const float x = sample_dists.y;
         const float w2 = x*x*x*(x*(x*6.0 - 15.0) + 10.0);
         weights = float4(0.0, 1.0 - w2, w2, 0.0);
     }
-    else if(beam_horiz_filter < 1.5)
+    else if(beam_horiz_filter < 2.5)
     {
         //  Gaussian:
         float inner_denom_inv = 1.0/(2.0*beam_horiz_sigma*beam_horiz_sigma);
@@ -304,6 +307,45 @@ float3 sample_single_scanline_horizontal(const sampler2D tex,
     const float2 uv_step_x = float2(texture_size_inv.x, 0.0);
     return get_scanline_color(
         tex, prev_texel_hor_uv, uv_step_x, final_weights);
+}
+
+float3 sample_rgb_scanline(
+    const sampler2D tex,
+    const float2 tex_uv, const float2 tex_size,
+    const float2 texture_size_inv
+) {
+    if (beam_misconvergence) {
+        const float3 convergence_offsets_rgb_x = get_convergence_offsets_x_vector();
+        const float3 convergence_offsets_rgb_y = get_convergence_offsets_y_vector();
+
+        const float3 offset_u_rgb = convergence_offsets_rgb_x * texture_size_inv.x;
+        const float3 offset_v_rgb = convergence_offsets_rgb_y * texture_size_inv.y;
+
+        const float2 scanline_uv_r = tex_uv - float2(offset_u_rgb.r, offset_v_rgb.r);
+        const float2 scanline_uv_g = tex_uv - float2(offset_u_rgb.g, offset_v_rgb.g);
+        const float2 scanline_uv_b = tex_uv - float2(offset_u_rgb.b, offset_v_rgb.b);
+        
+        /*
+        const float4 sample_r = tex2D(tex, scanline_uv_r);
+        const float4 sample_g = tex2D(tex, scanline_uv_g);
+        const float4 sample_b = tex2D(tex, scanline_uv_b);
+        */
+
+        /**/
+        const float3 sample_r = sample_single_scanline_horizontal(
+            tex, scanline_uv_r, tex_size, texture_size_inv);
+        const float3 sample_g = sample_single_scanline_horizontal(
+            tex, scanline_uv_g, tex_size, texture_size_inv);
+        const float3 sample_b = sample_single_scanline_horizontal(
+            tex, scanline_uv_b, tex_size, texture_size_inv);
+        /**/
+
+        return float3(sample_r.r, sample_g.g, sample_b.b);
+    }
+    else {
+        // return tex2D(tex, tex_uv).rgb;
+        return sample_single_scanline_horizontal(tex, tex_uv, tex_size, texture_size_inv);
+    }
 }
 
 float3 sample_rgb_scanline_horizontal(const sampler2D tex,
@@ -333,13 +375,13 @@ float3 sample_rgb_scanline_horizontal(const sampler2D tex,
     }
 }
 
-float3 get_bobbed_scanline_sample(
+float3 get_averaged_scanline_sample(
     sampler2D tex, const float2 texcoord,
     const float scanline_start_y, const float v_step_y,
     const float input_gamma
 ) {
     // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
-    float3 interpolated_line;
+    float3 interpolated_line = 0.0;
     for (int i = 0; i < scanline_num_pixels; i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
         interpolated_line += tex2Dlod_linearize(tex, coord, input_gamma).rgb;
@@ -351,6 +393,7 @@ float3 get_bobbed_scanline_sample(
 
 
 float get_curr_scanline_idx(
+    const float2 texcoord,
     const float texcoord_y,
     const float tex_size_y
 ) {
@@ -359,7 +402,25 @@ float get_curr_scanline_idx(
     // thickness `scanline_num_pixels` belonging to a single field.
 
     const float curr_line_texel_y = floor(texcoord_y * tex_size_y + under_half);
-    return floor(curr_line_texel_y / scanline_num_pixels);
+    return floor(curr_line_texel_y / scanline_num_pixels + FIX_ZERO(0.0));
+}
+
+float get_scanline_center(
+    const float2 texcoord,
+    const float line_texel_y,
+    const float scanline_idx
+) {
+    const float scanline_start_y = scanline_idx * scanline_num_pixels;
+
+    const float half_num_pixels = scanline_num_pixels / 2;
+    const float half_size = floor(half_num_pixels + under_half);
+    const float num_pixels_is_even = float(half_size >= half_num_pixels);
+    // const float num_pixels_is_even = float(half_size < half_num_pixels);
+
+    const float upper_center = scanline_start_y + half_size;
+    const float shift = num_pixels_is_even * float(line_texel_y > upper_center);
+
+    return upper_center + shift;
 }
 
 float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
@@ -367,37 +428,54 @@ float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
     // Given a scanline index, determine which field it belongs to.
     // Also determine which field is being drawn this frame.
 
+    // When interlacing is disabled, every scanline is in-field b/c
+    // the modulus is 1
     const float modulus = enable_interlacing + 1.0;
-    const float frame_field_idx = fmod(frame_count + interlace_bff, modulus);
+
+    // We implement the Static deinterlacing algorithm by lerp'ing
+    // between two candidate frame parities. The static algorithm
+    // simply takes the front or back field every frame. The others
+    // use the adjusted frame count's parity. We lerp on whether
+    // or not the deinterlacing algorithm is the Static one.
+    const float alternate_between_frames = float(scanline_deinterlacing_mode != 3);
+    const float non_alternating_idx = interlace_bff;
+    const float alternating_idx = fmod(frame_count + interlace_bff, modulus);
+    const float frame_field_idx = lerp(non_alternating_idx, alternating_idx, alternate_between_frames);
+
     const float line_field_idx = fmod(curr_scanline_idx, modulus);
 
     return float2(frame_field_idx, line_field_idx);
 }
 
-float curr_line_is_wrong_field(
-    const float texcoord_y,
-    const float tex_size_y
-) {
+float curr_line_is_wrong_field(float2 frame_and_line_field_idx)
+{
     // Return 1.0 if the current scanline is in the current field.
     // 0.0 otherwise
-    const float curr_scanline_idx = get_curr_scanline_idx(texcoord_y, tex_size_y);
-    const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
     return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
 }
 
 float curr_line_is_wrong_field(float curr_scanline_idx)
 {
-    // Return 1.0 if the current scanline is in the current field.
-    // 0.0 otherwise
-
     const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(curr_scanline_idx);
-    return float(frame_and_line_field_idx.x != frame_and_line_field_idx.y);
+    return curr_line_is_wrong_field(frame_and_line_field_idx);
+}
+
+float curr_line_is_wrong_field(
+    const float2 texcoord,
+    const float texcoord_y,
+    const float tex_size_y
+) {
+    const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord_y, tex_size_y);
+    return curr_line_is_wrong_field(curr_scanline_idx);
 }
 
 float3 get_beam_strength(float3 dist, float3 color,
     const float sigma_range, const float shape_range)
 {
-    //  See scanline_gaussian integral_contrib() for detailed comments!
+    // entry point in original is scanline_contrib()
+    // this is based on scanline_gaussian_sampled_contrib() from original
+
+    //  See scanline_gaussian_integral_contrib() for detailed comments!
     //  gaussian sample = 1/(sigma*sqrt(2*pi)) * e**(-(x**2)/(2*sigma**2))
     const float3 sigma = get_gaussian_sigma(color, sigma_range);
     //  Avoid repeated divides:
@@ -408,6 +486,65 @@ float3 get_beam_strength(float3 dist, float3 color,
     return color*exp(-(dist*dist)*inner_denom_inv)*outer_denom_inv;
 }
 
+float3 get_gaussian_beam_strength(
+    float dist,
+    float3 color,
+    const float sigma_range,
+    const float shape_range
+) {
+    // entry point in original is scanline_contrib()
+    // this is based on scanline_generalized_gaussian_sampled_contrib() from original
+
+    //  See scanline_generalized_gaussian_integral_contrib() for details!
+    //  generalized sample =
+    //      beta/(2*alpha*gamma(1/beta)) * e**(-(|x|/alpha)**beta)
+    const float3 alpha = sqrt(2.0) * get_gaussian_sigma(color, sigma_range);
+    const float3 beta = get_generalized_gaussian_beta(color, shape_range);
+    //  Avoid repeated divides:
+    const float3 alpha_inv = 1.0 / alpha;
+    const float3 beta_inv = 1.0 / beta;
+    const float3 scale = color * beta * 0.5 * alpha_inv /
+        gamma_impl(beta_inv, beta);
+    
+    return scale * exp(-pow(abs(dist*alpha_inv), beta));
+}
+
+float3 get_gaussian_beam_strength(
+    const float dist,
+    const float prev_dist,
+    const float3 color,
+    const float sigma_range,
+    const float shape_range
+) {
+    // entry point in original is scanline_contrib()
+    // this is based on scanline_generalized_gaussian_sampled_contrib() from original
+
+    //  See scanline_generalized_gaussian_integral_contrib() for details!
+    //  generalized sample =
+    //      beta/(2*alpha*gamma(1/beta)) * e**(-(|x|/alpha)**beta)
+    const float3 alpha = sqrt(2.0) * get_gaussian_sigma(color, sigma_range);
+    const float3 beta = get_generalized_gaussian_beta(color, shape_range);
+    //  Avoid repeated divides:
+    const float3 alpha_inv = 1.0 / alpha;
+    const float3 beta_inv = 1.0 / beta;
+    const float3 scale = color * beta * 0.5 * alpha_inv /
+        gamma_impl(beta_inv, beta);
+
+    const float3 strength_at_sample = scale * exp(-pow(abs(dist*alpha_inv), beta));
+    const float3 strength_at_prev_sample = scale * exp(-pow(abs(prev_dist*alpha_inv), beta));
+
+    return 0.5 * (strength_at_sample + strength_at_prev_sample);
+}
+
+float3 get_linear_beam_strength(
+    const float dist,
+    const float3 color,
+    const float num_pixels,
+    const bool interlaced
+) {
+    const float3 p = color * (1 - abs(dist));
+    return clamp(p, 0, color);
+}
 
 
 #endif  //  _SCANLINE_FUNCTIONS_H

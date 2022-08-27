@@ -550,8 +550,8 @@ float3 tex2Daa4x(const sampler2D tex, const float2 tex_uv,
     const float4 ssd_fai = get_subpixel_support_diam_and_final_axis_importance();
     const float2 subpixel_support_diameter = ssd_fai.xy;
     const float2 final_axis_importance = ssd_fai.zw;
-    const float2 xy_step = float2(1.0,1.0)/grid_size * subpixel_support_diameter;
-    const float2 xy_start_offset = float2(0.5 - grid_size*0.5,0.5 - grid_size*0.5) * xy_step;
+    const float2 xy_step = 1.0/grid_size * subpixel_support_diameter;
+    const float2 xy_start_offset = (0.5 - grid_size*0.5) * xy_step;
     //  Get the xy offset of each sample.  Exploit diagonal symmetry:
     const float2 xy_offset0 = xy_start_offset + float2(2.0, 0.0) * xy_step;
     const float2 xy_offset1 = xy_start_offset + float2(0.0, 1.0) * xy_step;
@@ -563,10 +563,9 @@ float3 tex2Daa4x(const sampler2D tex, const float2 tex_uv,
     //  Get the weight sum to normalize the total to 1.0 later:
     const float3 half_sum = w0 + w1;
     const float3 w_sum = half_sum + half_sum.bgr;
-    const float3 w_sum_inv = float3(1.0,1.0,1.0)/(w_sum);
+    const float3 w_sum_inv = 1.0/w_sum;
     //  Scale the pixel-space to texture offset matrix by the pixel diameter.
-    const float2x2 true_pixel_to_tex_uv =
-        float2x2((pixel_to_tex_uv * aa_pixel_diameter));
+    const float2x2 true_pixel_to_tex_uv = pixel_to_tex_uv * aa_pixel_diameter;
     //  Get uv sample offsets, mirror on odd frames if directed, and exploit
     //  diagonal symmetry:
     const float2 frame_sign = get_frame_sign(frame);
@@ -628,6 +627,8 @@ float3 tex2Daa5x(const sampler2D tex, const float2 tex_uv,
     //  Sum weighted samples (weight sum must equal 1.0 for each channel):
     return w_sum_inv * (w0 * sample0 + w1 * sample1 +
         w2 * sample2 + w3 * sample3 + w4 * sample4);
+    
+    // return (w0 + w1 + w2 + w3 + w4);
 }
 
 float3 tex2Daa6x(const sampler2D tex, const float2 tex_uv,
@@ -1375,7 +1376,7 @@ float3 tex2Daa(const sampler2D tex, const float2 tex_uv,
     return (antialias_level < 0.5) ? tex2D_linearize(tex, tex_uv, input_gamma).rgb :
         (antialias_level < 3.5) ? tex2Daa_subpixel_weights_only(
             tex, tex_uv, pixel_to_tex_uv, input_gamma) :
-        // (antialias_level < 4.5) ? tex2Daa4x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
+        (antialias_level < 4.5) ? tex2Daa4x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         (antialias_level < 5.5) ? tex2Daa5x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         (antialias_level < 6.5) ? tex2Daa6x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :
         (antialias_level < 7.5) ? tex2Daa7x(tex, tex_uv, pixel_to_tex_uv, frame, input_gamma) :

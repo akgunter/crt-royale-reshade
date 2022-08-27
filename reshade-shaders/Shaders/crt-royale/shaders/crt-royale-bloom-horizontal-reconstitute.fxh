@@ -27,7 +27,7 @@
 #include "../lib/scanline-functions.fxh"
 #include "../lib/bloom-functions.fxh"
 
-void vertexShader10(
+void bloomHorizontalVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -35,9 +35,7 @@ void vertexShader10(
     out float2 bloom_dxdy : TEXCOORD1,
     out float bloom_sigma_runtime : TEXCOORD2
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    PostProcessVS(id, position, texcoord);
 
     const float2 input_size = tex2Dsize(samplerBloomVertical);
 
@@ -56,7 +54,7 @@ void vertexShader10(
         mask_tile_size_x / mask_triads_per_tile, bloom_diff_thresh_);
 }
 
-void pixelShader10(
+void bloomHorizontalPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 bloom_dxdy : TEXCOORD1,

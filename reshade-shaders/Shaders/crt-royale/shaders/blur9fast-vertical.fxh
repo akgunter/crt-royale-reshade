@@ -49,17 +49,15 @@
 
 #include "shared-objects.fxh"
 
-void vertexShader3(
+void blurVerticalVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
     out float2 blur_dxdy : TEXCOORD1
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
-    
+    PostProcessVS(id, position, texcoord);
+
     //  Get the uv sample distance between output pixels.  Blurs are not generic
     //  Gaussian resizers, and correct blurs require:
     //  1.) OutputSize == InputSize * 2^m, where m is an integer <= 0.
@@ -75,14 +73,14 @@ void vertexShader3(
     blur_dxdy = float2(0.0, dxdy.y);
 }
 
-void pixelShader3(
+void blurVerticalPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 blur_dxdy : TEXCOORD1,
 
     out float4 color : SV_Target
 ) {
-    static const float3 blur_color = tex2Dblur9fast(samplerBloomApprox, texcoord, blur_dxdy, get_intermediate_gamma());
+    static const float3 blur_color = tex2Dblur9fast(samplerBloomApproxHoriz, texcoord, blur_dxdy, get_intermediate_gamma());
     //  Encode and output the blurred image:
     // color = encode_output(float4(blur_color, 1.0), 1.0);
     color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());

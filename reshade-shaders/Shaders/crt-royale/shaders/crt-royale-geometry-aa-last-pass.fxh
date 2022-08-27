@@ -53,7 +53,7 @@ float2x2 mul_scale(float2 scale, float2x2 mtrx)
 }
 
 
-void vertexShader11(
+void geometryVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
@@ -65,9 +65,7 @@ void vertexShader11(
     out float3 global_to_local_row1 : TEXCOORD5,
     out float3 global_to_local_row2 : TEXCOORD6
 ) {
-	texcoord.x = (id == 2) ? 2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    PostProcessVS(id, position, texcoord);
 
     output_size_inv = 1.0 / content_size;
 
@@ -128,7 +126,7 @@ void vertexShader11(
     eye_pos_local = mul(global_to_local, eye_pos_global);
 }
 
-void pixelShader11(
+void geometryPS(
     in const float4 position : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     in const float2 output_size_inv : TEXCOORD1,
@@ -196,18 +194,18 @@ void pixelShader11(
     if(antialias_level > 0.5 && (geom_mode > 0.5 || any(bool2((geom_overscan.x != 1.0), (geom_overscan.y != 1.0)))))
     {
         //  Sample the input with antialiasing (due to sharp phosphors, etc.):
-        raw_color = tex2Daa(samplerBlendScanline, tex_uv, pixel_to_tex_uv, float(frame_count), get_intermediate_gamma());
+        raw_color = tex2Daa(samplerBloomHorizontal, tex_uv, pixel_to_tex_uv, float(frame_count), get_intermediate_gamma());
     }
 
     else if(antialias_level > 0.5 && need_subpixel_aa)
     {
         //  Sample at each subpixel location:
         raw_color = tex2Daa_subpixel_weights_only(
-            samplerBlendScanline, tex_uv, pixel_to_tex_uv, get_intermediate_gamma());
+            samplerBloomHorizontal, tex_uv, pixel_to_tex_uv, get_intermediate_gamma());
     }
     else
     {
-        raw_color = tex2D_linearize(samplerBlendScanline, tex_uv, get_intermediate_gamma()).rgb;
+        raw_color = tex2D_linearize(samplerBloomHorizontal, tex_uv, get_intermediate_gamma()).rgb;
     }
 
     //  Dim borders and output the final result:

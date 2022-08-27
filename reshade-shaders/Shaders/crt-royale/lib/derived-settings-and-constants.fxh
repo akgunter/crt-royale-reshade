@@ -118,9 +118,7 @@ static const float mask_shadow_avg_color = 41.0/255.0;
 #define _SIMULATE_GBA_ON_CRT 4
 
 //  Ensure the first pass decodes CRT gamma and the last encodes LCD gamma.
-#ifndef GAMMA_SIMULATION_MODE
-    #define GAMMA_SIMULATION_MODE _SIMULATE_CRT_ON_LCD
-#endif
+#define GAMMA_SIMULATION_MODE _SIMULATE_CRT_ON_LCD
 
 //  Manually tiling a manually resized texture creates texture coord derivative
 //  discontinuities and confuses anisotropic filtering, causing discolored tile

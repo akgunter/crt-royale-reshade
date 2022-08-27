@@ -45,22 +45,28 @@ For the most part, configuring this implementation of crt-royale should be the s
 There are a handful of notable differences:
 1)  Mask Sample Mode "Smooth" has a new setting `Downsampling Sharpness`. You can use it to make Mode "Smooth" look more similar to Mode "Sharp" if you prefer something in between. I find this particularly useful for the Shadow mask.
 
-2)  The scanline logic is now user-toggleable instead of autodetected, and you can change the thickness of the scanlines if you want. You can now enable frame blending to smooth out VSync artifacting.
+2)  The scanline logic is now user-toggleable instead of autodetected, and you can change the thickness of the scanlines if you want.
 
-3)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask. You can also type "GRILLE", "SLOT", or "SHADOW" if you prefer.
+3)  You can now choose from a selection of "deinterlacing algorithms," to use the term loosely. The original crt-royale implicitely accomplished this by naively drawing the image on the screen and letting your monitor and eyes do the work. This resulted in image retention, jitter, and combing artifacts. Now you can choose from None (the original behavior), Weaving, Blended Weaving, and Static. All of these work by merging the current frame with the previous frame.
+    None: the original crt-royale behavior
+    Weaving: crisp, jitter-free, but noticeable combing artifacts
+    Blended Weaving: a middleground between None and Weaving
+    Static: emphasizes the scanlines by choosing the same field for every frame
 
-4)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
+4)  In DX9, the Mask Type is set by a preprocessor definition `phosphor_mask_type`. It can be either 0 for the Grille mask, 1 for the Slot mask, or 2 for the Shadow mask. You can also type "GRILLE", "SLOT", or "SHADOW" if you prefer.
 
-5)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
+5)  `PHOSPHOR_BLOOM_TRIADS_LARGER_THAN_3_PIXELS` and its siblings are still present. You can choose one or none of them by setting `PHOSPHOR_BLOOM_TRIAD_SIZE_MODE` to a value in range `[0 - 4]`. This is defined in `user-settings.fxh`.
 
-6)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
+6)  The same is true for `SIMULATE_CRT_ON_LCD` and its siblings. Set `GAMMA_SIMULATION_MODE` to `[0 - 4]` to control which of those is active. This is defined in `derived-settings-and-constants.fxh`.
 
-7) I've disabled many of the beam settings due to my rewrite of the scanline logic. They currently are unused.
+7)  Most of the "RUNTIME_...", "ANISOTROPIC_...", "DRIVERS_ALLOW_...", and other performance-related preprocessor definitions are either hidden from the UI or gone. Some of them are extremely difficult to port correctly. Some of them either don't do anything anymore or never did anything to begin with. And some of them I'll be adding back later, but I'll have to refactor them and the affected code to make them more user-friendly.
 
-8)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
+8) I've disabled many of the beam settings due to my rewrite of the scanline logic. They currently are unused.
+
+9)  I've exposed `antialias_filter`, `antialias_level`, and `antialias_temporal` as preprocessor definitions. Note that the code dedicated to having `antialias_level` set to `4` is disabled for now because it's currently broken.
 
 
 #### REPORTING DISCREPANCIES
 Please be aware that, because ReShade and RetroArch shaders work so differently, it won't be possible to replicate the libretro version's output perfectly. There simply are too many low-level differences in too many bits of math to achieve a pixel-perfect port, especially now that I've rewritten the scanline logic to be variable-width. That being said, you should be able to get pretty darn close.
 
-Obviously my top-priority is to make sure there aren't any breaking issues. If a configuration completely breaks the shader or crashes the game, I need to know about it. Similarly, if there's a configuration that runs well in RetroArch but is unplayably laggy in ReShade, I need to know about it. The same is true for configurations that completely screw up color balance in some stupid way (e.g. setting the Scanline Width to 2 used to throw off the brightness/gamma horribly, but 1 and 3+ were alright). Discrepancies that I won't be able to fix include occassional crushing in shadows, the bloom effect being more potent in places, or the scanlines being slightly different. These go back to limitations of ReShade and those aforementioned functional differences.
+Obviously my top-priority is to make sure there aren't any breaking issues. If a configuration completely breaks the shader or crashes the game, I need to know about it. Similarly, if there's a configuration that runs well in RetroArch but is unplayably laggy in ReShade, I need to know about it. The same is true for configurations that completely screw up color balance in some stupid way (e.g. setting the Scanline Width to 2 used to throw off the brightness/gamma horribly, but 1 and 3 were alright). Discrepancies that I won't be able to fix include occassional crushing in shadows, the bloom effect being more potent in places, or the scanlines being slightly different. These go back to limitations of ReShade and those aforementioned functional differences.

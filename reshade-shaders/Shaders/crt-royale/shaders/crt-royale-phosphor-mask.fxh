@@ -1,8 +1,5 @@
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
-//  crt-royale: A full-featured CRT shader, with cheese.
-//  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
-//
 //  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
 //  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
 //
@@ -19,27 +16,130 @@
 //  this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 //  Place, Suite 330, Boston, MA 02111-1307 USA
 
+
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
-
 #include "../lib/texture-settings.fxh"
+
 #include "shared-objects.fxh"
 
 
-void newPixelShader7(
+static const int num_sinc_lobes = mask_sinc_lobes;
+
+
+void maskResizeVertVS(
+    in const uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+
+    out float4 source_mask_size_inv_and_tile_size : TEXCOORD1,
+    out float3 downsizing_factor_and_true_tile_size : TEXCOORD2
+) {
+    PostProcessVS(id, position, texcoord);
+    
+    source_mask_size_inv_and_tile_size = float4(1.0 / mask_size, TEX_MASKHORIZONTAL_SIZE);
+    downsizing_factor_and_true_tile_size = get_downsizing_factor_and_true_tile_size();
+}
+
+void maskResizeVertPS(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+
+    in const float4 source_mask_size_inv_and_tile_size : TEXCOORD1,
+    in const float3 downsizing_factor_and_true_tile_size : TEXCOORD2,
+
+    out float4 color : SV_Target
+) {
+    const float2 source_mask_size_inv = source_mask_size_inv_and_tile_size.xy;
+    const float2 tile_size = source_mask_size_inv_and_tile_size.zw;
+    const float downsizing_factor = downsizing_factor_and_true_tile_size.x;
+    const float2 true_tile_size = downsizing_factor_and_true_tile_size.yz;
+
+    if (mask_sample_mode_desired > 0.5 || texcoord.y * tile_size.y >= true_tile_size.y) {
+        color = float4(0, 0, 0, 0);
+    }
+    else if (mask_type == 0) {
+        color = lanczos_downsample_vert(
+            samplerMaskGrille, source_mask_size_inv,
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
+        );
+    }
+    else if (mask_type == 2) {
+        color = lanczos_downsample_vert(
+            samplerMaskShadow, source_mask_size_inv,
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
+        );
+    }
+    else {
+        color = lanczos_downsample_vert(
+            samplerMaskSlot, source_mask_size_inv,
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
+        );
+    }
+}
+
+void maskResizeHorizVS(
+    in const uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+
+    out float4 source_mask_size_inv_and_tile_size : TEXCOORD1,
+    out float3 downsizing_factor_and_true_tile_size : TEXCOORD2
+) {
+    texcoord.x = (id == 2) ? 2.0 : 0.0;
+    texcoord.y = (id == 1) ? 2.0 : 0.0;
+    position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+
+    source_mask_size_inv_and_tile_size = float4(1.0 / TEX_MASKVERTICAL_SIZE, TEX_MASKHORIZONTAL_SIZE);
+    downsizing_factor_and_true_tile_size = get_downsizing_factor_and_true_tile_size();
+}
+
+
+void maskResizeHorizPS(
+    in const float4 pos : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+    in const float4 source_mask_size_inv_and_tile_size : TEXCOORD1,
+    in const float3 downsizing_factor_and_true_tile_size : TEXCOORD2,
+
+    out float4 color : SV_Target
+) {
+    const float2 source_mask_size_inv = source_mask_size_inv_and_tile_size.xy;
+    const float2 tile_size = source_mask_size_inv_and_tile_size.zw;
+    const float downsizing_factor = downsizing_factor_and_true_tile_size.x;
+    const float2 true_tile_size = downsizing_factor_and_true_tile_size.yz;
+
+    if (mask_sample_mode_desired > 0.5 || texcoord.x * tile_size.x >= true_tile_size.x) {
+        color = float4(0, 0, 0, 0);
+    }
+    else {
+        color = lanczos_downsample_horiz(
+            samplerMaskResizeVertical, source_mask_size_inv,
+            texcoord, downsizing_factor, num_sinc_lobes,
+            lanczos_weight_at_center
+        );
+    }
+}
+
+
+void applyPhosphorMaskPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
     
     out float4 color : SV_Target
 ) {
-    const float2 scanline_texture_size = tex2Dsize(samplerVerticalOffset);
+    const float2 scanline_texture_size = tex2Dsize(samplerDeinterlace);
     // const float2 output_size = tex2Dsize(samplerMaskedScanlines);
     const float2 output_size = TEX_MASKEDSCANLINES_SIZE;
 
     //  Our various input textures use different coords.
     const float2 scanline_texture_size_inv = 1.0 / scanline_texture_size;
-
+    
     //  This pass: Sample (misconverged?) scanlines to the final horizontal
     //  resolution, apply halation (bouncing electrons), and apply the phosphor
     //  mask.  Fake a bloom if requested.  Unless we fake a bloom, the output
@@ -47,9 +147,10 @@ void newPixelShader7(
 
     //  Horizontally sample the current row (a vertically interpolated scanline)
     //  and account for horizontal convergence offsets, given in units of texels.
-    const float3 scanline_color_dim = sample_rgb_scanline_horizontal(
-        samplerVerticalOffset, texcoord,
-        scanline_texture_size, scanline_texture_size_inv);
+    // const float3 scanline_color_dim = sample_rgb_scanline_horizontal(
+    //     samplerVerticalOffset, texcoord,
+    //     scanline_texture_size, scanline_texture_size_inv);
+    const float3 scanline_color_dim = tex2D(samplerDeinterlace, texcoord).rgb;
     const float auto_dim_factor = levels_autodim_temp;
 
     const float2 true_tile_size = get_downsizing_factor_and_true_tile_size().yz;
