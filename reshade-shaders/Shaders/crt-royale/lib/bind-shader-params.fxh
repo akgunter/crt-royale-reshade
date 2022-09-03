@@ -37,6 +37,10 @@
     #define _OVERRIDE_DEVICE_GAMMA 1
 #endif
 
+#ifndef USE_PHOSPHOR_TEXTURES
+    #define USE_PHOSPHOR_TEXTURES 0
+#endif
+
 // #ifndef ANTIALIAS_OVERRIDE_BASICS
 //     #define ANTIALIAS_OVERRIDE_BASICS 1
 // #endif
@@ -70,7 +74,7 @@ static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
     #define mask_type phosphor_mask_type
 #endif
 
-uniform int mask_sample_mode_desired <
+uniform uint mask_sample_mode_desired <
     ui_label   = "Mask Sample Mode";
     ui_tooltip = "Selects the phosphor downsampling method";
     ui_category = "Phosphor Mask";
@@ -102,7 +106,7 @@ uniform float mask_triad_size_desired <
     ui_category = "Phosphor Mask";
     ui_type    = "slider";
     ui_min     = 1.0;
-    ui_max     = 18.0;
+    ui_max     = 60.0;
     ui_step    = 0.1;
 > = mask_triad_size_desired_static;
 uniform float mask_num_triads_desired <
@@ -114,6 +118,40 @@ uniform float mask_num_triads_desired <
     ui_max     = 1280.0;
     ui_step    = 1.0;
 > = mask_num_triads_desired_static;
+uniform float aspect_ratio_adjustment<
+    ui_label   = "Triad Aspect Ratio";
+    ui_category = "Phosphor Mask";
+    ui_type    = "drag";
+    ui_min     = 0.01;
+    ui_max     = 10.0;
+    ui_step    = 0.01;
+> = 1.0;
+uniform float2 phosphor_thickness <
+    ui_label   = "Phosphor Thickness";
+    ui_tooltip = "Sets the brightness of the phosphor's edges, which appears to widen the phosphor.";
+    ui_category = "Phosphor Mask";
+    ui_type    = "drag";
+    ui_min     = 0.01;
+    ui_max     = 0.99;
+    ui_step    = 0.01;
+> = 0.2;
+uniform float2 phosphor_sharpness <
+    ui_label   = "Phosphor Sharpness";
+    ui_tooltip = "Controls the steepness of the phosphor's edges, which appears to sharpen the phosphor.";
+    ui_category = "Phosphor Mask";
+    ui_type    = "drag";
+    ui_min     = 0.01;
+    ui_max     = 1000.0;
+    ui_step    = 0.01;
+> = 50;
+uniform uint phosphor_update_interval_setting <
+    ui_label   = "Phosphor Update Interval";
+    ui_tooltip = "Sets the number of frames skipped by the phosphor mask pass. Set to Every Frame to make it easier to configure the mask. Set to Every 60 Frames to maximize performance.";
+    ui_category = "Phosphor Mask";
+    ui_type    = "combo";
+    ui_items   = "Every Frame\0"
+                 "Every 60 Frames\0";
+> = 0;
 
 
 // ==== INTERLACING ====
@@ -123,7 +161,7 @@ uniform bool enable_interlacing <
     // ui_type    = "combo";
     // ui_items   = "No\0Yes\0";
 > = true;
-uniform int scanline_deinterlacing_mode <
+uniform uint scanline_deinterlacing_mode <
     ui_label   = "Deinterlacing Mode";
     ui_tooltip = "Selects the deinterlacing algorithm. For crt-royale's original appearance, choose None.";
     ui_category = "Interlacing and Scanlines";
@@ -141,14 +179,6 @@ uniform float scanline_num_pixels <
     ui_max     = 30.0;
     ui_step    = 1.0;
 > = 2.0;
-uniform float scanline_max_embedding_dist <
-    ui_label   = "Scanline Max Embed Dist";
-    ui_category = "Interlacing and Scanlines";
-    ui_type    = "slider";
-    ui_min     = 0.1;
-    ui_max     = 5.0;
-    ui_step    = 0.1;
-> = 1.0;
 uniform float scanline_blend_gamma <
     ui_label   = "Scanline Blend Gamma";
     ui_tooltip = "Nudge this if Scanline Blend Strength changes your colors too much";
@@ -174,25 +204,7 @@ uniform bool interlace_bff <
 // static const float beam_max_shape = beam_max_shape_static;
 static const float beam_shape_power = beam_shape_power_static;
 
-uniform float3 convergence_offset_x <
-    ui_label   = "Convergence Offset X RGB";
-    ui_tooltip = "Shift the color channels horizontally";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = -10;
-    ui_max     = 10;
-    ui_step    = 0.05;
-> = 0;
-uniform float3 convergence_offset_y <
-    ui_label   = "Convergence Offset Y RGB";
-    ui_tooltip = "Shift the color channels vertically";
-    ui_category = "Electron Beam";
-    ui_type    = "drag";
-    ui_min     = -10;
-    ui_max     = 10;
-    ui_step    = 0.05;
-> = 0;
-uniform int beam_shape_mode <
+uniform uint beam_shape_mode <
     ui_label   = "Beam Shape Mode";
     ui_category = "Electron Beam";
     ui_type    = "combo";
@@ -201,6 +213,14 @@ uniform int beam_shape_mode <
                  "Gaussian\0"
                  "Multi-Source Gaussian\0";
 > = 1;
+uniform float beam_gap_width <
+    ui_label   = "Beam Gap Width";
+    ui_category = "Electron Beam";
+    ui_type    = "slider";
+    ui_min     = 0.1;
+    ui_max     = 5.0;
+    ui_step    = 0.1;
+> = 1.0;
 uniform float beam_min_sigma <
     ui_label   = "Beam Min Sigma";
     ui_category = "Electron Beam";
@@ -246,7 +266,7 @@ uniform float beam_shape_power <
     ui_step    = 0.01;
 > = beam_shape_power_static;
 */
-uniform int beam_horiz_filter <
+uniform uint beam_horiz_filter <
     ui_label   = "Beam Horiz Filter";
     ui_tooltip = "Default is Quilez";
     ui_category = "Electron Beam";
@@ -273,6 +293,24 @@ uniform float beam_horiz_linear_rgb_weight <
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = beam_horiz_linear_rgb_weight_static;
+uniform float3 convergence_offset_x <
+    ui_label   = "Convergence Offset X RGB";
+    ui_tooltip = "Shift the color channels horizontally";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -10;
+    ui_max     = 10;
+    ui_step    = 0.05;
+> = 0;
+uniform float3 convergence_offset_y <
+    ui_label   = "Convergence Offset Y RGB";
+    ui_tooltip = "Shift the color channels vertically";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -10;
+    ui_max     = 10;
+    ui_step    = 0.05;
+> = 0;
 
 
 // ==== IMAGE COLORIZATION ====
@@ -353,7 +391,7 @@ static const float aa_gauss_sigma = aa_gauss_sigma_static;
 
 
 // ==== GEOMETRY ====
-uniform int geom_mode_runtime <
+uniform uint geom_mode_runtime <
     ui_label   = "Geom Mode";
     ui_tooltip = "Select screen curvature";
     ui_category = "Screen Geometry";

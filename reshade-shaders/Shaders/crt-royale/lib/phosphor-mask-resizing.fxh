@@ -217,15 +217,19 @@ float4 lanczos_downsample_vert(
 }
 
 float4 samplePhosphorMask(const float2 texcoord) {
-    if (mask_type == 0) {
-        return tex2D(samplerMaskGrille, texcoord);
-    }
-    else if (mask_type == 2) {
-        return tex2D(samplerMaskShadow, texcoord);
-    }
-    else {
-        return tex2D(samplerMaskSlot, texcoord);
-    }
+    #if USE_PHOSPHOR_TEXTURES == 1
+        if (mask_type == 0) {
+            return tex2D(samplerMaskGrille, texcoord);
+        }
+        else if (mask_type == 2) {
+            return tex2D(samplerMaskShadow, texcoord);
+        }
+        else {
+            return tex2D(samplerMaskSlot, texcoord);
+        }
+    #else
+        return float4(1, 1, 1, 1);
+    #endif
 }
 
 #endif  //  _NEW_PHOSPHOR_MASK_RESIZING_H

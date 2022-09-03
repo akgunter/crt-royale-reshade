@@ -29,11 +29,11 @@
 #define mask_texture_magmin_filter_type LINEAR
 
 #if USE_LARGE_PHOSPHOR_MASK == 1
-    #define mask_grille_texture_path "crt-royale/TileableLinearApertureGrille15Wide8And5d5Spacing.png"
-    #define mask_slot_texture_path "crt-royale/TileableLinearSlotMaskTall15Wide9And4d5Horizontal9d14VerticalSpacing.png"
-    #define mask_shadow_texture_path "crt-royale/TileableLinearShadowMaskEDP.png"
+	#define mask_grille_texture_path "crt-royale/TileableLinearApertureGrille15Wide8And5d5Spacing.png"
+	#define mask_slot_texture_path "crt-royale/TileableLinearSlotMaskTall15Wide9And4d5Horizontal9d14VerticalSpacing.png"
+	#define mask_shadow_texture_path "crt-royale/TileableLinearShadowMaskEDP.png"
 	#define mask_size_xy 512
-    #define mask_texture_mip_filter_type LINEAR
+	#define mask_texture_mip_filter_type LINEAR
 #else
 	#define mask_grille_texture_path "crt-royale/TileableLinearApertureGrille15Wide8And5d5SpacingResizeTo64.png"
 	#define mask_slot_texture_path "crt-royale/TileableLinearSlotMaskTall15Wide9And4d5Horizontal9d14VerticalSpacingResizeTo64.png"
@@ -44,7 +44,7 @@
 
 static const float2 mask_size = float2(mask_size_xy, mask_size_xy);
 
-#if __RENDERER__ != 0x9000
+#if __RENDERER__ != 0x9000 && USE_PHOSPHOR_TEXTURES == 1
 	texture2D texMaskGrille < source = mask_grille_texture_path; > {
 		Width = mask_size.x;
 		Height = mask_size.y;
@@ -92,8 +92,7 @@ static const float2 mask_size = float2(mask_size_xy, mask_size_xy);
 		MinFilter = mask_texture_magmin_filter_type;
 		MipFilter = mask_texture_mip_filter_type;
 	};
-#else
-
+#elif USE_PHOSPHOR_TEXTURES == 1
 	// Use preprocessor sorcery to drop all three textures to one
 	//   without having to refactor the entire phosphor codebase
 	#if phosphor_mask_type == 0

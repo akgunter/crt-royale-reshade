@@ -148,12 +148,12 @@ void simulateEletronBeamsPS(
         // Calculate the beam strength based upon distance from the scanline
         //   and intensity of the sampled color
         const float beam_dist_factor = 1 + float(enable_interlacing);
-        const float pixel_delta = 2 * scanline_max_embedding_dist / (beam_dist_factor * scanline_num_pixels);
-        const float max_beam_dist = scanline_max_embedding_dist - pixel_delta/2.0;
-        const float beam_dist_denom = half_num_pixels / scanline_max_embedding_dist;
+        const float pixel_delta = 2 * beam_gap_width / (beam_dist_factor * scanline_num_pixels);
+        const float max_beam_dist = beam_gap_width - pixel_delta/2.0;
+        const float beam_dist_denom = half_num_pixels / beam_gap_width;
         
         const float beam_dist_v = curr_line_texel_v - source_scanline_center_v;
-        const float beam_dist_y = scanline_max_embedding_dist * beam_dist_v / beam_dist_denom;
+        const float beam_dist_y = beam_gap_width * beam_dist_v / beam_dist_denom;
         
         const float interlacing_brightness_factor = 2 + 2 * enable_interlacing * float(
             scanline_deinterlacing_mode != 1 &&
@@ -210,12 +210,12 @@ void simulateEletronBeamsPS(
         // Calculate the beam strength based upon distance from the scanline
         //   and intensity of the sampled color
         const float beam_dist_factor = 1 + float(enable_interlacing);
-        const float pixel_delta = 2 * scanline_max_embedding_dist / (beam_dist_factor * scanline_num_pixels);
-        const float max_beam_dist = scanline_max_embedding_dist - pixel_delta/2.0;
-        const float beam_dist_denom = beam_dist_factor * half_num_pixels / scanline_max_embedding_dist;
+        const float pixel_delta = 2 * beam_gap_width / (beam_dist_factor * scanline_num_pixels);
+        const float max_beam_dist = beam_gap_width - pixel_delta/2.0;
+        const float beam_dist_denom = beam_dist_factor * half_num_pixels / beam_gap_width;
 
         const float beam_dist_v = curr_line_texel_v - source_scanline_center_v;
-        const float beam_dist_y = scanline_max_embedding_dist * beam_dist_v / beam_dist_denom;
+        const float beam_dist_y = beam_gap_width * beam_dist_v / beam_dist_denom;
 
         const float interlacing_brightness_factor = 2 - !enable_interlacing * float(
             scanline_num_pixels == 1
@@ -294,12 +294,12 @@ void simulateEletronBeamsPS(
         // Calculate the beam strength based upon distance from the scanline
         //   and intensity of the sampled color
         const float beam_dist_factor = 1 + float(enable_interlacing);
-        const float pixel_delta = 2 * scanline_max_embedding_dist / (beam_dist_factor * scanline_num_pixels);
-        const float max_beam_dist = scanline_max_embedding_dist - pixel_delta/2.0;
-        const float beam_dist_denom = beam_dist_factor * half_num_pixels / scanline_max_embedding_dist;
+        const float pixel_delta = 2 * beam_gap_width / (beam_dist_factor * scanline_num_pixels);
+        const float max_beam_dist = beam_gap_width - pixel_delta/2.0;
+        const float beam_dist_denom = beam_dist_factor * half_num_pixels / beam_gap_width;
 
         const float3 beam_dists_v = curr_line_texel_v - scanline_centers_v;
-        const float3 beam_dists_y = scanline_max_embedding_dist * beam_dists_v / beam_dist_denom;
+        const float3 beam_dists_y = beam_gap_width * beam_dists_v / beam_dist_denom;
 
         const float interlacing_brightness_factor = 2 - !enable_interlacing * float(
             scanline_num_pixels == 1

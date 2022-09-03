@@ -57,7 +57,7 @@
 static const float2 buffer_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
 static const float2 content_size = float2(CONTENT_WIDTH_INTERNAL, CONTENT_HEIGHT_INTERNAL);
 
-uniform int frame_count < source = "framecount"; >;
+uniform uint frame_count < source = "framecount"; >;
 
 
 // Yes, the WIDTH/HEIGHT/SIZE defines are kinda weird.
@@ -263,17 +263,19 @@ sampler2D samplerFreezeFrame { Texture = texFreezeFrame; };
 #define TEX_MASKVERTICAL_WIDTH mask_size_xy
 #define TEX_MASKVERTICAL_HEIGHT mask_size_xy
 #define TEX_MASKVERTICAL_SIZE int2(TEX_MASKVERTICAL_WIDTH, TEX_MASKVERTICAL_HEIGHT)
-texture2D texMaskResizeVertical {
-	Width = TEX_MASKVERTICAL_WIDTH;
-	Height = TEX_MASKVERTICAL_HEIGHT;
-};
-sampler2D samplerMaskResizeVertical {
-	Texture = texMaskResizeVertical;
+#if USE_PHOSPHOR_TEXTURES == 1
+	texture2D texMaskResizeVertical {
+		Width = TEX_MASKVERTICAL_WIDTH;
+		Height = TEX_MASKVERTICAL_HEIGHT;
+	};
+	sampler2D samplerMaskResizeVertical {
+		Texture = texMaskResizeVertical;
 
-    AddressU = mask_texture_wrap_mode;
-    AddressV = mask_texture_wrap_mode;
-    AddressW = mask_texture_wrap_mode;
-};
+		AddressU = mask_texture_wrap_mode;
+		AddressV = mask_texture_wrap_mode;
+		AddressW = mask_texture_wrap_mode;
+	};
+#endif
 
 
 // Pass 10 Mask Texture (phosphorMaskResizeHorizontalPass)
@@ -284,17 +286,31 @@ sampler2D samplerMaskResizeVertical {
 #define TEX_MASKHORIZONTAL_WIDTH mask_size_xy
 #define TEX_MASKHORIZONTAL_HEIGHT mask_size_xy
 #define TEX_MASKHORIZONTAL_SIZE int2(TEX_MASKHORIZONTAL_WIDTH, TEX_MASKHORIZONTAL_HEIGHT)
-texture2D texMaskResizeHorizontal {
-	Width = TEX_MASKHORIZONTAL_WIDTH;
-	Height = TEX_MASKHORIZONTAL_HEIGHT;
-};
-sampler2D samplerMaskResizeHorizontal {
-	Texture = texMaskResizeHorizontal;
-    
-    AddressU = mask_texture_wrap_mode;
-    AddressV = mask_texture_wrap_mode;
-    AddressW = mask_texture_wrap_mode;
-};
+#if USE_PHOSPHOR_TEXTURES == 1
+	texture2D texMaskResizeHorizontal {
+		Width = TEX_MASKHORIZONTAL_WIDTH;
+		Height = TEX_MASKHORIZONTAL_HEIGHT;
+	};
+	sampler2D samplerMaskResizeHorizontal {
+		Texture = texMaskResizeHorizontal;
+		
+		AddressU = mask_texture_wrap_mode;
+		AddressV = mask_texture_wrap_mode;
+		AddressW = mask_texture_wrap_mode;
+	};
+#else
+	#define TEX_PHOSPHORMASK_WIDTH CONTENT_WIDTH_INTERNAL
+	#define TEX_PHOSPHORMASK_HEIGHT CONTENT_HEIGHT_INTERNAL
+	#define TEX_PHOSPHORMASKL_SIZE int2(TEX_PHOSPHORMASK_WIDTH, TEX_PHOSPHORMASK_HEIGHT)
+
+	texture2D texPhosphorMask {
+		Width = TEX_PHOSPHORMASK_WIDTH;
+		Height = TEX_PHOSPHORMASK_HEIGHT;
+	};
+	sampler2D samplerPhosphorMask {
+		Texture = texPhosphorMask;
+	};
+#endif
 
 
 // Pass 11 Buffer (phosphorMaskPass)

@@ -32,11 +32,16 @@
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
 	#include "crt-royale/shaders/crt-royale-deinterlace.fxh"
-	#include "crt-royale/shaders/crt-royale-phosphor-mask.fxh"
 	#include "crt-royale/shaders/crt-royale-brightpass.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
 	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
 	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
+	
+	#if USE_PHOSPHOR_TEXTURES == 0
+		#include "crt-royale/shaders/crt-royale-computed-mask.fxh"
+	#else
+		#include "crt-royale/shaders/crt-royale-phosphor-mask.fxh"
+	#endif
 #endif
 
 
@@ -154,32 +159,57 @@ technique CRT_Royale
 			//   scanlineBlendPass will not work properly if this ever defaults to true
 			ClearRenderTargets = false;
 		}
-		// crt-royale-phosphor-mask.fxh
-		pass phosphorMaskResizeVerticalPass
-		{
-			// Scale the phosphor mask vertically
-			VertexShader = maskResizeVertVS;
-			PixelShader = maskResizeVertPS;
-			
-			RenderTarget = texMaskResizeVertical;
-		}
-		pass phosphorMaskResizeHorizontalPass
-		{
-			// Scale the phosphor mask horizontally
-			VertexShader = maskResizeHorizVS;
-			PixelShader = maskResizeHorizPS;
-			
-			RenderTarget = texMaskResizeHorizontal;
-		}
-		pass phosphorMaskPass
-		{
-			// Tile the scaled phosphor mask and apply it to
-			//   the deinterlaced image.
-			VertexShader = PostProcessVS;
-			PixelShader = applyPhosphorMaskPS;
-			
-			RenderTarget = texMaskedScanlines;
-		}
+		#if USE_PHOSPHOR_TEXTURES == 0
+			// crt-royale-computed-mask.fxh
+			pass generatePhosphorMask
+			{
+				VertexShader = generatePhosphorMaskVS;
+				PixelShader = generatePhosphorMaskPS;
+
+				RenderTarget = texPhosphorMask;
+
+				// This lets us improve performance by only computing the mask every k frames
+				ClearRenderTargets = false;
+			}
+			pass applyPhosphormask
+			{
+				// Tile the scaled phosphor mask and apply it to
+				//   the deinterlaced image.
+				VertexShader = PostProcessVS;
+				PixelShader = applyComputedPhosphorMaskPS;
+				
+				RenderTarget = texMaskedScanlines;
+				// RenderTarget = texGeometry;
+			}
+		#else
+			// crt-royale-phosphor-mask.fxh
+			pass phosphorMaskResizeVerticalPass
+			{
+				// Scale the phosphor mask vertically
+				VertexShader = maskResizeVertVS;
+				PixelShader = maskResizeVertPS;
+				
+				RenderTarget = texMaskResizeVertical;
+			}
+			pass phosphorMaskResizeHorizontalPass
+			{
+				// Scale the phosphor mask horizontally
+				VertexShader = maskResizeHorizVS;
+				PixelShader = maskResizeHorizPS;
+				
+				RenderTarget = texMaskResizeHorizontal;
+			}
+			pass phosphorMaskPass
+			{
+				// Tile the scaled phosphor mask and apply it to
+				//   the deinterlaced image.
+				VertexShader = PostProcessVS;
+				PixelShader = applyPhosphorMaskPS;
+				
+				RenderTarget = texMaskedScanlines;
+				// RenderTarget = texGeometry;
+			}
+		#endif
 		// crt-royale-brightpass.fxh
 		pass brightpassPass
 		{

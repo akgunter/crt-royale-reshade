@@ -42,7 +42,8 @@ void brightpassVS(
     float2 output_size = TEX_BRIGHTPASS_SIZE;
     //  Calculate a runtime bloom_sigma in case it's needed:
     const float2 estimated_viewport_size = content_size;
-    const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
+    // const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
+    const float2 estimated_mask_resize_output_size = TEX_MASKHORIZONTAL_SIZE;
     const float mask_tile_size_x = get_resized_mask_tile_size(estimated_viewport_size, estimated_mask_resize_output_size, true).x;
     bloom_sigma_runtime = get_min_sigma_to_blur_triad(
         mask_tile_size_x / mask_triads_per_tile, bloom_diff_thresh_);

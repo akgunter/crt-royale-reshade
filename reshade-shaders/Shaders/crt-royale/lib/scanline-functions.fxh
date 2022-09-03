@@ -438,7 +438,7 @@ float2 get_frame_and_line_field_idx(const float curr_scanline_idx)
     // use the adjusted frame count's parity. We lerp on whether
     // or not the deinterlacing algorithm is the Static one.
     const float alternate_between_frames = float(scanline_deinterlacing_mode != 3);
-    const float non_alternating_idx = interlace_bff;
+    const float non_alternating_idx = interlace_bff * enable_interlacing;
     const float alternating_idx = fmod(frame_count + interlace_bff, modulus);
     const float frame_field_idx = lerp(non_alternating_idx, alternating_idx, alternate_between_frames);
 
