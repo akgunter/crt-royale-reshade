@@ -301,17 +301,17 @@ static const float mask_shadow_avg_color = 41.0/255.0;
 
 //  If we can use the large mipmapped LUT without mipmapping artifacts, we
 //  should: It gives us more options for using fewer samples.
-#if USE_LARGE_PHOSPHOR_MASK
+// #if USE_LARGE_PHOSPHOR_MASK
     // #if ANISOTROPIC_RESAMPLING_COMPAT_TEX2DLOD
     //     //  TODO: Take advantage of this!
     //     #define PHOSPHOR_MASK_RESIZE_MIPMAPPED_LUT
     //     static const float2 mask_resize_src_lut_size = mask_texture_large_size;
     // #else
-    static const float2 mask_resize_src_lut_size = mask_texture_large_size;
+static const float2 mask_resize_src_lut_size = mask_texture_large_size;
     // #endif
-#else
-    static const float2 mask_resize_src_lut_size = mask_texture_small_size;
-#endif
+// #else
+//     static const float2 mask_resize_src_lut_size = mask_texture_small_size;
+// #endif
 
 static const float tile_aspect_inv = mask_resize_src_lut_size.y/mask_resize_src_lut_size.x;
 

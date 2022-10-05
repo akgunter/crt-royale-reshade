@@ -26,147 +26,68 @@
 
 #include "shared-objects.fxh"
 
-void simulateInterlacingVS(
+
+void calculateBeamDistsVS(
     in const uint id : SV_VertexID,
 
     out float4 position : SV_Position,
-    out float2 texcoord : TEXCOORD0,
-    out float interlaced : TEXCOORD1,
-    out float2 v_step : TEXCOORD2
+    out float2 texcoord : TEXCOORD0
 ) {
-    PostProcessVS(id, position, texcoord);
-    
-    interlaced = enable_interlacing;
-    v_step = float2(0.0, 1.0 / content_size.y);
-}
+    const int beam_update_interval = (beam_update_interval_setting == 0) ? 1 : 60;
+    const float compute_mask_factor = float(frame_count % beam_update_interval == 0);
 
-void simulateInterlacingPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float interlaced : TEXCOORD1,
-    in const float2 v_step : TEXCOORD2,
-
-    out float4 color : SV_Target
-) {
-    //  Sample the current line and an average of the previous/next line;
-    //  tex2D_linearize will decode CRT gamma.  Don't bother branching:
-    float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, content_size.y);
-    float curr_scanline_start_y = (
-        curr_scanline_idx * scanline_num_pixels + TEXCOORD_OFFSET
-    ) / content_size.y;
-    float3 in_field_interpolated_line = get_averaged_scanline_sample(
-        samplerCrop, texcoord,
-        curr_scanline_start_y, v_step.y,
-        get_input_gamma()
-    );
-    
-    const float wrong_field = interlaced * curr_line_is_wrong_field(curr_scanline_idx);
-    const float3 selected_color = lerp(in_field_interpolated_line, 0, wrong_field);
-
-    color = encode_output(float4(selected_color, 1.0), get_intermediate_gamma());
-}
-
-void simulateEletronBeamsVS(
-    in const uint id : SV_VertexID,
-
-    out float4 position : SV_Position,
-    out float2 texcoord : TEXCOORD0,
-    out float2 v_step : TEXCOORD1
-) {
-    PostProcessVS(id, position, texcoord);
-    v_step = float2(0.0, 1.0 / tex2Dsize(samplerInterlaced).y);
+	texcoord.x = (id == 2) ? compute_mask_factor*2.0 : 0.0;
+	texcoord.y = (id == 1) ? 2.0 : 0.0;
+	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 }
 
 
-void simulateEletronBeamsPS(
+void calculateBeamDistsPS(
     in const float4 position : SV_Position,
     in const float2 texcoord : TEXCOORD0,
-    in const float2 v_step : TEXCOORD1,
-    
-    out float4 color : SV_Target
+
+    out float4 beam_strength : SV_Target
 ) {
-    const float2 orig_linearized_size = tex2Dsize(samplerInterlaced);
-    const float wrong_field = curr_line_is_wrong_field(texcoord, texcoord.y, orig_linearized_size.y);
+    InterpolationFieldData interpolation_data = precalc_interpolation_field_data(texcoord);
+
+    // We have to subtract off the texcoord offset to make sure we're using domain [0, 1]
+    const float color_corrected = texcoord.x - 1.0 / TEX_BEAMDIST_WIDTH;
 
     // Digital shape
     //   Beam will be perfectly rectangular
+	[branch]
     if (beam_shape_mode == 0) {
-        // const float3 scanline_color = tex2D_linearize(samplerInterlaced, texcoord, get_intermediate_gamma()).rgb;
-        const float3 scanline_color = sample_single_scanline_horizontal(
-            samplerInterlaced,
-            texcoord, orig_linearized_size,
-            1 / orig_linearized_size
-        );
-
         // Double the intensity when interlacing to maintain the same apparent brightness
-        const float interlacing_brightness_factor = 1 + enable_interlacing * float(
-            scanline_deinterlacing_mode != 1 &&
-            scanline_deinterlacing_mode != 2
-        );
-        
-        // If we're in the current field, draw the beam
-        //   wrong_field is always 0 when we aren't interlacing
-        const float3 beam_strength = (1 - wrong_field) * interlacing_brightness_factor * scanline_color;
+        const float interlacing_brightness_factor = 1 + float(
+			enable_interlacing &
+			(scanline_deinterlacing_mode != 1) &
+			(scanline_deinterlacing_mode != 2)
+		);
+        const float raw_beam_strength = (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 
-        // Temporarily auto-dim the output to avoid clipping.
-        color = encode_output(float4(beam_strength * levels_autodim_temp, 1.0), get_intermediate_gamma());
+        beam_strength = float4(color_corrected * raw_beam_strength, 0, 0, 1);
     }
     // Linear shape
     //   Beam intensity will drop off linarly with distance from center
     //   Works better than gaussian with narrow scanlines (about 1-6 pixels wide)
     //   Will only consider contribution from nearest scanline
     else if (beam_shape_mode == 1) {
-        // Find the texel position of the current scanline
-        const float curr_line_texel_v = floor(texcoord.y * orig_linearized_size.y + under_half);
-        const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, orig_linearized_size.y);
-        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels;
+		const float beam_dist_y = triangle_wave(texcoord.y, interpolation_data.triangle_wave_freq);
 
-        // Find the center of the current scanline
-        //   For odd sizes, this is a texel. For even, this is between two texels
-        const float half_num_pixels = scanline_num_pixels / 2;
-        const float half_size = floor(half_num_pixels + under_half);
-        const float num_pixels_is_even = float(half_size >= half_num_pixels);
-        const float curr_scanline_center_v = curr_scanline_start_v + half_num_pixels - 0.5;
-
-        // Find the center of the nearest in-field scanline
-        const float curr_line_is_below_center = float(curr_line_texel_v > curr_scanline_center_v);
-        const float source_offset_direction = lerp(-1, 1, curr_line_is_below_center);
-        const float source_offset = source_offset_direction * wrong_field * scanline_num_pixels;
-
-        const float source_scanline_center_v = curr_scanline_center_v + source_offset;
-        const float source_scanline_start_v = curr_scanline_start_v + source_offset;
-        const float source_scanline_center_y = (source_scanline_center_v + TEXCOORD_OFFSET) / orig_linearized_size.y;
-        const float2 source_scanline_center_xy = float2(texcoord.x, source_scanline_center_y);
-        
-        // Sample the nearest in-field scanline
-        const float3 scanline_color = sample_single_scanline_horizontal(
-            samplerInterlaced,
-            source_scanline_center_xy, orig_linearized_size,
-            1 / orig_linearized_size
+        const bool scanline_is_wider_than_1 = scanline_num_pixels > 1;
+        const bool deinterlacing_mode_requires_boost = (
+            enable_interlacing &&
+            (scanline_deinterlacing_mode != 1) &&
+            (scanline_deinterlacing_mode != 2)
         );
 
-        // Calculate the beam strength based upon distance from the scanline
-        //   and intensity of the sampled color
-        const float beam_dist_factor = 1 + float(enable_interlacing);
-        const float pixel_delta = 2 * beam_gap_width / (beam_dist_factor * scanline_num_pixels);
-        const float max_beam_dist = beam_gap_width - pixel_delta/2.0;
-        const float beam_dist_denom = half_num_pixels / beam_gap_width;
-        
-        const float beam_dist_v = curr_line_texel_v - source_scanline_center_v;
-        const float beam_dist_y = beam_gap_width * beam_dist_v / beam_dist_denom;
-        
-        const float interlacing_brightness_factor = 2 + 2 * enable_interlacing * float(
-            scanline_deinterlacing_mode != 1 &&
-            scanline_deinterlacing_mode != 2
-        );
-        const float interlacing_brightness_quotient = 1 + !enable_interlacing * float(scanline_num_pixels == 1);
-        const float3 beam_strength = get_linear_beam_strength(
-            beam_dist_y, scanline_color,
-            scanline_num_pixels,
-            enable_interlacing
-        ) * interlacing_brightness_factor / interlacing_brightness_quotient;
+        const float interlacing_brightness_factor = (1 + scanline_is_wider_than_1) * (1 + deinterlacing_mode_requires_boost);
+		// const float raw_beam_strength = (1 - beam_dist_y) * (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
+		// const float raw_beam_strength = (1 - beam_dist_y);
+		const float raw_beam_strength = clamp(-beam_dist_y * rcp(beam_linear_thickness) + 1, 0 , 1);
+        const float adj_beam_strength = raw_beam_strength * (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 
-        color = encode_output(float4(beam_strength * levels_autodim_temp, 1), get_intermediate_gamma());
+		beam_strength = float4(color_corrected * adj_beam_strength, 0, 0, 1);
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
@@ -178,59 +99,26 @@ void simulateEletronBeamsPS(
         const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
         const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
 
-        // Find the texel position of the current scanline
-        const float curr_line_texel_v = floor(texcoord.y * orig_linearized_size.y + under_half);
-        const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, orig_linearized_size.y);
-        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels;
-
-        // Find the center of the current scanline
-        //   For odd sizes, this is a texel. For even, this is between two texels
-        const float half_num_pixels = scanline_num_pixels / 2;
-        const float half_size = floor(half_num_pixels + under_half);
-        const float num_pixels_is_even = float(half_size >= half_num_pixels);
-        const float curr_scanline_center_v = curr_scanline_start_v + half_num_pixels - 0.5;
-
-        // Find the center of the nearest in-field scanline
-        const float curr_line_is_below_center = float(curr_line_texel_v > curr_scanline_center_v);
-        const float source_offset_direction = lerp(-1, 1, curr_line_is_below_center);
-        const float source_offset = source_offset_direction * wrong_field * scanline_num_pixels;
-
-        const float source_scanline_center_v = curr_scanline_center_v + source_offset;
-        const float source_scanline_start_v = curr_scanline_start_v + source_offset;
-        const float source_scanline_center_y = (source_scanline_center_v + TEXCOORD_OFFSET) / orig_linearized_size.y;
-        const float2 source_scanline_center_xy = float2(texcoord.x, source_scanline_center_y);
-
-        // Sample the nearest in-field scanline
-        const float3 scanline_color = sample_single_scanline_horizontal(
-            samplerInterlaced,
-            source_scanline_center_xy, orig_linearized_size,
-            1 / orig_linearized_size
-        );
-
-        // Calculate the beam strength based upon distance from the scanline
-        //   and intensity of the sampled color
         const float beam_dist_factor = 1 + float(enable_interlacing);
-        const float pixel_delta = 2 * beam_gap_width / (beam_dist_factor * scanline_num_pixels);
-        const float max_beam_dist = beam_gap_width - pixel_delta/2.0;
-        const float beam_dist_denom = beam_dist_factor * half_num_pixels / beam_gap_width;
+        const float freq_adj = interpolation_data.triangle_wave_freq * rcp(beam_dist_factor);
+        // The conditional 0.25*f offset ensures the interlaced scanlines align with the non-interlaced ones as in the other beam shapes
+        const float frame_offset = enable_interlacing * (!interpolation_data.field_parity * 0.5 + 0.25) * rcp(freq_adj);
+		const float beam_dist_y = triangle_wave(texcoord.y - frame_offset, freq_adj);
 
-        const float beam_dist_v = curr_line_texel_v - source_scanline_center_v;
-        const float beam_dist_y = beam_gap_width * beam_dist_v / beam_dist_denom;
-
-        const float interlacing_brightness_factor = 2 - !enable_interlacing * float(
-            scanline_num_pixels == 1
+        const float interlacing_brightness_factor = 1 + float(
+            !enable_interlacing &&
+            (scanline_num_pixels > 1)
+        ) + float(
+            enable_interlacing &&
+            (scanline_deinterlacing_mode != 1) &
+            (scanline_deinterlacing_mode != 2)
         );
-        const float interlacing_brightness_quotient = 1 + enable_interlacing * float(
-            scanline_deinterlacing_mode == 1 ||
-            scanline_deinterlacing_mode == 2
-        );
-
-        const float3 beam_strength = get_gaussian_beam_strength(
-            beam_dist_y, scanline_color,
+        const float raw_beam_strength = get_gaussian_beam_strength(
+            beam_dist_y, color_corrected,
             sigma_range, shape_range
-        ) * interlacing_brightness_factor / interlacing_brightness_quotient;
+        ) * interlacing_brightness_factor * levels_autodim_temp;
 
-        color = encode_output(float4(beam_strength * levels_autodim_temp, 1), get_intermediate_gamma());
+        beam_strength = float4(raw_beam_strength, 0, 0, 1);
     }
     // Gaussian Shape
     //   Beam will be a distorted Gaussian, dependent on color brightness and hyperparameters
@@ -242,109 +130,174 @@ void simulateEletronBeamsPS(
         const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
         const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
 
-        // Find the texel position of the current scanline
-        const float curr_line_texel_v = floor(texcoord.y * orig_linearized_size.y + under_half);
-        const float curr_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, orig_linearized_size.y);
-        const float curr_scanline_start_v = curr_scanline_idx * scanline_num_pixels;
+        const float beam_dist_factor = (1 + float(enable_interlacing));
+        const float freq_adj = interpolation_data.triangle_wave_freq * rcp(beam_dist_factor);
+        // The conditional 0.25*f offset ensures the interlaced scanlines align with the non-interlaced ones as in the other beam shapes
+        const float frame_offset = enable_interlacing * (!interpolation_data.field_parity * 0.5 + 0.25) * rcp(freq_adj);
+		const float curr_beam_dist_y = triangle_wave(texcoord.y - frame_offset, freq_adj);
+		const float upper_beam_dist_y = sawtooth_incr_wave(texcoord.y - frame_offset, freq_adj)*2 + 1;
+        const float lower_beam_dist_y = 4 - upper_beam_dist_y;
 
-        // Find the center of the current scanline
-        //   For odd sizes, this is a texel. For even, this is between two texels
-        const float half_num_pixels = scanline_num_pixels / 2;
-        const float half_size = floor(half_num_pixels + under_half);
-        const float num_pixels_is_even = float(half_size >= half_num_pixels);
-        const float curr_scanline_center_v = curr_scanline_start_v + half_num_pixels - 0.5;
+        const float upper_beam_strength = get_gaussian_beam_strength(
+            upper_beam_dist_y, color_corrected,
+            sigma_range, shape_range
+        );
+        const float curr_beam_strength = get_gaussian_beam_strength(
+            curr_beam_dist_y, color_corrected,
+            sigma_range, shape_range
+        );
+        const float lower_beam_strength = get_gaussian_beam_strength(
+            lower_beam_dist_y, color_corrected,
+            sigma_range, shape_range
+        );
         
-        // Find the center of the nearest in-field scanline
-        const float curr_line_is_below_center = float(curr_line_texel_v > curr_scanline_center_v);
-        const float source_offset_direction = lerp(-1, 1, curr_line_is_below_center);
-        const float source_offset = source_offset_direction * wrong_field * scanline_num_pixels;
-
-        const float bounding_scanline_offset_v = (2 - wrong_field) * scanline_num_pixels;
-
-        const float3 scanline_offsets_v = float3(
-            -bounding_scanline_offset_v,
-            0,
-            bounding_scanline_offset_v
+        const float interlacing_brightness_factor = 1 + float(
+            !enable_interlacing &&
+            (scanline_num_pixels > 1)
+        ) + float(
+            enable_interlacing &&
+            (scanline_deinterlacing_mode != 1) &
+            (scanline_deinterlacing_mode != 2)
         );
-        const float3 scanline_centers_v = curr_scanline_center_v + scanline_offsets_v;
-        const float3 scanline_centers_y = (
-            scanline_centers_v + TEXCOORD_OFFSET
-        ) / orig_linearized_size.y;
+        const float3 raw_beam_strength = float3(curr_beam_strength, upper_beam_strength, lower_beam_strength) * interlacing_brightness_factor * levels_autodim_temp;
 
-        const float2 upper_scanline_center_xy = float2(texcoord.x, scanline_centers_y.x);
-        const float2 curr_scanline_center_xy = float2(texcoord.x, scanline_centers_y.y);
-        const float2 lower_scanline_center_xy = float2(texcoord.x, scanline_centers_y.z);
-
-        const float3 upper_scanline_color = sample_single_scanline_horizontal(
-            samplerInterlaced,
-            upper_scanline_center_xy, orig_linearized_size,
-            1 / orig_linearized_size
-        );
-        const float3 curr_scanline_color = sample_single_scanline_horizontal(
-            samplerInterlaced,
-            curr_scanline_center_xy, orig_linearized_size,
-            1 / orig_linearized_size
-        );
-        const float3 lower_scanline_color = sample_single_scanline_horizontal(
-            samplerInterlaced,
-            lower_scanline_center_xy, orig_linearized_size,
-            1 / orig_linearized_size
-        );        
-
-        // Calculate the beam strength based upon distance from the scanline
-        //   and intensity of the sampled color
-        const float beam_dist_factor = 1 + float(enable_interlacing);
-        const float pixel_delta = 2 * beam_gap_width / (beam_dist_factor * scanline_num_pixels);
-        const float max_beam_dist = beam_gap_width - pixel_delta/2.0;
-        const float beam_dist_denom = beam_dist_factor * half_num_pixels / beam_gap_width;
-
-        const float3 beam_dists_v = curr_line_texel_v - scanline_centers_v;
-        const float3 beam_dists_y = beam_gap_width * beam_dists_v / beam_dist_denom;
-
-        const float interlacing_brightness_factor = 2 - !enable_interlacing * float(
-            scanline_num_pixels == 1
-        );
-        const float interlacing_brightness_quotient = 1 + enable_interlacing * float(
-            scanline_deinterlacing_mode == 1 ||
-            scanline_deinterlacing_mode == 2
-        );
-
-        const float3 upper_beam_strength = get_gaussian_beam_strength(
-            beam_dists_y.x, upper_scanline_color,
-            sigma_range, shape_range
-        );
-        const float3 curr_beam_strength = get_gaussian_beam_strength(
-            beam_dists_y.y, curr_scanline_color,
-            sigma_range, shape_range
-        );
-        const float3 lower_beam_strength = get_gaussian_beam_strength(
-            beam_dists_y.z, lower_scanline_color,
-            sigma_range, shape_range
-        );
-        const float3 beam_strength = (
-            upper_beam_strength +
-            (1 - wrong_field) * curr_beam_strength +
-            lower_beam_strength
-        ) * interlacing_brightness_factor / interlacing_brightness_quotient;
-
-        // Output the corrected color
-        color = encode_output(float4(beam_strength * levels_autodim_temp, 1), get_intermediate_gamma());
+        beam_strength = float4(raw_beam_strength, 1);
     }
+}
+
+
+void simulateEletronBeamsVS(
+    in const uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+    out float4 runtime_bin_shapes : TEXCOORD1
+) {
+    PostProcessVS(id, position, texcoord);
+
+    // Mode 0: size of pixel in [0, 1] = pixel_dims / viewport_size
+    // Mode 1: size of pixel in [0, 1] = viewport_size / grid_dims
+    const float2 runtime_pixel_shape = (pixel_grid_mode == 0) ? pixel_shape * rcp(content_size) : content_size * rcp(pixel_grid_resolution);
+    const float2 runtime_scanline_shape = float2(1, scanline_num_pixels) * rcp(content_size);
+    runtime_bin_shapes = float4(runtime_pixel_shape, runtime_scanline_shape);
+}
+
+void simulateEletronBeamsPS(
+    in const float4 position : SV_Position,
+    in const float2 texcoord : TEXCOORD0,
+    in const float4 runtime_bin_shapes : TEXCOORD1,
+    
+    out float4 color : SV_Target
+) {
+    InterpolationFieldData interpolation_data = calc_interpolation_field_data(texcoord);
+    const float ypos = (texcoord.y * interpolation_data.triangle_wave_freq + interpolation_data.field_parity) * 0.5;
+
+	float2 texcoord_scanlined = round_coord(texcoord, 0, runtime_bin_shapes.zw);
+
+    // Sample from the neighboring scanline when in the wrong field
+    [branch]
+    if (interpolation_data.wrong_field) {
+        const float coord_moved_up = texcoord_scanlined.y <= texcoord.y;
+        const float direction = lerp(-1, 1, coord_moved_up);
+        texcoord_scanlined.y += direction * scanline_num_pixels * rcp(content_size.y);
+    }
+
+    // Now we apply pixellation and cropping
+    float2 texcoord_pixellated = round_coord(
+        texcoord_scanlined,
+        pixel_grid_offset * rcp(content_size),
+		runtime_bin_shapes.xy
+    );
+    const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
+	
+	[branch]
+    if (beam_shape_mode < 3) {
+		const float4 scanline_color = tex2D_linearize(
+            ReShade::BackBuffer,
+            texcoord_uncropped,
+            get_input_gamma()
+        );
+
+        const float beam_strength_r = tex2D(samplerBeamDist, float2(scanline_color.r, ypos)).x;
+        const float beam_strength_g = tex2D(samplerBeamDist, float2(scanline_color.g, ypos)).x;
+        const float beam_strength_b = tex2D(samplerBeamDist, float2(scanline_color.b, ypos)).x;
+        const float4 beam_strength = float4(beam_strength_r, beam_strength_g, beam_strength_b, 1);
+
+        color = beam_strength;
+    }
+    else {
+        const float2 offset = float2(0, scanline_num_pixels) * (1 + enable_interlacing) * rcp(content_size);
+
+		const float4 curr_scanline_color = tex2D_linearize(
+            ReShade::BackBuffer,
+            texcoord_uncropped,
+            get_input_gamma()
+        );
+        const float4 upper_scanline_color = tex2D_linearize(
+            ReShade::BackBuffer,
+            texcoord_uncropped - offset,
+            get_input_gamma()
+        );
+        const float4 lower_scanline_color = tex2D_linearize(
+            ReShade::BackBuffer,
+            texcoord_uncropped + offset,
+            get_input_gamma()
+        );
+
+        const float curr_beam_strength_r = tex2D(samplerBeamDist, float2(curr_scanline_color.r, ypos)).x;
+        const float curr_beam_strength_g = tex2D(samplerBeamDist, float2(curr_scanline_color.g, ypos)).x;
+        const float curr_beam_strength_b = tex2D(samplerBeamDist, float2(curr_scanline_color.b, ypos)).x;
+        
+        const float upper_beam_strength_r = tex2D(samplerBeamDist, float2(upper_scanline_color.r, ypos)).y;
+        const float upper_beam_strength_g = tex2D(samplerBeamDist, float2(upper_scanline_color.g, ypos)).y;
+        const float upper_beam_strength_b = tex2D(samplerBeamDist, float2(upper_scanline_color.b, ypos)).y;
+        
+        const float lower_beam_strength_r = tex2D(samplerBeamDist, float2(lower_scanline_color.r, ypos)).z;
+        const float lower_beam_strength_g = tex2D(samplerBeamDist, float2(lower_scanline_color.g, ypos)).z;
+        const float lower_beam_strength_b = tex2D(samplerBeamDist, float2(lower_scanline_color.b, ypos)).z;
+
+        color = float4(
+            curr_beam_strength_r + upper_beam_strength_r + lower_beam_strength_r,
+            curr_beam_strength_g + upper_beam_strength_g + lower_beam_strength_g,
+            curr_beam_strength_b + upper_beam_strength_b + lower_beam_strength_b,
+            1
+        );
+    }
+}
+
+void beamConvergenceVS(
+    in const uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+    out float run_convergence : TEXCOORD1
+) {
+    PostProcessVS(id, position, texcoord);
+    const uint3 x_flag = convergence_offset_x != 0;
+    const uint3 y_flag = convergence_offset_y != 0;
+    run_convergence = dot(x_flag, 1) + dot(y_flag, 1);
 }
 
 void beamConvergencePS(
     in const float4 position : SV_Position,
     in const float2 texcoord : TEXCOORD0,
+    in const float run_convergence : TEXCOORD1,
 
     out float4 color : SV_TARGET
 ) {
     const float2 scanline_texture_size = tex2Dsize(samplerElectronBeams);
     const float2 scanline_texture_size_inv = 1.0 / scanline_texture_size;
 
-    const float3 offset_sample = sample_rgb_scanline(
-        samplerElectronBeams, texcoord,
-        scanline_texture_size, scanline_texture_size_inv
-    );
+    [branch]
+    if (!run_convergence) {
+        color = tex2D(samplerElectronBeams, texcoord - float2(0, scanline_offset * rcp(content_size.y)));
+    }
+    else {
+        const float3 offset_sample = sample_rgb_scanline(
+            samplerElectronBeams, texcoord - float2(0, scanline_offset * rcp(content_size.y)),
+            scanline_texture_size, scanline_texture_size_inv
+        );
 
-    color = float4(offset_sample, 1);
+        color = float4(offset_sample, 1);
+    }
 }

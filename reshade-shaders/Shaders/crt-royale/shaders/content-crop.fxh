@@ -27,6 +27,7 @@
 static const float2 content_center = (TEXCOORD_OFFSET + float2(CONTENT_CENTER_X, CONTENT_CENTER_Y)) / buffer_size + 0.5;
 // The content's normalized diameter d is its size divided by the buffer's size. The radius is d/2.
 static const float2 content_radius = content_size / (2.0 * buffer_size);
+static const float2 content_scale = content_size / buffer_size;
 
 static const float content_left = content_center.x - content_radius.x;
 static const float content_right = content_center.x + content_radius.x;
@@ -35,6 +36,7 @@ static const float content_lower = content_center.y + content_radius.y;
 
 // The xy-offset of the top-left pixel in the content box
 static const float2 content_offset = float2(content_left, content_upper);
+static const float2 content_offset_from_right = float2(content_right, content_lower);
 
 
 void cropContentPixelShader(
@@ -43,9 +45,10 @@ void cropContentPixelShader(
 
     out float4 color : SV_Target
 ) {
-    const float2 texcoord_cropped = texcoord * content_size / buffer_size + content_offset;
+    const float2 texcoord_cropped = texcoord * content_scale + content_offset;
     color = tex2D(ReShade::BackBuffer, texcoord_cropped);
 }
+
 
 void uncropContentPixelShader(
     in const float4 pos : SV_Position,

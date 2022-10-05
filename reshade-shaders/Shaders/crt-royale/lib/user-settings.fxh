@@ -129,9 +129,9 @@
 //  PHOSPHOR MASK:
 //  Choose between a 64x64 or 512x512 source for the phosphor mask
 //  Mainly affects Sample Mode 1
-#ifndef USE_LARGE_PHOSPHOR_MASK
-    #define USE_LARGE_PHOSPHOR_MASK 1
-#endif
+// #ifndef USE_LARGE_PHOSPHOR_MASK
+//     #define USE_LARGE_PHOSPHOR_MASK 1
+// #endif
 
 //  Manually resize the phosphor mask for best results (slower)?  Disabling this
 //  removes the option to do so, but it may be faster without dynamic branches.
@@ -420,5 +420,8 @@ static const float border_darkness_static = 2.0;        //  range [0, inf)
 //  Border compression: High numbers compress border transitions, narrowing
 //  the dark border area.
 static const float border_compress_static = 2.5;        //  range [1, inf)
+
+// TODO: Nuke this
+#define mask_size_xy float2(512, 512)
 
 #endif  //  _USER_SETTINGS_H

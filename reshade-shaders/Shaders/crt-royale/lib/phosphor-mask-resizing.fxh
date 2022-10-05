@@ -83,7 +83,8 @@ float2 get_resized_mask_tile_size(const float2 estimated_viewport_size,
         mask_triad_size_desired,
         estimated_viewport_size.x / mask_num_triads_desired,
         mask_specify_num_triads);
-    if(get_mask_sample_mode() > 0.5)
+    // if(get_mask_sample_mode() > 0.5)
+    if (false)
     {
         //  We don't need constraints unless we're sampling MASK_RESIZE.
         return desired_tile_size_x * tile_aspect;
@@ -141,11 +142,12 @@ float3 get_downsizing_factor_and_true_tile_size() {
         mask_triad_size_desired :
         float(CONTENT_WIDTH) / mask_num_triads_desired;
 
+    const uint mask_sample_mode_desired = 0;
     const float2 true_tile_size_float = mask_sample_mode_desired < 1.5 ?
         triad_size * mask_triads_per_tile * float2(1, tile_aspect_inv) :
         content_size;
 
-    const float downsizing_factor = mask_size.x / (triad_size * mask_triads_per_tile);
+    const float downsizing_factor = mask_size_xy.x / (triad_size * mask_triads_per_tile);
     const float2 true_tile_size = floor(true_tile_size_float + FIX_ZERO(0.0));
 
     return float3(downsizing_factor, true_tile_size);
@@ -217,19 +219,7 @@ float4 lanczos_downsample_vert(
 }
 
 float4 samplePhosphorMask(const float2 texcoord) {
-    #if USE_PHOSPHOR_TEXTURES == 1
-        if (mask_type == 0) {
-            return tex2D(samplerMaskGrille, texcoord);
-        }
-        else if (mask_type == 2) {
-            return tex2D(samplerMaskShadow, texcoord);
-        }
-        else {
-            return tex2D(samplerMaskSlot, texcoord);
-        }
-    #else
-        return float4(1, 1, 1, 1);
-    #endif
+    return float4(1, 1, 1, 1);
 }
 
 #endif  //  _NEW_PHOSPHOR_MASK_RESIZING_H

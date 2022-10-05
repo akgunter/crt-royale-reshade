@@ -23,6 +23,7 @@
 #include "content-crop.fxh"
 
 
+#if CONTENT_BOX_VISIBLE
 #ifndef CONTENT_BOX_INSCRIBED
     #define CONTENT_BOX_INSCRIBED 1
 #endif
@@ -103,5 +104,5 @@ void contentBoxPixelShader(
 }
 
 
-
+#endif  // CONTENT_BOX_VISIBLE
 #endif  //  _CONTENT_BOXING

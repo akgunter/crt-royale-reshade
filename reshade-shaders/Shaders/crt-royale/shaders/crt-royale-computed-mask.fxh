@@ -20,7 +20,6 @@
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
 #include "../lib/phosphor-mask-resizing.fxh"
-#include "../lib/texture-settings.fxh"
 
 #include "shared-objects.fxh"
 

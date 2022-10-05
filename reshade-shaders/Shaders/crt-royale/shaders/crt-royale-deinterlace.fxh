@@ -14,7 +14,7 @@ void deinterlaceVS(
 ) {
     PostProcessVS(id, position, texcoord);
 
-    v_step = float2(0.0, scanline_num_pixels / TEX_FREEZEFRAME_HEIGHT);
+    v_step = float2(0.0, scanline_num_pixels * rcp(TEX_FREEZEFRAME_HEIGHT));
 }
 
 
@@ -25,14 +25,24 @@ void deinterlacePS(
     
     out float4 color : SV_Target
 ) {
+    // float2 scanline_offset_norm;
+    // float triangle_wave_freq;
+    // bool field_parity;
+    // bool wrong_field;
+    // calc_wrong_field(texcoord, scanline_offset_norm, triangle_wave_freq, field_parity, wrong_field);
+    
+    InterpolationFieldData interpolation_data = calc_interpolation_field_data(texcoord);
+
+    // TODO: add scanline_parity to calc_wrong_field()
+
     // Weaving
     // Sample texcoord from this frame and the previous frame
     // If we're in the correct field, use the current sample
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're probably averaging a color with 0 and producing a brightness of 0.5.
     if (enable_interlacing && scanline_deinterlacing_mode == 1) {
-        const float cur_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, CONTENT_HEIGHT_INTERNAL);
-        const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
+        // const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
+        // const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
         
         const float4 cur_line_color = tex2D(samplerBeamConvergence, texcoord);
         const float4 cur_line_prev_color = tex2D(samplerFreezeFrame, texcoord);
@@ -40,7 +50,7 @@ void deinterlacePS(
         const float4 avg_color = (cur_line_color + cur_line_prev_color) / 2.0;
 
         // Multiply by 1.5, so each pair of scanlines has total brightness 2
-        const float4 raw_out_color = lerp(1.5*cur_line_color, avg_color, wrong_field);
+        const float4 raw_out_color = lerp(1.5*cur_line_color, avg_color, interpolation_data.wrong_field);
         color = encode_output(raw_out_color, scanline_blend_gamma);
     }
     // Blended Weaving
@@ -51,21 +61,20 @@ void deinterlacePS(
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're averaging two fully illuminated colors
     else if (enable_interlacing && scanline_deinterlacing_mode == 2) {
-        const float cur_scanline_idx = get_curr_scanline_idx(texcoord, texcoord.y, CONTENT_HEIGHT_INTERNAL);
-        const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
-        const float wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
-        const float field_is_odd = fmod(cur_scanline_idx, 2);
+        // const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
+        // const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
+        // const float wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
+        // const float field_is_odd = fmod(cur_scanline_idx, 2);
 
-        const float use_negative_offset = field_is_odd;
-        const float2 raw_offset = lerp(1, -1, use_negative_offset) * v_step;
-        const float2 curr_offset = lerp(0, raw_offset, wrong_field);
-        const float2 prev_offset = lerp(raw_offset, 0, wrong_field);
+        const float2 raw_offset = lerp(1, -1, interpolation_data.scanline_parity) * v_step;
+        const float2 curr_offset = lerp(0, raw_offset, interpolation_data.wrong_field);
+        const float2 prev_offset = lerp(raw_offset, 0, interpolation_data.wrong_field);
 
         const float4 cur_line_color = tex2D(samplerBeamConvergence, texcoord + curr_offset);
         const float4 prev_line_color = tex2D(samplerFreezeFrame, texcoord + prev_offset);
 
         const float4 avg_color = (cur_line_color + prev_line_color) / 2.0;
-        const float4 raw_out_color = lerp(cur_line_color, avg_color, wrong_field);
+        const float4 raw_out_color = lerp(cur_line_color, avg_color, interpolation_data.wrong_field);
         color = encode_output(raw_out_color, scanline_blend_gamma);
     }
     // No temporal blending
