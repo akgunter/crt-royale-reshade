@@ -65,6 +65,7 @@ static const float under_half = 0.4995;
 //  Avoid dividing by zero; using a macro overloads for float, float2, etc.:
 #define FIX_ZERO(c) (root_max(root_abs(c), 0.0000152587890625))   //  2^-16
 
-#define fmod(x, y) ((x) - (y) * floor((x)/(y) + FIX_ZERO(0.0)))
+// #define fmod(x, y) ((x) - (y) * floor((x)/(y) + FIX_ZERO(0.0)))
+#define fmod(x, y) (frac(x / y) * y)
 
 #endif  //  _HELPER_FUNCTIONS_AND_MACROS_H

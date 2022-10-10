@@ -52,28 +52,17 @@ technique CRT_Royale
 			PixelShader = contentBoxPixelShader;
 		}
 	#else
-		/*
-		// content-crop.fxh
-		pass cropPass
+		pass beamDistPass
 		{
-			// Crop the input buffer, so all our math is scaled to the actual
-			//   game content rather than the entire window.
-			VertexShader = PostProcessVS;
-			PixelShader = cropContentPixelShader;
+			// Simulate emission of the interlaced video as electron beams. 	
+			VertexShader = calculateBeamDistsVS;
+			PixelShader = calculateBeamDistsPS;
 
-			RenderTarget = texCrop;
-		}
-		// crt-royale-electron-beams.fx
-		pass interlacingPass
-		{
-			// Simulate interlacing by blending in-field rows
-			//   and blanking out out-of-field rows.
-			VertexShader = simulateInterlacingVS;
-			PixelShader = simulateInterlacingPS;
+			RenderTarget = texBeamDist;
 
-			RenderTarget = texInterlaced;
+			// This lets us improve performance by only computing the mask every k frames
+			ClearRenderTargets = false;
 		}
-		*/
 		pass electronBeamPass
 		{
 			// Simulate emission of the interlaced video as electron beams. 	
@@ -82,7 +71,7 @@ technique CRT_Royale
 
 			RenderTarget = texElectronBeams;
 		}
-		pass beamConvergencPass
+		pass beamConvergencePass
 		{
 			// Simulate beam convergence miscalibration
 			//   Not to be confused with beam purity
@@ -98,7 +87,7 @@ technique CRT_Royale
 			//   and then threw it all away. So this is a no-op for now.
 			//   It still has a blur effect b/c its a smaller buffer.
 			// TODO: activate the math in this pass and see what happens.
-			VertexShader = approximateBloomVS;
+			VertexShader = PostProcessVS;
 			PixelShader = approximateBloomVertPS;
 			
 			RenderTarget = texBloomApproxVert;
@@ -109,7 +98,7 @@ technique CRT_Royale
 			//   and then threw it all away. So this is a no-op for now.
 			//   It still has a blur effect b/c its a smaller buffer.
 			// TODO: activate the math in this pass and see what happens.
-			VertexShader = approximateBloomVS;
+			VertexShader = PostProcessVS;
 			PixelShader = approximateBloomHorizPS;
 			
 			RenderTarget = texBloomApproxHoriz;

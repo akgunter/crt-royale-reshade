@@ -96,7 +96,7 @@ void brightpassPS(
             ((float3(1.0, 1.0, 1.0) - area_contrib_underestimate) /
             intensity_underestimate - float3(1.0, 1.0, 1.0)) / (center_weight - 1.0);
     #endif
-    const float3 blur_ratio = clamp(blur_ratio_temp, 0.0, 1.0);
+    const float3 blur_ratio = saturate(blur_ratio_temp);
     //  Calculate the brightpass based on the auto-dimmed, unamplified, masked
     //  scanlines, encode if necessary, and return!
     const float3 brightpass = intensity_dim *

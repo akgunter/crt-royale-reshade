@@ -30,41 +30,42 @@
 #include "shared-objects.fxh"
 
 
-
-static const int num_sinc_lobes = 3;
-
-
-void approximateBloomVS(
-    in const uint id : SV_VertexID,
-
-    out float4 position : SV_Position,
-    out float2 texcoord : TEXCOORD0,
-
-    out float2 source_size_inv : TEXCOORD1,
-    out float2 downsizing_factor : TEXCOORD2
+float4 linear_downsample(
+    const sampler2D tex,
+    const float2 texcoord,
+    const int total_num_samples,
+    const float2 delta_uv
 ) {
-    PostProcessVS(id, position, texcoord);
+    const float delta_d = rcp(total_num_samples + 1.0);
+    const float i_offset = (total_num_samples + 1) * 0.5;
 
-    source_size_inv = 1.0 / float2(TEX_BEAMCONVERGENCE_SIZE);
-    downsizing_factor = float2(TEX_BEAMCONVERGENCE_SIZE) / TEX_BLOOMAPPROXHORIZ_SIZE;
+    float3 acc = 0;
+    float w_sum = 0;
+    for(int i = 0; i <= total_num_samples; i++) {
+        const float d = (i + 1.0) * delta_d;
+        const float2 coord = texcoord + delta_uv * (i - i_offset);
+        // const float weight = triangle_wave(d, 1);
+        const float weight = 1;
+ 
+        acc += tex2D(tex, coord).rgb * weight;
+        w_sum += weight;
+    }
+    
+    return float4(acc / w_sum, 1);
 }
 
 void approximateBloomVertPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
 
-    in float2 source_size_inv : TEXCOORD1,
-    in float2 downsizing_factor : TEXCOORD2,
-
     out float4 color : SV_Target
 ) {
+    const float2 delta_uv = blur_radius * float2(0.0, rcp(TEX_BEAMCONVERGENCE_HEIGHT));
 
-    const float2 uv = texcoord / float2(1.0, downsizing_factor.y);
-
-    color = lanczos_downsample_vert(
-        samplerBeamConvergence, source_size_inv,
-        uv, downsizing_factor.y, num_sinc_lobes,
-        1.0
+    color = linear_downsample(
+        samplerBeamConvergence, texcoord,
+        BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL,
+        delta_uv
     );
 }
 
@@ -72,17 +73,13 @@ void approximateBloomHorizPS(
     in const float4 pos : SV_Position,
     in const float2 texcoord : TEXCOORD0,
 
-    in float2 source_size_inv : TEXCOORD1,
-    in float2 downsizing_factor : TEXCOORD2,
-
     out float4 color : SV_Target
 ) {
-    
-    const float2 uv = texcoord / float2(downsizing_factor.x, 1.0);
+    const float2 delta_uv = blur_radius * float2(rcp(TEX_BEAMCONVERGENCE_WIDTH), 0.0);
 
-    color = lanczos_downsample_horiz(
-        samplerBloomApproxVert, source_size_inv,
-        uv, downsizing_factor.x, num_sinc_lobes,
-        1.0
+    color = linear_downsample(
+        samplerBloomApproxVert, texcoord,
+        BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL,
+        delta_uv
     );
 }

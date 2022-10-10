@@ -61,11 +61,6 @@ void deinterlacePS(
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're averaging two fully illuminated colors
     else if (enable_interlacing && scanline_deinterlacing_mode == 2) {
-        // const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
-        // const float2 frame_and_line_field_idx = get_frame_and_line_field_idx(cur_scanline_idx);
-        // const float wrong_field = curr_line_is_wrong_field(frame_and_line_field_idx);
-        // const float field_is_odd = fmod(cur_scanline_idx, 2);
-
         const float2 raw_offset = lerp(1, -1, interpolation_data.scanline_parity) * v_step;
         const float2 curr_offset = lerp(0, raw_offset, interpolation_data.wrong_field);
         const float2 prev_offset = lerp(raw_offset, 0, interpolation_data.wrong_field);

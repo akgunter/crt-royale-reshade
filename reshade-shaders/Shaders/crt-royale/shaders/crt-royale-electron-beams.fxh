@@ -33,8 +33,7 @@ void calculateBeamDistsVS(
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0
 ) {
-    const int beam_update_interval = (beam_update_interval_setting == 0) ? 1 : 60;
-    const float compute_mask_factor = float(frame_count % beam_update_interval == 0);
+    const float compute_mask_factor = frame_count % 60 == 0 || overlay_active > 0;
 
 	texcoord.x = (id == 2) ? compute_mask_factor*2.0 : 0.0;
 	texcoord.y = (id == 1) ? 2.0 : 0.0;
@@ -59,8 +58,8 @@ void calculateBeamDistsPS(
     if (beam_shape_mode == 0) {
         // Double the intensity when interlacing to maintain the same apparent brightness
         const float interlacing_brightness_factor = 1 + float(
-			enable_interlacing &
-			(scanline_deinterlacing_mode != 1) &
+			enable_interlacing &&
+			(scanline_deinterlacing_mode != 1) &&
 			(scanline_deinterlacing_mode != 2)
 		);
         const float raw_beam_strength = (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
@@ -84,7 +83,7 @@ void calculateBeamDistsPS(
         const float interlacing_brightness_factor = (1 + scanline_is_wider_than_1) * (1 + deinterlacing_mode_requires_boost);
 		// const float raw_beam_strength = (1 - beam_dist_y) * (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 		// const float raw_beam_strength = (1 - beam_dist_y);
-		const float raw_beam_strength = clamp(-beam_dist_y * rcp(beam_linear_thickness) + 1, 0 , 1);
+		const float raw_beam_strength = saturate(-beam_dist_y * rcp(beam_linear_thickness) + 1);
         const float adj_beam_strength = raw_beam_strength * (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 
 		beam_strength = float4(color_corrected * adj_beam_strength, 0, 0, 1);
@@ -110,7 +109,7 @@ void calculateBeamDistsPS(
             (scanline_num_pixels > 1)
         ) + float(
             enable_interlacing &&
-            (scanline_deinterlacing_mode != 1) &
+            (scanline_deinterlacing_mode != 1) &&
             (scanline_deinterlacing_mode != 2)
         );
         const float raw_beam_strength = get_gaussian_beam_strength(
@@ -156,7 +155,7 @@ void calculateBeamDistsPS(
             (scanline_num_pixels > 1)
         ) + float(
             enable_interlacing &&
-            (scanline_deinterlacing_mode != 1) &
+            (scanline_deinterlacing_mode != 1) &&
             (scanline_deinterlacing_mode != 2)
         );
         const float3 raw_beam_strength = float3(curr_beam_strength, upper_beam_strength, lower_beam_strength) * interlacing_brightness_factor * levels_autodim_temp;
@@ -177,7 +176,7 @@ void simulateEletronBeamsVS(
 
     // Mode 0: size of pixel in [0, 1] = pixel_dims / viewport_size
     // Mode 1: size of pixel in [0, 1] = viewport_size / grid_dims
-    const float2 runtime_pixel_shape = (pixel_grid_mode == 0) ? pixel_shape * rcp(content_size) : content_size * rcp(pixel_grid_resolution);
+    const float2 runtime_pixel_shape = (pixel_grid_mode == 0) ? pixel_shape * rcp(content_size) : rcp(pixel_grid_resolution);
     const float2 runtime_scanline_shape = float2(1, scanline_num_pixels) * rcp(content_size);
     runtime_bin_shapes = float4(runtime_pixel_shape, runtime_scanline_shape);
 }
@@ -210,7 +209,7 @@ void simulateEletronBeamsPS(
     );
     const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
 	
-	[branch]
+	// [branch]
     if (beam_shape_mode < 3) {
 		const float4 scanline_color = tex2D_linearize(
             ReShade::BackBuffer,
@@ -285,17 +284,14 @@ void beamConvergencePS(
 
     out float4 color : SV_TARGET
 ) {
-    const float2 scanline_texture_size = tex2Dsize(samplerElectronBeams);
-    const float2 scanline_texture_size_inv = 1.0 / scanline_texture_size;
-
-    [branch]
+    // [branch]
     if (!run_convergence) {
         color = tex2D(samplerElectronBeams, texcoord - float2(0, scanline_offset * rcp(content_size.y)));
     }
     else {
         const float3 offset_sample = sample_rgb_scanline(
             samplerElectronBeams, texcoord - float2(0, scanline_offset * rcp(content_size.y)),
-            scanline_texture_size, scanline_texture_size_inv
+            TEX_ELECTRONBEAMS_SIZE, rcp(TEX_ELECTRONBEAMS_SIZE)
         );
 
         color = float4(offset_sample, 1);

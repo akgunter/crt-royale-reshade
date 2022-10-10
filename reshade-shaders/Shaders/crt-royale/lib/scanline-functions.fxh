@@ -65,14 +65,12 @@ InterpolationFieldData precalc_interpolation_field_data(float2 texcoord) {
     
 	data.triangle_wave_freq = 2;
 
-	const bool frame_count_parity = frame_count & (scanline_deinterlacing_mode != 3);
-    // data.field_parity = frame_count_parity ^ interlace_bff;
+	// const bool frame_count_parity = frame_count & (scanline_deinterlacing_mode != 3);
+	// const bool frame_count_parity = bool(frame_count * 2147483648) && (scanline_deinterlacing_mode != 3);
+	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 3);
 
 	const float field_wave = triangle_wave(texcoord.y + rcp(2*data.triangle_wave_freq), data.triangle_wave_freq * 0.5) * 2 - 1;
     data.scanline_parity = field_wave >= 0;
-
-	// const bool wrong_field_raw = data.scanline_parity ^ data.field_parity;
-	// data.wrong_field = enable_interlacing & wrong_field_raw;
 
     return data;
 }
@@ -82,14 +80,15 @@ InterpolationFieldData calc_interpolation_field_data(float2 texcoord) {
     
 	data.triangle_wave_freq = content_size.y * rcp(scanline_num_pixels);
 
-	const bool frame_count_parity = frame_count & (scanline_deinterlacing_mode != 3);
-    data.field_parity = frame_count_parity ^ interlace_bff;
+	// const bool frame_count_parity = bool(frame_count * 2147483648) && (scanline_deinterlacing_mode != 3);
+	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 3);
+    data.field_parity = (frame_count_parity && !interlace_bff) || (!frame_count_parity && interlace_bff);
 
 	const float field_wave = triangle_wave(texcoord.y + rcp(2*data.triangle_wave_freq), data.triangle_wave_freq * 0.5) * 2 - 1;
     data.scanline_parity = field_wave >= 0;
 
-	const bool wrong_field_raw = data.scanline_parity ^ data.field_parity;
-	data.wrong_field = enable_interlacing & wrong_field_raw;
+	const bool wrong_field_raw = (data.scanline_parity && !data.field_parity) || (!data.scanline_parity && data.field_parity);
+	data.wrong_field = enable_interlacing && wrong_field_raw;
 
     return data;
 }

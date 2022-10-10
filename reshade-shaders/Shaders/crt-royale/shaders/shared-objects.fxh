@@ -145,9 +145,8 @@ sampler2D samplerBloomApprox { Texture = texBloomApprox; };
 //     available buffers of the same size
 //   Last usage is in brightpassPass
 #define TEX_BLOOMAPPROXVERT_WIDTH CONTENT_WIDTH_INTERNAL
-#define TEX_BLOOMAPPROXVERT_HEIGHT 240
-// #define TEX_BLOOMAPPROXVERT_WIDTH CONTENT_WIDTH_INTERNAL
-// #define TEX_BLOOMAPPROXVERT_HEIGHT CONTENT_HEIGHT_INTERNAL
+// #define TEX_BLOOMAPPROXVERT_HEIGHT 240
+#define TEX_BLOOMAPPROXVERT_HEIGHT int(CONTENT_HEIGHT_INTERNAL / BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL)
 #define TEX_BLOOMAPPROXVERT_SIZE int2(TEX_BLOOMAPPROXVERT_WIDTH, TEX_BLOOMAPPROXVERT_HEIGHT)
 texture2D texBloomApproxVert < pooled = true; > {
 	Width = TEX_BLOOMAPPROXVERT_WIDTH;
@@ -161,10 +160,10 @@ sampler2D samplerBloomApproxVert { Texture = texBloomApproxVert; };
 //   Cannot be conditioned on __RENDERER__ b/c there are no
 //     available buffers of the same size
 //   Last usage is in brightpassPass
-#define TEX_BLOOMAPPROXHORIZ_WIDTH 320
-#define TEX_BLOOMAPPROXHORIZ_HEIGHT 240
-// #define TEX_BLOOMAPPROXHORIZ_WIDTH CONTENT_WIDTH_INTERNAL
-// #define TEX_BLOOMAPPROXHORIZ_HEIGHT CONTENT_HEIGHT_INTERNAL
+// #define TEX_BLOOMAPPROXHORIZ_WIDTH 320
+// #define TEX_BLOOMAPPROXHORIZ_HEIGHT 240
+#define TEX_BLOOMAPPROXHORIZ_WIDTH int(CONTENT_WIDTH_INTERNAL / BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL)
+#define TEX_BLOOMAPPROXHORIZ_HEIGHT TEX_BLOOMAPPROXVERT_HEIGHT
 #define TEX_BLOOMAPPROXHORIZ_SIZE int2(TEX_BLOOMAPPROXHORIZ_WIDTH, TEX_BLOOMAPPROXHORIZ_HEIGHT)
 texture2D texBloomApproxHoriz < pooled = true; > {
 	Width = TEX_BLOOMAPPROXHORIZ_WIDTH;
@@ -251,9 +250,7 @@ texture2D texPhosphorMask < pooled = false; > {
 	
 	Format = RGBA16;
 };
-sampler2D samplerPhosphorMask {
-	Texture = texPhosphorMask;
-};
+sampler2D samplerPhosphorMask { Texture = texPhosphorMask; };
 
 
 // Pass 11 Buffer (phosphorMaskPass)

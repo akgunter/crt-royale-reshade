@@ -279,8 +279,8 @@ float3 get_phosphor_intensity_shadow(
     const float3 x_adj = texcoord.x * viewport_frequency_factor.x - shadow_norm_center_offsets_x;
 	const float3 theta_x = 2 * pi * x_adj;
 
-	const float3 texcoord_x_periodic1 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2) + 1);
-	const float3 texcoord_x_periodic2 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2));
+    const float3 texcoord_x_periodic1 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2) + 1);
+    const float3 texcoord_x_periodic2 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2));
     const float3 ty1 = sqrt(
         shadow_norm_phosphor_rad*shadow_norm_phosphor_rad - texcoord_x_periodic1*texcoord_x_periodic1
     );
@@ -316,7 +316,7 @@ float3 get_phosphor_intensity_shadow(
 
     const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, shadow_py1), shadow_q.y);
     const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, shadow_py2), shadow_q.y);
-    return clamp(f_x1 * f_y1, 0, 1) + clamp(f_x2 * f_y2, 0, 1);
+    return saturate(f_x1 * f_y1) + saturate(f_x2 * f_y2);
 }
 
 void generatePhosphorMaskVS(
@@ -328,17 +328,17 @@ void generatePhosphorMaskVS(
     out float2 mask_pq_x : TEXCOORD2,
     out float2 mask_pq_y : TEXCOORD3
 ) {
-    const int phosphor_update_interval = (phosphor_update_interval_setting == 0) ? 1 : 60;
-    const float compute_mask_factor = float(frame_count % phosphor_update_interval == 0);
 
-	texcoord.x = (id == 2) ? compute_mask_factor*2.0 : 0.0;
-	texcoord.y = (id == 1) ? 2.0 : 0.0;
-	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    const float compute_mask_factor = frame_count % 60 == 0 || overlay_active > 0;
+    
+    texcoord.x = (id == 2) ? compute_mask_factor*2.0 : 0.0;
+    texcoord.y = (id == 1) ? 2.0 : 0.0;
+    position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 
     const float2 viewport_size = tex2Dsize(samplerDeinterlace);
     const float aspect_ratio = aspect_ratio_adjustment * ((mask_type == 1) ? slot_aspect_ratio : shadow_aspect_ratio);
     const float2 triad_size_factor = viewport_size * rcp(mask_triad_size_desired * float2(1, aspect_ratio));
-	const float2 num_triads_factor = mask_num_triads_desired * float2(1, viewport_size.y * rcp(viewport_size.x) * rcp(aspect_ratio));
+    const float2 num_triads_factor = mask_num_triads_desired * float2(1, viewport_size.y * rcp(viewport_size.x) * rcp(aspect_ratio));
 
     viewport_frequency_factor = ((mask_specify_num_triads == 0) ? triad_size_factor : num_triads_factor);
 

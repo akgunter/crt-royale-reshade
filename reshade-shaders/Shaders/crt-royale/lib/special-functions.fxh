@@ -422,7 +422,7 @@ float4 normalized_ligamma_impl(const float4 s, const float4 z,
     const float4 large_z = 1.0 - uigamma_large_z_impl(s, z) * gamma_s_inv;
     const float4 small_z = ligamma_small_z_impl(s, z, s_inv) * gamma_s_inv;
     //  Combine the results from both branches:
-    int4 inverse_z_is_large = clamp(~(z_is_large), 0, 1);
+    int4 inverse_z_is_large = saturate(~(z_is_large));
     return large_z * float4(z_is_large) + small_z * float4(inverse_z_is_large);
 }
 
@@ -437,7 +437,7 @@ float3 normalized_ligamma_impl(const float3 s, const float3 z,
     z_is_large.z = int(z.z > thresh);
     const float3 large_z = 1.0 - uigamma_large_z_impl(s, z) * gamma_s_inv;
     const float3 small_z = ligamma_small_z_impl(s, z, s_inv) * gamma_s_inv;
-    int3 inverse_z_is_large = clamp(~(z_is_large), 0, 1);
+    int3 inverse_z_is_large = saturate(~(z_is_large));
     return large_z * float3(z_is_large) + small_z * float3(inverse_z_is_large);
 }
 
@@ -451,7 +451,7 @@ float2 normalized_ligamma_impl(const float2 s, const float2 z,
     z_is_large.y = int(z.y > thresh);
     const float2 large_z = 1.0 - uigamma_large_z_impl(s, z) * gamma_s_inv;
     const float2 small_z = ligamma_small_z_impl(s, z, s_inv) * gamma_s_inv;
-    int2 inverse_z_is_large = clamp(~(z_is_large), 0, 1);
+    int2 inverse_z_is_large = saturate(~(z_is_large));
     return large_z * float2(z_is_large) + small_z * float2(inverse_z_is_large);
 }
 

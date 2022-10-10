@@ -73,23 +73,27 @@
         #define NUM_BEAMDIST_DIST_SAMPLES 120
     #endif
 
+    #ifndef BLOOMAPPROX_DOWNSIZING_FACTOR
+        #define BLOOMAPPROX_DOWNSIZING_FACTOR 4.0
+    #endif
+
     // Define this internal value, so ADVANCED_SETTINGS == 0 doesn't cause a redefinition error when
     //   NUM_BEAMDIST_COLOR_SAMPLES defined in the preset file. Also makes it easy to avoid bugs
     //   related to parentheses and order-of-operations when the user defines this arithmetically.
     #define NUM_BEAMDIST_COLOR_SAMPLES_INTERNAL int(NUM_BEAMDIST_COLOR_SAMPLES)
     #define NUM_BEAMDIST_DIST_SAMPLES_INTERNAL int(NUM_BEAMDIST_DIST_SAMPLES)
+    #define BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL float(BLOOMAPPROX_DOWNSIZING_FACTOR)
 #else
     #define NUM_BEAMDIST_COLOR_SAMPLES_INTERNAL 1024
     #define NUM_BEAMDIST_DIST_SAMPLES_INTERNAL 120
+    #define BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL 4.0
 #endif
-
-static const float beamdist_ypos_multiplier = 0.5 * CONTENT_HEIGHT / NUM_BEAMDIST_DIST_SAMPLES_INTERNAL;
-
 
 // Wrap the content size in parenthesis for internal use, so the
 //   user doesn't have to
 #define CONTENT_WIDTH_INTERNAL int(CONTENT_WIDTH)
 #define CONTENT_HEIGHT_INTERNAL int(CONTENT_HEIGHT)
+
 
 // Offset the center of the game's content (horizontal)
 #ifndef CONTENT_CENTER_X
@@ -104,53 +108,49 @@ static const float2 buffer_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
 static const float2 content_size = float2(CONTENT_WIDTH_INTERNAL, CONTENT_HEIGHT_INTERNAL);
 
 uniform uint frame_count < source = "framecount"; >;
+uniform int overlay_active < source = "overlay_active"; >;
 
 static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
 
 
 // ==== PIXELATION ===
-#if ADVANCED_SETTINGS == 1
-    uniform uint pixelation_method < 
-        ui_label   = "Pixelation Method";
-        ui_tooltip = "Algorithm to create pixelation effect";
-        ui_category = "Pixelation";
-        ui_type    = "combo";
-        ui_items   = "Point Sampling (fast)\0"
-                    "Averaging (versatile)\0";
-    > = 0;
-    uniform uint pixel_grid_mode <
-        ui_label   = "Pixel Grid Param";
-        ui_tooltip = "Switch between using Pixel Size or Num Pixels";
-        ui_category = "Pixelation";
-        ui_type    = "combo";
-        ui_items   = "Pixel Size\0"
-                    "Content Resolution\0";
-    > = 0;
-#else
-    static const uint pixelation_method = 0;
-    static const uint pixel_grid_mode = 0;
-#endif
+uniform uint pixelation_method < 
+    ui_label   = "Pixelation Method";
+    ui_tooltip = "Algorithm to create pixelation effect";
+    ui_category = "Pixelation";
+    ui_type    = "combo";
+    ui_items   = "Point Sampling (fast)\0"
+                "Averaging (versatile)\0";
+    hidden     = !ADVANCED_SETTINGS;
+> = 0;
+uniform uint pixel_grid_mode <
+    ui_label   = "Pixel Grid Param";
+    ui_tooltip = "Switch between using Pixel Size or Num Pixels";
+    ui_category = "Pixelation";
+    ui_type    = "combo";
+    ui_items   = "Pixel Size\0"
+                "Content Resolution\0";
+    hidden     = !ADVANCED_SETTINGS;
+> = 0;
 uniform float2 pixel_shape <
     ui_label   = "Pixel Size";
     ui_category = "Pixelation";
+    ui_category_closed = true;
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 30.0;
     ui_step    = 1.0;
 > = float2(1, 1);
-#if ADVANCED_SETTINGS == 1
-    uniform float2 pixel_grid_resolution <
-        ui_label   = "Num Pixels";
-        ui_tooltip = "The number of pixels to downsample to";
-        ui_category = "Pixelation";
-        ui_type    = "drag";
-        ui_min     = 1.0;
-        ui_max     = 10000.0;
-        ui_step    = 1.0;
-    > = content_size;
-#else
-    static const float2 pixel_grid_resolution = content_size;
-#endif
+uniform float2 pixel_grid_resolution <
+    ui_label   = "Num Pixels";
+    ui_tooltip = "The number of pixels to downsample to";
+    ui_category = "Pixelation";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_max     = 10000.0;
+    ui_step    = 1.0;
+    hidden     = !ADVANCED_SETTINGS;
+> = content_size;
 uniform float2 pixel_grid_offset <
     ui_label   = "Pixel Grid Offset";
     ui_category = "Pixelation";
@@ -165,23 +165,21 @@ uniform int mask_type <
     ui_label   = "Mask Type";
     ui_tooltip = "Selects the phosphor shape";
     ui_category = "Phosphor Mask";
+    ui_category_closed = true;
     ui_type    = "combo";
     ui_items   = "Grille\0"
                  "Slot\0"
                  "Shadow\0";
 > = mask_type_static;
-#if ADVANCED_SETTINGS == 1
-    uniform uint mask_specify_num_triads <
-        ui_label   = "Mask Size Param";
-        ui_tooltip = "Switch between using Mask Triad Size or Mask Num Triads";
-        ui_category = "Phosphor Mask";
-        ui_type    = "combo";
-        ui_items   = "Triad Width\0"
-                    "Num Triads Across\0";
-    > = mask_specify_num_triads_static;
-#else
-    static const uint mask_specify_num_triads = mask_specify_num_triads_static;
-#endif
+uniform uint mask_specify_num_triads <
+    ui_label   = "Mask Size Param";
+    ui_tooltip = "Switch between using Mask Triad Size or Mask Num Triads";
+    ui_category = "Phosphor Mask";
+    ui_type    = "combo";
+    ui_items   = "Triad Width\0"
+                "Num Triads Across\0";
+    hidden     = !ADVANCED_SETTINGS;
+> = mask_specify_num_triads_static;
 uniform float mask_triad_size_desired <
     ui_label   = "Mask Triad Width";
     ui_tooltip = "The width of a triad";
@@ -191,19 +189,16 @@ uniform float mask_triad_size_desired <
     ui_max     = 60.0;
     ui_step    = 0.1;
 > = mask_triad_size_desired_static;
-#if ADVANCED_SETTINGS == 1
-    uniform float mask_num_triads_desired <
-        ui_label   = "Mask Num Triads Across";
-        ui_tooltip = "The number of triads in the viewport (horizontally)";
-        ui_category = "Phosphor Mask";
-        ui_type    = "drag";
-        ui_min     = 1.0;
-        ui_max     = 1280.0;
-        ui_step    = 1.0;
-    > = mask_num_triads_desired_static;
-#else
-    static const float mask_num_triads_desired = mask_num_triads_desired_static;
-#endif
+uniform float mask_num_triads_desired <
+    ui_label   = "Mask Num Triads Across";
+    ui_tooltip = "The number of triads in the viewport (horizontally)";
+    ui_category = "Phosphor Mask";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_max     = 1280.0;
+    ui_step    = 1.0;
+    hidden     = !ADVANCED_SETTINGS;
+> = mask_num_triads_desired_static;
 uniform float aspect_ratio_adjustment<
     ui_label   = "Triad Aspect Ratio";
     ui_category = "Phosphor Mask";
@@ -212,43 +207,33 @@ uniform float aspect_ratio_adjustment<
     ui_max     = 10.0;
     ui_step    = 0.01;
 > = 1.0;
-#if ADVANCED_SETTINGS == 1
-    uniform float2 phosphor_thickness <
-        ui_label   = "Phosphor Thickness";
-        ui_tooltip = "Sets the brightness of the phosphor's edges, which appears to widen the phosphor.";
-        ui_category = "Phosphor Mask";
-        ui_type    = "drag";
-        ui_min     = 0.01;
-        ui_max     = 0.99;
-        ui_step    = 0.01;
-    > = 0.2;
-    uniform float2 phosphor_sharpness <
-        ui_label   = "Phosphor Sharpness";
-        ui_tooltip = "Controls the steepness of the phosphor's edges, which appears to sharpen the phosphor.";
-        ui_category = "Phosphor Mask";
-        ui_type    = "drag";
-        ui_min     = 0.01;
-        ui_max     = 1000.0;
-        ui_step    = 0.01;
-    > = 50;
-#else
-    static const float2 phosphor_thickness = 0.2;
-    static const float2 phosphor_sharpness = 50;
-#endif
-uniform uint phosphor_update_interval_setting <
-    ui_label   = "Phosphor Update Interval";
-    ui_tooltip = "Sets the number of frames skipped by the phosphor mask pass. Set to Every Frame to make it easier to configure the mask. Set to Every 60 Frames to maximize performance.";
+uniform float2 phosphor_thickness <
+    ui_label   = "Phosphor Thickness";
+    ui_tooltip = "Sets the brightness of the phosphor's edges, which appears to widen the phosphor.";
     ui_category = "Phosphor Mask";
-    ui_type    = "radio";
-    ui_items   = "Calc Phosphors Every Frame\0"
-                 "Calc Phosphors Every 60 Frames (Recommended)\0";
-> = 0;
+    ui_type    = "drag";
+    ui_min     = 0.01;
+    ui_max     = 0.99;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = 0.2;
+uniform float2 phosphor_sharpness <
+    ui_label   = "Phosphor Sharpness";
+    ui_tooltip = "Controls the steepness of the phosphor's edges, which appears to sharpen the phosphor.";
+    ui_category = "Phosphor Mask";
+    ui_type    = "drag";
+    ui_min     = 0.01;
+    ui_max     = 1000.0;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = 50;
 
 
 // ==== ELECTRON BEAM ====
 uniform bool enable_interlacing <
     ui_label   = "Enable Interlacing";
     ui_category = "Electron Beam";
+    ui_category_closed = true;
 > = false;
 uniform bool interlace_bff <
     ui_label   = "Draw Back-Field First";
@@ -290,14 +275,6 @@ uniform float scanline_offset <
     ui_max     = 30;
     ui_step    = 1;
 > = 0;
-uniform uint beam_update_interval_setting <
-    ui_label   = "Beam Update Interval";
-    ui_tooltip = "Sets the number of frames skipped by the beam distance pass. Set to Every Frame to make it easier to configure the beams. Set to Every 60 Frames to maximize performance.";
-    ui_category = "Electron Beam";
-    ui_type    = "radio";
-    ui_items   = "Calc Scanlines Every Frame\0"
-                 "Calc Scanlines Every 60 Frames (Recommended)\0";
-> = 0;
 uniform float scanline_blend_gamma <
     ui_label   = "Deinterlacing Blend Gamma";
     ui_tooltip = "Nudge this if deinterlacing changes your colors too much";
@@ -312,7 +289,7 @@ uniform float beam_linear_thickness <
     ui_category = "Electron Beam";
     ui_type    = "slider";
     ui_min     = 0.01;
-    ui_max     = 1.0;
+    ui_max     = 3.0;
     ui_step    = 0.01;
 > = 1.0;
 uniform float beam_min_sigma <
@@ -337,54 +314,51 @@ uniform float beam_spot_power <
     ui_min     = 0.0;
     ui_step    = 0.01;
 > = beam_spot_power_static;
-#if ADVANCED_SETTINGS == 1
-    uniform float beam_min_shape <
-        ui_label   = "Gaussian Beam Min Shape";
-        ui_category = "Electron Beam";
-        ui_type    = "drag";
-        ui_min     = 0.0;
-        ui_step    = 0.01;
-    > = beam_min_shape_static;
-    uniform float beam_max_shape <
-        ui_label   = "Gaussian Beam Max Shape";
-        ui_tooltip = "Should be >= Beam Min Shape";
-        ui_category = "Electron Beam";
-        ui_type    = "drag";
-        ui_min     = 0.0;
-        ui_step    = 0.01;
-    > = beam_max_shape_static;
-    uniform float beam_shape_power <
-        ui_label   = "Gaussian Beam Shape Power";
-        ui_category = "Electron Beam";
-        ui_type    = "drag";
-        ui_min     = 0.0;
-        ui_step    = 0.01;
-    > = beam_shape_power_static;
-    uniform float3 convergence_offset_x <
-        ui_label   = "Convergence Offset X RGB";
-        ui_tooltip = "Shift the color channels horizontally";
-        ui_category = "Electron Beam";
-        ui_type    = "drag";
-        ui_min     = -10;
-        ui_max     = 10;
-        ui_step    = 0.05;
-    > = 0;
-    uniform float3 convergence_offset_y <
-        ui_label   = "Convergence Offset Y RGB";
-        ui_tooltip = "Shift the color channels vertically";
-        ui_category = "Electron Beam";
-        ui_type    = "drag";
-        ui_min     = -10;
-        ui_max     = 10;
-        ui_step    = 0.05;
-    > = 0;
-#else
-    static const float beam_min_shape = beam_min_shape_static;
-    static const float beam_max_shape = beam_max_shape_static;
-    static const float beam_shape_power = beam_shape_power_static;
-    static const float3 convergence_offset_x = 0;
-    static const float3 convergence_offset_y = 0;
-#endif
+uniform float beam_min_shape <
+    ui_label   = "Gaussian Beam Min Shape";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = beam_min_shape_static;
+uniform float beam_max_shape <
+    ui_label   = "Gaussian Beam Max Shape";
+    ui_tooltip = "Should be >= Beam Min Shape";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = beam_max_shape_static;
+uniform float beam_shape_power <
+    ui_label   = "Gaussian Beam Shape Power";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = 0.0;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = beam_shape_power_static;
+uniform float3 convergence_offset_x <
+    ui_label   = "Convergence Offset X RGB";
+    ui_tooltip = "Shift the color channels horizontally";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -10;
+    ui_max     = 10;
+    ui_step    = 0.05;
+    hidden     = !ADVANCED_SETTINGS;
+> = 0;
+uniform float3 convergence_offset_y <
+    ui_label   = "Convergence Offset Y RGB";
+    ui_tooltip = "Shift the color channels vertically";
+    ui_category = "Electron Beam";
+    ui_type    = "drag";
+    ui_min     = -10;
+    ui_max     = 10;
+    ui_step    = 0.05;
+    hidden     = !ADVANCED_SETTINGS;
+> = 0;
 
 static uint beam_horiz_filter = beam_horiz_filter_static;
 static float beam_horiz_sigma = beam_horiz_sigma_static;
@@ -395,6 +369,7 @@ uniform float crt_gamma <
     ui_label   = "CRT Gamma";
     ui_tooltip = "The gamma-level of the original content";
     ui_category = "Colors and Effects";
+    ui_category_closed = true;
     ui_type    = "slider";
     ui_min     = 1.0;
     ui_max     = 5.0;
@@ -417,6 +392,16 @@ uniform float levels_contrast <
     ui_max     = 4.0;
     ui_step    = 0.01;
 > = levels_contrast_static;
+uniform float blur_radius <
+    ui_label   = "Blur Radius";
+    ui_tooltip = "Scales the radius of the halation and diffusion effects";
+    ui_category = "Colors and Effects";
+    ui_type    = "slider";
+    ui_min     = 0.01;
+    ui_max     = 5.0;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = 1.0;
 uniform float halation_weight <
     ui_label   = "Halation";
     ui_tooltip = "Desaturation due to eletrons exciting the wrong phosphors";
@@ -452,16 +437,15 @@ uniform float bloom_excess <
     ui_max     = 1.0;
     ui_step    = 0.01;
 > = bloom_excess_static;
-#if _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS
-    uniform float2 aa_subpixel_r_offset_runtime <
-        ui_label   = "AA Subpixel R Offet XY";
-        ui_category = "Colors and Effects";
-        ui_type    = "drag";
-        ui_min     = -0.5;
-        ui_max     = 0.5;
-        ui_step    = 0.01;
-    > = aa_subpixel_r_offset_static;
-#endif
+uniform float2 aa_subpixel_r_offset_runtime <
+    ui_label   = "AA Subpixel R Offet XY";
+    ui_category = "Colors and Effects";
+    ui_type    = "drag";
+    ui_min     = -0.5;
+    ui_max     = 0.5;
+    ui_step    = 0.01;
+    hidden     = _RUNTIME_ANTIALIAS_SUBPIXEL_OFFSETS;
+> = aa_subpixel_r_offset_static;
 
 static const float aa_cubic_c = aa_cubic_c_static;
 static const float aa_gauss_sigma = aa_gauss_sigma_static;
@@ -472,6 +456,7 @@ uniform uint geom_mode_runtime <
     ui_label   = "Geom Mode";
     ui_tooltip = "Select screen curvature";
     ui_category = "Screen Geometry";
+    ui_category_closed = true;
     ui_type    = "combo";
     ui_items   = "Flat\0"
                  "Spherical\0"
@@ -487,48 +472,46 @@ uniform float geom_radius <
     ui_max     = 1024;
     ui_step    = 0.01;
 > = geom_radius_static;
-#if ADVANCED_SETTINGS == 1
-    uniform float geom_view_dist <
-        ui_label   = "Geom View Distance";
-        ui_category = "Screen Geometry";
-        ui_type    = "slider";
-        ui_min     = 0.5;
-        ui_max     = 1024;
-        ui_step    = 0.01;
-    > = geom_view_dist_static;
-    uniform float2 geom_tilt_angle <
-        ui_label   = "Geom Tilt Angle XY";
-        ui_category = "Screen Geometry";
-        ui_type    = "drag";
-        ui_min     = -pi;
-        ui_max     = pi;
-        ui_step    = 0.01;
-    > = geom_tilt_angle_static;
-    uniform float2 geom_aspect_ratio <
-        ui_label   = "Geom Aspect Ratio XY";
-        ui_category = "Screen Geometry";
-        ui_type    = "drag";
-        ui_min     = 1.0;
-        ui_step    = 0.01;
-    > = float2(geom_aspect_ratio_static, 1);
-    uniform float2 geom_overscan <
-        ui_label   = "Geom Overscan XY";
-        ui_category = "Screen Geometry";
-        ui_type    = "drag";
-        ui_min     = FIX_ZERO(0.0);
-        ui_step    = 0.01;
-    > = geom_overscan_static;
-#else
-    static const float geom_view_dist = geom_view_dist_static;
-    static const float2 geom_tilt_angle = geom_tilt_angle_static;
-    static const float2 geom_aspect_ratio = float2(geom_aspect_ratio_static, 1);
-    static const float2 geom_overscan = geom_overscan_static;
-#endif
+uniform float geom_view_dist <
+    ui_label   = "Geom View Distance";
+    ui_category = "Screen Geometry";
+    ui_type    = "slider";
+    ui_min     = 0.5;
+    ui_max     = 1024;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = geom_view_dist_static;
+uniform float2 geom_tilt_angle <
+    ui_label   = "Geom Tilt Angle XY";
+    ui_category = "Screen Geometry";
+    ui_type    = "drag";
+    ui_min     = -pi;
+    ui_max     = pi;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = geom_tilt_angle_static;
+uniform float2 geom_aspect_ratio <
+    ui_label   = "Geom Aspect Ratio XY";
+    ui_category = "Screen Geometry";
+    ui_type    = "drag";
+    ui_min     = 1.0;
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = float2(geom_aspect_ratio_static, 1);
+uniform float2 geom_overscan <
+    ui_label   = "Geom Overscan XY";
+    ui_category = "Screen Geometry";
+    ui_type    = "drag";
+    ui_min     = FIX_ZERO(0.0);
+    ui_step    = 0.01;
+    hidden     = !ADVANCED_SETTINGS;
+> = geom_overscan_static;
 
 // ==== BORDER ====
 uniform float border_size <
     ui_label   = "Border Size";
     ui_category = "Screen Border";
+    ui_category_closed = true;
     ui_type    = "slider";
     ui_min     = 0.0;
     ui_max     = 0.5;

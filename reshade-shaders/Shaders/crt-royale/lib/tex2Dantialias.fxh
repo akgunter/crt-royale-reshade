@@ -302,8 +302,7 @@ float eval_separable_box_filter(const float2 offset)
 
 float eval_tent_filter(const float dist)
 {
-    return clamp((aa_tent_support - dist)/
-        aa_tent_support, 0.0, 1.0);
+    return saturate((aa_tent_support - dist) / aa_tent_support);
 }
 
 float eval_gaussian_filter(const float dist)
