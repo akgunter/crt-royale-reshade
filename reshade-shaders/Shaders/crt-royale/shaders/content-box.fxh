@@ -80,8 +80,8 @@ static const float4 box_color = float4(
 );
 
 void contentBoxPixelShader(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {

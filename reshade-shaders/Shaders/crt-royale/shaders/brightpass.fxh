@@ -31,7 +31,7 @@
 
 
 void brightpassVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -50,9 +50,9 @@ void brightpassVS(
 }
 
 void brightpassPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float bloom_sigma_runtime : TEXCOORD1,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float bloom_sigma_runtime : TEXCOORD1,
 
     out float4 color : SV_Target
 ) {

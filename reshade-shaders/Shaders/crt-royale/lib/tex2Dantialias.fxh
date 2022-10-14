@@ -178,13 +178,13 @@
     //  only, and use only the first lobe vertically or a box filter, over a
     //  correspondingly smaller range.  This compensates for the sparse sampling
     //  grid's typically large positive/negative x/y covariance.
-    static const float2 aa_xy_axis_importance = root_cond(
+    static const float2 aa_xy_axis_importance = macro_cond(
         aa_filter < 5.5,
         float2(1.0, 1.0),           //  Box, tent, Gaussian
-        root_cond(
+        macro_cond(
             aa_filter < 8.5,
             float2(1.0, 0.0),        //  Cubic and Lanczos sinc
-            root_cond(
+            macro_cond(
                 aa_filter < 9.5,
                 float2(1.0, 1.0/aa_lanczos_lobes),      //  Lanczos jinc
                 float2(1.0, 1.0)    //  Default to box

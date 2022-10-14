@@ -202,10 +202,10 @@ static const float bloom_excess_static = 0.0;               //  range [0, 1]
 //  There are three filter options (static option only for now):
 //  0.) Bilinear resize: A fast, close approximation to a 4x4 resize
 //      if min_allowed_viewport_triads and the BLOOM_APPROX resolution are sane
-//      and beam_max_sigma is low.
+//      and gaussian_beam_max_sigma is low.
 //  1.) 3x3 resize blur: Medium speed, soft/smeared from bilinear blurring,
-//      always uses a static sigma regardless of beam_max_sigma or
-//      mask_num_triads_desired.
+//      always uses a static sigma regardless of gaussian_beam_max_sigma or
+//      mask_num_triads_across.
 //  2.) True 4x4 Gaussian resize: Slowest, technically correct.
 //  These options are more pronounced for the fast, unbloomed shader version.
 #ifndef RADEON_FIX
@@ -240,26 +240,26 @@ static const bool beam_generalized_gaussian = true;
 static const float beam_antialias_level = 1.0;              //  range [0, 2]
 //  Min/max standard deviations for scanline beams: Higher values widen and
 //  soften scanlines.  Depending on other options, low min sigmas can alias.
-static const float beam_min_sigma_static = 0.02;            //  range (0, 1]
-static const float beam_max_sigma_static = 0.3;             //  range (0, 1]
+static const float gaussian_beam_min_sigma_static = 0.02;            //  range (0, 1]
+static const float gaussian_beam_max_sigma_static = 0.3;             //  range (0, 1]
 //  Beam width varies as a function of color: A power function (0) is more
 //  configurable, but a spherical function (1) gives the widest beam
 //  variability without aliasing (static option only for now).
 static const float beam_spot_shape_function = 0.0;
 //  Spot shape power: Powers <= 1 give smoother spot shapes but lower
 //  sharpness.  Powers >= 1.0 are awful unless mix/max sigmas are close.
-static const float beam_spot_power_static = 1.0/3.0;    //  range (0, 16]
+static const float gaussian_beam_spot_power_static = 1.0/3.0;    //  range (0, 16]
 //  Generalized Gaussian max shape parameters: Higher values give flatter
 //  scanline plateaus and steeper dropoffs, simultaneously widening and
 //  sharpening scanlines at the cost of aliasing.  2.0 is pure Gaussian, and
 //  values > ~40.0 cause artifacts with integrals.
-static const float beam_min_shape_static = 2.0;         //  range [2, 32]
-static const float beam_max_shape_static = 4.0;         //  range [2, 32]
+static const float gaussian_beam_min_shape_static = 2.0;         //  range [2, 32]
+static const float gaussian_beam_max_shape_static = 4.0;         //  range [2, 32]
 //  Generalized Gaussian shape power: Affects how quickly the distribution
 //  changes shape from Gaussian to steep/plateaued as color increases from 0
 //  to 1.0.  Higher powers appear softer for most colors, and lower powers
 //  appear sharper for most colors.
-static const float beam_shape_power_static = 1.0/4.0;   //  range (0, 16]
+static const float gaussian_beam_shape_power_static = 1.0/4.0;   //  range (0, 16]
 //  What filter should be used to sample scanlines horizontally?
 //  0: Quilez (fast), 1: Gaussian (configurable), 2: Lanczos2 (sharp)
 static const float beam_horiz_filter_static = 0.0;
@@ -284,7 +284,7 @@ static const bool interlace_detect = true;
 static const bool interlace_1080i_static = false;
 //  For interlaced sources, assume TFF (top-field first) or BFF order?
 //  (Whether this matters depends on the nature of the interlaced input.)
-static const bool interlace_bff_static = false;
+static const bool interlace_back_field_first_static = false;
 
 //  ANTIALIASING:
 //  What AA level do you want for curvature/overscan/subpixels?  Options:
@@ -339,7 +339,7 @@ static const float mask_sample_mode_static = 0.0;           //  range [0, 2]
 //  Prefer setting the triad size (0.0) or number on the screen (1.0)?
 //  If _RUNTIME_PHOSPHOR_BLOOM_SIGMA isn't #defined, the specified triad size
 //  will always be used to calculate the full bloom sigma statically.
-static const float mask_specify_num_triads_static = 0.0;    //  range [0, 1]
+static const float mask_size_param_static = 0.0;    //  range [0, 1]
 //  Specify the phosphor triad size, in pixels.  Each tile (usually with 8
 //  triads) will be rounded to the nearest integer tile size and clamped to
 //  obey minimum size constraints (imposed to reduce downsize taps) and
@@ -347,10 +347,10 @@ static const float mask_specify_num_triads_static = 0.0;    //  range [0, 1]
 //  To increase the size limit, double the viewport-relative scales for the
 //  two MASK_RESIZE passes in crt-royale.cgp and user-cgp-contants.h.
 //      range [1, mask_texture_small_size/mask_triads_per_tile]
-static const float mask_triad_size_desired_static = 24.0 / 8.0;
-//  If mask_specify_num_triads is 1.0/true, we'll go by this instead (the
+static const float mask_triad_width_static = 24.0 / 8.0;
+//  If mask_size_param is 1.0/true, we'll go by this instead (the
 //  final size will be rounded and constrained as above); default 480.0
-static const float mask_num_triads_desired_static = 480.0;
+static const float mask_num_triads_across_static = 480.0;
 //  How many lobes should the sinc/Lanczos resizer use?  More lobes require
 //  more samples and avoid moire a bit better, but some is unavoidable
 //  depending on the destination size (static option for now).

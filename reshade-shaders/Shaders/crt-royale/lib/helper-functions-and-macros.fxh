@@ -35,16 +35,16 @@
 // equivalents, so I recommend using the built-ins whenever you can.
 
 
-#define root_sign(c) -((int) ((c) != 0)) * -((int) ((c) > 0))
-#define root_abs(c) (c) * root_sign(c)
+#define macro_sign(c) -((int) ((c) != 0)) * -((int) ((c) > 0))
+#define macro_abs(c) (c) * macro_sign(c)
 
-#define root_min(c, d) (c) * ((int) ((c) <= (d))) + (d) * ((int) ((c) > (d)))
-#define root_max(c, d) (c) * ((int) ((c) >= (d))) + (d) * ((int) ((c) < (d)))
-#define root_clamp(c, l, u) root_min(root_max(c, l), u)
+#define macro_min(c, d) (c) * ((int) ((c) <= (d))) + (d) * ((int) ((c) > (d)))
+#define macro_max(c, d) (c) * ((int) ((c) >= (d))) + (d) * ((int) ((c) < (d)))
+#define macro_clamp(c, l, u) macro_min(macro_max(c, l), u)
 
-#define root_ceil(c) (float) ((int) (c) + (int) (((int) (c)) < (c)))
+#define macro_ceil(c) (float) ((int) (c) + (int) (((int) (c)) < (c)))
 
-#define root_cond(c, a, b) float(c) * (a) + float(!(c)) * (b)
+#define macro_cond(c, a, b) float(c) * (a) + float(!(c)) * (b)
 
 
 
@@ -63,9 +63,9 @@ static const float pi = 3.141592653589;
 static const float under_half = 0.4995;
 
 //  Avoid dividing by zero; using a macro overloads for float, float2, etc.:
-#define FIX_ZERO(c) (root_max(root_abs(c), 0.0000152587890625))   //  2^-16
+#define FIX_ZERO(c) (macro_max(macro_abs(c), 0.0000152587890625))   //  2^-16
 
 // #define fmod(x, y) ((x) - (y) * floor((x)/(y) + FIX_ZERO(0.0)))
-#define fmod(x, y) (frac(x / y) * y)
+#define fmod(x, y) (frac((x) / (y)) * (y))
 
 #endif  //  _HELPER_FUNCTIONS_AND_MACROS_H

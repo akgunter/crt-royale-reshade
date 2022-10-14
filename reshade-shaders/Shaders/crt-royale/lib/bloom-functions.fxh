@@ -247,12 +247,12 @@ float get_bloom_approx_sigma(const float output_size_x_runtime,
     //  Assume the default static value.  This is a compromise that ensures
     //  typical triads are blurred, even if unusually large ones aren't.
     static const float mask_num_triads_static =
-        max(min_allowed_viewport_triads.x, mask_num_triads_desired_static);
+        max(min_allowed_viewport_triads.x, mask_num_triads_across_static);
     const float mask_num_triads_from_size =
-        estimated_viewport_size_x/mask_triad_size_desired;
+        estimated_viewport_size_x/mask_triad_width;
     const float mask_num_triads_runtime = max(min_allowed_viewport_triads.x,
-        lerp(mask_num_triads_from_size, mask_num_triads_desired,
-            mask_specify_num_triads));
+        lerp(mask_num_triads_from_size, mask_num_triads_across,
+            mask_size_param));
     //  Assume an extremely large viewport size for asymptotic results:
     static const float max_viewport_size_x = 1080.0*1024.0*(4.0/3.0);
     if(bloom_approx_filter > 1.5)   //  4x4 true Gaussian resize
@@ -267,7 +267,7 @@ float get_bloom_approx_sigma(const float output_size_x_runtime,
         //  The BLOOM_APPROX input has to be ORIG_LINEARIZED to avoid moire, but
         //  account for the Gaussian scanline sigma from the last pass too.
         //  The bloom will be too wide horizontally but tall enough vertically.
-        return length(float2(bloom_approx_sigma, beam_max_sigma));
+        return length(float2(bloom_approx_sigma, gaussian_beam_max_sigma));
     }
     else    //  3x3 blur resize (the bilinear resize doesn't need a sigma)
     {
@@ -289,7 +289,7 @@ float get_bloom_approx_sigma(const float output_size_x_runtime,
         //  The BLOOM_APPROX input has to be ORIG_LINEARIZED to avoid moire, but
         //  try accounting for the Gaussian scanline sigma from the last pass
         //  too; use the static default value:
-        return length(float2(bloom_approx_sigma, beam_max_sigma_static));
+        return length(float2(bloom_approx_sigma, gaussian_beam_max_sigma_static));
     }
 }
 
@@ -306,7 +306,7 @@ float get_final_bloom_sigma(const float bloom_sigma_runtime)
     //  Notes:      Call this from the fragment shader, NOT the vertex shader,
     //              so static sigmas can be constant-folded!
     const float bloom_sigma_optimistic = get_min_sigma_to_blur_triad(
-        mask_triad_size_desired_static, bloom_diff_thresh);
+        mask_triad_width_static, bloom_diff_thresh);
     #if _RUNTIME_PHOSPHOR_BLOOM_SIGMA
         return bloom_sigma_runtime;
     #else

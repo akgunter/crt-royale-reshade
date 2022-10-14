@@ -47,7 +47,7 @@ float4 linear_downsample(
         // const float weight = triangle_wave(d, 1);
         const float weight = 1;
  
-        acc += tex2D(tex, coord).rgb * weight;
+        acc += tex2Dlod(tex, float4(coord, 0, 0)).rgb * weight;
         w_sum += weight;
     }
     
@@ -55,8 +55,8 @@ float4 linear_downsample(
 }
 
 void approximateBloomVertPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {
@@ -64,14 +64,14 @@ void approximateBloomVertPS(
 
     color = linear_downsample(
         samplerBeamConvergence, texcoord,
-        BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL,
+        bloomapprox_downsizing_factor,
         delta_uv
     );
 }
 
 void approximateBloomHorizPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {
@@ -79,7 +79,7 @@ void approximateBloomHorizPS(
 
     color = linear_downsample(
         samplerBloomApproxVert, texcoord,
-        BLOOMAPPROX_DOWNSIZING_FACTOR_INTERNAL,
+        bloomapprox_downsizing_factor,
         delta_uv
     );
 }

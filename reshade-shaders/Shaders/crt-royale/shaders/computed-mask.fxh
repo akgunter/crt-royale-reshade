@@ -242,6 +242,7 @@ float3 get_phosphor_intensity_grille(
     return 1 - pow(1 - pow(alpha, grille_pq.x), grille_pq.y);
 }
 
+
 /*
  *  Generates a slot mask with the desired resolution and sharpness.
  */
@@ -320,7 +321,7 @@ float3 get_phosphor_intensity_shadow(
 }
 
 void generatePhosphorMaskVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -335,12 +336,11 @@ void generatePhosphorMaskVS(
     texcoord.y = (id == 1) ? 2.0 : 0.0;
     position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 
-    const float2 viewport_size = tex2Dsize(samplerDeinterlace);
-    const float aspect_ratio = aspect_ratio_adjustment * ((mask_type == 1) ? slot_aspect_ratio : shadow_aspect_ratio);
-    const float2 triad_size_factor = viewport_size * rcp(mask_triad_size_desired * float2(1, aspect_ratio));
-    const float2 num_triads_factor = mask_num_triads_desired * float2(1, viewport_size.y * rcp(viewport_size.x) * rcp(aspect_ratio));
+    const float aspect_ratio = scale_triad_height * ((mask_type == 1) ? slot_aspect_ratio : shadow_aspect_ratio);
+    const float2 triad_size_factor = content_size * rcp(mask_triad_width * float2(1, aspect_ratio));
+    const float2 num_triads_factor = mask_num_triads_across * float2(1, content_size.y * rcp(content_size.x) * rcp(aspect_ratio));
 
-    viewport_frequency_factor = ((mask_specify_num_triads == 0) ? triad_size_factor : num_triads_factor);
+    viewport_frequency_factor = ((mask_size_param == 0) ? triad_size_factor : num_triads_factor);
 
     const float edge_norm_tx = (mask_type == 0) ? grille_edge_norm_t : ((mask_type == 1) ? slot_edge_norm_tx*0.5 : shadow_edge_norm_tx);
     const float edge_norm_ty = (mask_type == 1) ? slot_edge_norm_ty : shadow_edge_norm_ty*0.5;
@@ -352,9 +352,9 @@ void generatePhosphorMaskVS(
 }
 
 void generatePhosphorMaskPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float2 viewport_frequency_factor: TEXCOORD1,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float2 viewport_frequency_factor: TEXCOORD1,
     in float2 mask_pq_x : TEXCOORD2,
     in float2 mask_pq_y : TEXCOORD3,
     
@@ -388,8 +388,8 @@ void generatePhosphorMaskPS(
 
 
 void applyComputedPhosphorMaskPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
     
     out float4 color : SV_Target
 ) {

@@ -6,7 +6,7 @@
 
 
 void deinterlaceVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -14,14 +14,14 @@ void deinterlaceVS(
 ) {
     PostProcessVS(id, position, texcoord);
 
-    v_step = float2(0.0, scanline_num_pixels * rcp(TEX_FREEZEFRAME_HEIGHT));
+    v_step = float2(0.0, scanline_thickness * rcp(TEX_FREEZEFRAME_HEIGHT));
 }
 
 
 void deinterlacePS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float2 v_step : TEXCOORD1,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float2 v_step : TEXCOORD1,
     
     out float4 color : SV_Target
 ) {
@@ -41,7 +41,7 @@ void deinterlacePS(
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're probably averaging a color with 0 and producing a brightness of 0.5.
     if (enable_interlacing && scanline_deinterlacing_mode == 1) {
-        // const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, CONTENT_HEIGHT_INTERNAL);
+        // const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, content_size.y);
         // const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
         
         const float4 cur_line_color = tex2D(samplerBeamConvergence, texcoord);
@@ -51,7 +51,7 @@ void deinterlacePS(
 
         // Multiply by 1.5, so each pair of scanlines has total brightness 2
         const float4 raw_out_color = lerp(1.5*cur_line_color, avg_color, interpolation_data.wrong_field);
-        color = encode_output(raw_out_color, scanline_blend_gamma);
+        color = encode_output(raw_out_color, deinterlacing_blend_gamma);
     }
     // Blended Weaving
     // Sample texcoord from this frame
@@ -70,7 +70,7 @@ void deinterlacePS(
 
         const float4 avg_color = (cur_line_color + prev_line_color) / 2.0;
         const float4 raw_out_color = lerp(cur_line_color, avg_color, interpolation_data.wrong_field);
-        color = encode_output(raw_out_color, scanline_blend_gamma);
+        color = encode_output(raw_out_color, deinterlacing_blend_gamma);
     }
     // No temporal blending
     else {
@@ -79,8 +79,8 @@ void deinterlacePS(
 }
 
 void freezeFramePS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {

@@ -33,7 +33,7 @@
 
 //  The larger the resized tile, the fewer samples we'll need for downsizing.
 //  See if we can get a static min tile size > mask_min_allowed_tile_size:
-static const float mask_min_allowed_tile_size = root_ceil(
+static const float mask_min_allowed_tile_size = macro_ceil(
     mask_min_allowed_triad_size * mask_triads_per_tile);
 
 float2 get_resized_mask_tile_size(const float2 estimated_viewport_size,
@@ -41,7 +41,7 @@ float2 get_resized_mask_tile_size(const float2 estimated_viewport_size,
     const bool solemnly_swear_same_inputs_for_every_pass)
 {
     //  Requires:   The following global constants must be defined according to
-    //              certain constraints:
+    //              certainraints:
     //              1.) mask_resize_num_triads: Must be high enough that our
     //                  mask sampling method won't have artifacts later
     //                  (long story; see derived-settings-and-constants.h)
@@ -50,12 +50,12 @@ float2 get_resized_mask_tile_size(const float2 estimated_viewport_size,
     //              4.) mask_min_allowed_triad_size: User setting (the more
     //                  restrictive it is, the faster the resize will go)
     //              5.) mask_min_allowed_tile_size_x < mask_resize_src_lut_size.x
-    //              6.) mask_triad_size_desired_{runtime, static}
-    //              7.) mask_num_triads_desired_{runtime, static}
-    //              8.) mask_specify_num_triads must be 0.0/1.0 (false/true)
+    //              6.) mask_triad_width_{runtime, static}
+    //              7.) mask_num_triads_across_{runtime, static}
+    //              8.) mask_size_param must be 0.0/1.0 (false/true)
     //              The function parameters must be defined as follows:
     //              1.) estimated_viewport_size == (final viewport size);
-    //                  If mask_specify_num_triads is 1.0/true and the viewport
+    //                  If mask_size_param is 1.0/true and the viewport
     //                  estimate is wrong, the number of triads will differ from
     //                  the user's preference by about the same factor.
     //              2.) estimated_mask_resize_output_size: Must equal the
@@ -77,12 +77,12 @@ float2 get_resized_mask_tile_size(const float2 estimated_viewport_size,
         mask_resize_src_lut_size.y/mask_resize_src_lut_size.x;
     static const float tile_aspect_ratio = 1.0/tile_aspect_ratio_inv;
     static const float2 tile_aspect = float2(1.0, tile_aspect_ratio_inv);
-    //  If mask_specify_num_triads is 1.0/true and estimated_viewport_size.x is
+    //  If mask_size_param is 1.0/true and estimated_viewport_size.x is
     //  wrong, the user preference will be misinterpreted:
     const float desired_tile_size_x = mask_triads_per_tile * lerp(
-        mask_triad_size_desired,
-        estimated_viewport_size.x / mask_num_triads_desired,
-        mask_specify_num_triads);
+        mask_triad_width,
+        estimated_viewport_size.x / mask_num_triads_across,
+        mask_size_param);
     // if(get_mask_sample_mode() > 0.5)
     if (false)
     {
@@ -138,9 +138,9 @@ float2 get_resized_mask_tile_size(const float2 estimated_viewport_size,
 }
 
 float3 get_downsizing_factor_and_true_tile_size() {
-    const float triad_size = mask_specify_num_triads == 0 ?
-        mask_triad_size_desired :
-        float(CONTENT_WIDTH) / mask_num_triads_desired;
+    const float triad_size = mask_size_param == 0 ?
+        mask_triad_width :
+        float(CONTENT_WIDTH) / mask_num_triads_across;
 
     const uint mask_sample_mode_desired = 0;
     const float2 true_tile_size_float = mask_sample_mode_desired < 1.5 ?

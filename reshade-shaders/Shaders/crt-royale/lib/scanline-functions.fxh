@@ -39,18 +39,14 @@ float2 round_coord(
 	return c - fmod(adj_c, bin_size) + bin_size * 0.5;
 }
 
-float triangle_wave(float t, float f) {
-	const float theta = fmod(t * f, 1.0);
-	return abs(1 - 2*theta);
-}
 
-float sawtooth_incr_wave(float t, float f) {
-    return fmod(t * f, 1.0);
-}
+// Use preproc defs for these, so they work for arbitrary choices of float1/2/3/4
+#define triangle_wave(t, f) abs(1 - 2*frac((t) * (f)))
 
-float sawtooth_decr_wave(float t, float f) {
-    return fmod(-t * f, 1.0);
-}
+#define sawtooth_incr_wave(t, f) frac((t) * (f))
+
+// using fmod(-t*f, 1.0) outputs 0 at t == 0, but I want it to output 1
+#define sawtooth_decr_wave(t, f) 1 - frac((t) * (f))
 
 
 struct InterpolationFieldData {
@@ -65,10 +61,6 @@ InterpolationFieldData precalc_interpolation_field_data(float2 texcoord) {
     
 	data.triangle_wave_freq = 2;
 
-	// const bool frame_count_parity = frame_count & (scanline_deinterlacing_mode != 3);
-	// const bool frame_count_parity = bool(frame_count * 2147483648) && (scanline_deinterlacing_mode != 3);
-	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 3);
-
 	const float field_wave = triangle_wave(texcoord.y + rcp(2*data.triangle_wave_freq), data.triangle_wave_freq * 0.5) * 2 - 1;
     data.scanline_parity = field_wave >= 0;
 
@@ -78,11 +70,10 @@ InterpolationFieldData precalc_interpolation_field_data(float2 texcoord) {
 InterpolationFieldData calc_interpolation_field_data(float2 texcoord) {
     InterpolationFieldData data;
     
-	data.triangle_wave_freq = content_size.y * rcp(scanline_num_pixels);
+	data.triangle_wave_freq = content_size.y * rcp(scanline_thickness);
 
-	// const bool frame_count_parity = bool(frame_count * 2147483648) && (scanline_deinterlacing_mode != 3);
 	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 3);
-    data.field_parity = (frame_count_parity && !interlace_bff) || (!frame_count_parity && interlace_bff);
+    data.field_parity = (frame_count_parity && !interlace_back_field_first) || (!frame_count_parity && interlace_back_field_first);
 
 	const float field_wave = triangle_wave(texcoord.y + rcp(2*data.triangle_wave_freq), data.triangle_wave_freq * 0.5) * 2 - 1;
     data.scanline_parity = field_wave >= 0;
@@ -96,43 +87,43 @@ InterpolationFieldData calc_interpolation_field_data(float2 texcoord) {
 float get_gaussian_sigma(const float color, const float sigma_range)
 {
     //  Requires:   Globals:
-    //              1.) beam_min_sigma and beam_max_sigma are global floats
+    //              1.) gaussian_beam_min_sigma and gaussian_beam_max_sigma are global floats
     //                  containing the desired minimum and maximum beam standard
     //                  deviations, for dim and bright colors respectively.
-    //              2.) beam_max_sigma must be > 0.0
-    //              3.) beam_min_sigma must be in (0.0, beam_max_sigma]
-    //              4.) beam_spot_power must be defined as a global float.
+    //              2.) gaussian_beam_max_sigma must be > 0.0
+    //              3.) gaussian_beam_min_sigma must be in (0.0, gaussian_beam_max_sigma]
+    //              4.) gaussian_beam_spot_power must be defined as a global float.
     //              Parameters:
     //              1.) color is the underlying source color along a scanline
-    //              2.) sigma_range = beam_max_sigma - beam_min_sigma; we take
+    //              2.) sigma_range = gaussian_beam_max_sigma - gaussian_beam_min_sigma; we take
     //                  sigma_range as a parameter to avoid repeated computation
     //                  when beam_{min, max}_sigma are runtime shader parameters
     //  Optional:   Users may set beam_spot_shape_function to 1 to define the
     //              inner f(color) subfunction (see below) as:
     //                  f(color) = sqrt(1.0 - (color - 1.0)*(color - 1.0))
     //              Otherwise (technically, if beam_spot_shape_function < 0.5):
-    //                  f(color) = pow(color, beam_spot_power)
+    //                  f(color) = pow(color, gaussian_beam_spot_power)
     //  Returns:    The standard deviation of the Gaussian beam for "color:"
-    //                  sigma = beam_min_sigma + sigma_range * f(color)
+    //                  sigma = gaussian_beam_min_sigma + sigma_range * f(color)
     //  Details/Discussion:
     //  The beam's spot shape vaguely resembles an aspect-corrected f() in the
     //  range [0, 1] (not quite, but it's related).  f(color) = color makes
     //  spots look like diamonds, and a spherical function or cube balances
-    //  between variable width and a soft/realistic shape.   A beam_spot_power
+    //  between variable width and a soft/realistic shape.   A gaussian_beam_spot_power
     //  > 1.0 can produce an ugly spot shape and more initial clipping, but the
     //  final shape also differs based on the horizontal resampling filter and
     //  the phosphor bloom.  For instance, resampling horizontally in nonlinear
     //  light and/or with a sharp (e.g. Lanczos) filter will sharpen the spot
     //  shape, but a sixth root is still quite soft.  A power function (default
-    //  1.0/3.0 beam_spot_power) is most flexible, but a fixed spherical curve
+    //  1.0/3.0 gaussian_beam_spot_power) is most flexible, but a fixed spherical curve
     //  has the highest variability without an awful spot shape.
     //
-    //  beam_min_sigma affects scanline sharpness/aliasing in dim areas, and its
-    //  difference from beam_max_sigma affects beam width variability.  It only
-    //  affects clipping [for pure Gaussians] if beam_spot_power > 1.0 (which is
+    //  gaussian_beam_min_sigma affects scanline sharpness/aliasing in dim areas, and its
+    //  difference from gaussian_beam_max_sigma affects beam width variability.  It only
+    //  affects clipping [for pure Gaussians] if gaussian_beam_spot_power > 1.0 (which is
     //  a conservative estimate for a more complex constraint).
     //
-    //  beam_max_sigma affects clipping and increasing scanline width/softness
+    //  gaussian_beam_max_sigma affects clipping and increasing scanline width/softness
     //  as color increases.  The wider this is, the more scanlines need to be
     //  evaluated to avoid distortion.  For a pure Gaussian, the max_beam_sigma
     //  at which the first unused scanline always has a weight < 1.0/255.0 is:
@@ -145,13 +136,13 @@ float get_gaussian_sigma(const float color, const float sigma_range)
     if(beam_spot_shape_function < 0.5)
     {
         //  Use a power function:
-        return beam_min_sigma + sigma_range * pow(color, beam_spot_power);
+        return gaussian_beam_min_sigma + sigma_range * pow(color, gaussian_beam_spot_power);
     }
     else
     {
         //  Use a spherical function:
         const float color_minus_1 = color - 1;
-        return beam_min_sigma + sigma_range * sqrt(1.0 - color_minus_1*color_minus_1);
+        return gaussian_beam_min_sigma + sigma_range * sqrt(1.0 - color_minus_1*color_minus_1);
     }
 }
 
@@ -159,15 +150,15 @@ float get_generalized_gaussian_beta(const float color,
     const float shape_range)
 {
     //  Requires:   Globals:
-    //              1.) beam_min_shape and beam_max_shape are global floats
+    //              1.) gaussian_beam_min_shape and gaussian_beam_max_shape are global floats
     //                  containing the desired min/max generalized Gaussian
     //                  beta parameters, for dim and bright colors respectively.
-    //              2.) beam_max_shape must be >= 2.0
-    //              3.) beam_min_shape must be in [2.0, beam_max_shape]
-    //              4.) beam_shape_power must be defined as a global float.
+    //              2.) gaussian_beam_max_shape must be >= 2.0
+    //              3.) gaussian_beam_min_shape must be in [2.0, gaussian_beam_max_shape]
+    //              4.) gaussian_beam_shape_power must be defined as a global float.
     //              Parameters:
     //              1.) color is the underlying source color along a scanline
-    //              2.) shape_range = beam_max_shape - beam_min_shape; we take
+    //              2.) shape_range = gaussian_beam_max_shape - gaussian_beam_min_shape; we take
     //                  shape_range as a parameter to avoid repeated computation
     //                  when beam_{min, max}_shape are runtime shader parameters
     //  Returns:    The type-I generalized Gaussian "shape" parameter beta for
@@ -179,9 +170,9 @@ float get_generalized_gaussian_beta(const float color,
     //  c.) beta > 2.0 flattens and widens the peak, then drops off more steeply
     //      than a Gaussian.  Whereas high sigmas widen and soften peaks, high
     //      beta widen and sharpen peaks at the risk of aliasing.
-    //  Unlike high beam_spot_powers, high beam_shape_powers actually soften shape
+    //  Unlike high gaussian_beam_spot_powers, high gaussian_beam_shape_powers actually soften shape
     //  transitions, whereas lower ones sharpen them (at the risk of aliasing).
-    return beam_min_shape + shape_range * pow(color, beam_shape_power);
+    return gaussian_beam_min_shape + shape_range * pow(color, gaussian_beam_shape_power);
 }
 
 float3 get_raw_interpolated_color(const float3 color0,
@@ -443,13 +434,13 @@ float3 get_averaged_scanline_sample(
     const float scanline_start_y, const float v_step_y,
     const float input_gamma
 ) {
-    // Sample `scanline_num_pixels` vertically-contiguous pixels and average them.
+    // Sample `scanline_thickness` vertically-contiguous pixels and average them.
     float3 interpolated_line = 0.0;
-    for (int i = 0; i < scanline_num_pixels; i++) {
+    for (int i = 0; i < scanline_thickness; i++) {
         float4 coord = float4(texcoord.x, scanline_start_y + i * v_step_y, 0, 0);
         interpolated_line += tex2Dlod_linearize(tex, coord, input_gamma).rgb;
     }
-    interpolated_line /= float(scanline_num_pixels);
+    interpolated_line /= float(scanline_thickness);
 
     return interpolated_line;
 }

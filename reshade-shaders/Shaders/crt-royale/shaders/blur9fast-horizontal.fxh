@@ -50,7 +50,7 @@
 #include "shared-objects.fxh"
 
 void blurHorizontalVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -74,9 +74,9 @@ void blurHorizontalVS(
 }
 
 void blurHorizontalPS(
-    in const float4 pos : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float2 blur_dxdy : TEXCOORD1,
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float2 blur_dxdy : TEXCOORD1,
 
     out float4 color : SV_Target
 ) {

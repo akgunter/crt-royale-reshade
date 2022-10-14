@@ -28,7 +28,7 @@
 
 
 void calculateBeamDistsVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0
@@ -42,8 +42,8 @@ void calculateBeamDistsVS(
 
 
 void calculateBeamDistsPS(
-    in const float4 position : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
+    in float4 position : SV_Position,
+    in float2 texcoord : TEXCOORD0,
 
     out float4 beam_strength : SV_Target
 ) {
@@ -73,7 +73,7 @@ void calculateBeamDistsPS(
     else if (beam_shape_mode == 1) {
 		const float beam_dist_y = triangle_wave(texcoord.y, interpolation_data.triangle_wave_freq);
 
-        const bool scanline_is_wider_than_1 = scanline_num_pixels > 1;
+        const bool scanline_is_wider_than_1 = scanline_thickness > 1;
         const bool deinterlacing_mode_requires_boost = (
             enable_interlacing &&
             (scanline_deinterlacing_mode != 1) &&
@@ -83,7 +83,7 @@ void calculateBeamDistsPS(
         const float interlacing_brightness_factor = (1 + scanline_is_wider_than_1) * (1 + deinterlacing_mode_requires_boost);
 		// const float raw_beam_strength = (1 - beam_dist_y) * (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 		// const float raw_beam_strength = (1 - beam_dist_y);
-		const float raw_beam_strength = saturate(-beam_dist_y * rcp(beam_linear_thickness) + 1);
+		const float raw_beam_strength = saturate(-beam_dist_y * rcp(linear_beam_thickness) + 1);
         const float adj_beam_strength = raw_beam_strength * (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 
 		beam_strength = float4(color_corrected * adj_beam_strength, 0, 0, 1);
@@ -95,8 +95,8 @@ void calculateBeamDistsPS(
         //  Calculate {sigma, shape}_range outside of scanline_contrib so it's only
         //  done once per pixel (not 6 times) with runtime params.  Don't reuse the
         //  vertex shader calculations, so static versions can be constant-folded.
-        const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
-        const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
+        const float sigma_range = max(gaussian_beam_max_sigma, gaussian_beam_min_sigma) - gaussian_beam_min_sigma;
+        const float shape_range = max(gaussian_beam_max_shape, gaussian_beam_min_shape) - gaussian_beam_min_shape;
 
         const float beam_dist_factor = 1 + float(enable_interlacing);
         const float freq_adj = interpolation_data.triangle_wave_freq * rcp(beam_dist_factor);
@@ -106,7 +106,7 @@ void calculateBeamDistsPS(
 
         const float interlacing_brightness_factor = 1 + float(
             !enable_interlacing &&
-            (scanline_num_pixels > 1)
+            (scanline_thickness > 1)
         ) + float(
             enable_interlacing &&
             (scanline_deinterlacing_mode != 1) &&
@@ -126,8 +126,8 @@ void calculateBeamDistsPS(
         //  Calculate {sigma, shape}_range outside of scanline_contrib so it's only
         //  done once per pixel (not 6 times) with runtime params.  Don't reuse the
         //  vertex shader calculations, so static versions can be constant-folded.
-        const float sigma_range = max(beam_max_sigma, beam_min_sigma) - beam_min_sigma;
-        const float shape_range = max(beam_max_shape, beam_min_shape) - beam_min_shape;
+        const float sigma_range = max(gaussian_beam_max_sigma, gaussian_beam_min_sigma) - gaussian_beam_min_sigma;
+        const float shape_range = max(gaussian_beam_max_shape, gaussian_beam_min_shape) - gaussian_beam_min_shape;
 
         const float beam_dist_factor = (1 + float(enable_interlacing));
         const float freq_adj = interpolation_data.triangle_wave_freq * rcp(beam_dist_factor);
@@ -152,7 +152,7 @@ void calculateBeamDistsPS(
         
         const float interlacing_brightness_factor = 1 + float(
             !enable_interlacing &&
-            (scanline_num_pixels > 1)
+            (scanline_thickness > 1)
         ) + float(
             enable_interlacing &&
             (scanline_deinterlacing_mode != 1) &&
@@ -166,7 +166,7 @@ void calculateBeamDistsPS(
 
 
 void simulateEletronBeamsVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -176,15 +176,15 @@ void simulateEletronBeamsVS(
 
     // Mode 0: size of pixel in [0, 1] = pixel_dims / viewport_size
     // Mode 1: size of pixel in [0, 1] = viewport_size / grid_dims
-    const float2 runtime_pixel_shape = (pixel_grid_mode == 0) ? pixel_shape * rcp(content_size) : rcp(pixel_grid_resolution);
-    const float2 runtime_scanline_shape = float2(1, scanline_num_pixels) * rcp(content_size);
-    runtime_bin_shapes = float4(runtime_pixel_shape, runtime_scanline_shape);
+    const float2 runtime_pixel_size = (pixel_grid_mode == 0) ? pixel_size * rcp(content_size) : rcp(pixel_grid_resolution);
+    const float2 runtime_scanline_shape = float2(1, scanline_thickness) * rcp(content_size);
+    runtime_bin_shapes = float4(runtime_pixel_size, runtime_scanline_shape);
 }
 
 void simulateEletronBeamsPS(
-    in const float4 position : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float4 runtime_bin_shapes : TEXCOORD1,
+    in float4 position : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float4 runtime_bin_shapes : TEXCOORD1,
     
     out float4 color : SV_Target
 ) {
@@ -198,7 +198,7 @@ void simulateEletronBeamsPS(
     if (interpolation_data.wrong_field) {
         const float coord_moved_up = texcoord_scanlined.y <= texcoord.y;
         const float direction = lerp(-1, 1, coord_moved_up);
-        texcoord_scanlined.y += direction * scanline_num_pixels * rcp(content_size.y);
+        texcoord_scanlined.y += direction * scanline_thickness * rcp(content_size.y);
     }
 
     // Now we apply pixellation and cropping
@@ -225,7 +225,7 @@ void simulateEletronBeamsPS(
         color = beam_strength;
     }
     else {
-        const float2 offset = float2(0, scanline_num_pixels) * (1 + enable_interlacing) * rcp(content_size);
+        const float2 offset = float2(0, scanline_thickness) * (1 + enable_interlacing) * rcp(content_size);
 
 		const float4 curr_scanline_color = tex2D_linearize(
             ReShade::BackBuffer,
@@ -265,7 +265,7 @@ void simulateEletronBeamsPS(
 }
 
 void beamConvergenceVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -278,9 +278,9 @@ void beamConvergenceVS(
 }
 
 void beamConvergencePS(
-    in const float4 position : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float run_convergence : TEXCOORD1,
+    in float4 position : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float run_convergence : TEXCOORD1,
 
     out float4 color : SV_TARGET
 ) {

@@ -54,7 +54,7 @@ float2x2 mul_scale(float2 scale, float2x2 mtrx)
 
 
 void geometryVS(
-    in const uint id : SV_VertexID,
+    in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
@@ -127,14 +127,14 @@ void geometryVS(
 }
 
 void geometryPS(
-    in const float4 position : SV_Position,
-    in const float2 texcoord : TEXCOORD0,
-    in const float2 output_size_inv : TEXCOORD1,
-    in const float4 geom_aspect_and_overscan : TEXCOORD2,
-    in const float3 eye_pos_local : TEXCOORD3,
-    in const float3 global_to_local_row0 : TEXCOORD4,
-    in const float3 global_to_local_row1 : TEXCOORD5,
-    in const float3 global_to_local_row2 : TEXCOORD6,
+    in float4 position : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float2 output_size_inv : TEXCOORD1,
+    in float4 geom_aspect_and_overscan : TEXCOORD2,
+    in float3 eye_pos_local : TEXCOORD3,
+    in float3 global_to_local_row0 : TEXCOORD4,
+    in float3 global_to_local_row1 : TEXCOORD5,
+    in float3 global_to_local_row2 : TEXCOORD6,
 
     out float4 color : SV_Target
 ) {

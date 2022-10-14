@@ -169,7 +169,7 @@ static const float mask_shadow_avg_color = 41.0/255.0;
     #endif
     //  Mode 2 (4x4 Gaussian resize) won't work, and mode 1 (3x3 blur) is
     //  inferior in most cases, so replace 2.0 with 0.0:
-    static const float bloom_approx_filter = root_cond(
+    static const float bloom_approx_filter = macro_cond(
         bloom_approx_filter_static > 1.5,
         0.0,
         bloom_approx_filter_static
@@ -367,9 +367,9 @@ static const float max_aniso_pixel_border = max_aa_base_pixel_border + 0.5;
 //  Convert the pixel border to an integer texel border.  Assume same-pass
 //  curvature about triples the texel frequency:
 #ifdef GEOMETRY_EARLY
-    #define max_mask_texel_border root_ceil(max_tiled_pixel_border * 3.0f)
+    #define max_mask_texel_border macro_ceil(max_tiled_pixel_border * 3.0f)
 #else
-    #define max_mask_texel_border root_ceil(max_tiled_pixel_border)
+    #define max_mask_texel_border macro_ceil(max_tiled_pixel_border)
 #endif
 //  Convert the texel border to a tile border using worst-case assumptions:
 static const float max_mask_tile_border = max_mask_texel_border/
