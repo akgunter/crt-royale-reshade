@@ -103,11 +103,16 @@
 	#define CONTENT_CENTER_Y 0
 #endif
 
+// Wrap the content size in parenthesis for internal use, so the user doesn't have to
+static const float2 content_size = float2(int(CONTENT_WIDTH), int(CONTENT_HEIGHT));
+
+#ifndef ENABLE_PREBLUR
+    #define ENABLE_PREBLUR 1
+#endif
+
 
 static const float2 buffer_size = float2(BUFFER_WIDTH, BUFFER_HEIGHT);
 
-// Wrap the content size in parenthesis for internal use, so the user doesn't have to
-static const float2 content_size = float2(int(CONTENT_WIDTH), int(CONTENT_HEIGHT));
 
 // The normalized center is 0.5 plus the normalized offset
 static const float2 content_center = float2(CONTENT_CENTER_X, CONTENT_CENTER_Y) / buffer_size + 0.5;
@@ -136,7 +141,8 @@ uniform int basic_setup_help <
 			  "2. Configure the Phosphor Mask.\n"
               "3. Configure the Scanlines.\n"
               "4. Configure the Colors and Effects.\n"
-              "5. Configure the Screen Geometry.\n\n"
+              "5. Configure the Screen Geometry.\n"
+              "6. Configure or disable Preblur\n\n"
               "- In Preprocessor Definitions, set ADVANCED_SETTINGS to 1 to access more settings.\n";
 	ui_category = "Basic Setup Instructions";
     ui_category_closed = true;
@@ -717,6 +723,38 @@ uniform float border_compress <
     ui_category = "Screen Border";
 > = border_compress_static;
 
+// ==== PREBLUR ====
+#if ENABLE_PREBLUR
+    uniform float2 preblur_effect_radius <
+            #if !HIDE_HELP_SECTIONS
+            ui_text    = "- Apply a linear blur to the input image. Kind of like an NTSC/Composite shader, but much faster.\n"
+                         "- If you want to use an NTSC shader or don't like this effect, disable it by setting ENABLE_PREBLUR to 0\n"
+                         "- If you leave all of these set to 0, then they don't do anything. Consider disabling the effect to improve performance.\n\n";
+            #endif
+            ui_type    = "drag";
+            ui_min     = 0;
+            ui_max     = 100;
+            ui_step    = 1;
+            ui_label   = "Effect Radius XY";
+            ui_tooltip = "The radius of the effect visible on the screen (measured in pixels)";
+        
+        ui_category   = "Pre-Blur";
+        ui_category_closed = true;
+    > = 0;
+    uniform uint2 preblur_sampling_radius <
+            ui_type = "drag";
+            ui_min = 0;
+            ui_max = 100;
+            ui_step = 1;
+            ui_label = "Sampling Radius XY";
+            ui_tooltip = "The number of samples to take on either side of each pixel";
+        
+        ui_category   = "Pre-Blur";
+    > = 0;
+#else
+    static const float2 preblur_effect_radius = 0;
+    static const uint2 preblur_sampling_radius = 0;
+#endif
 
 //  Provide accessors for vector constants that pack scalar uniforms:
 float2 get_aspect_vector(const float geom_aspect_ratio)

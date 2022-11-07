@@ -26,17 +26,18 @@
 #include "crt-royale/shaders/content-box.fxh"
 
 #if !CONTENT_BOX_VISIBLE
-	#include "crt-royale/shaders/content-crop.fxh"
-	#include "crt-royale/shaders/crt-royale-electron-beams.fxh"
-	#include "crt-royale/shaders/crt-royale-bloom-approx.fxh"
+	#include "crt-royale/shaders/linear-preblur.fxh"
+	#include "crt-royale/shaders/electron-beams.fxh"
+	#include "crt-royale/shaders/bloom-approx.fxh"
 	#include "crt-royale/shaders/blur9fast-vertical.fxh"
 	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
-	#include "crt-royale/shaders/crt-royale-deinterlace.fxh"
-	#include "crt-royale/shaders/crt-royale-brightpass.fxh"
-	#include "crt-royale/shaders/crt-royale-bloom-vertical.fxh"
-	#include "crt-royale/shaders/crt-royale-bloom-horizontal-reconstitute.fxh"
-	#include "crt-royale/shaders/crt-royale-geometry-aa-last-pass.fxh"
-	#include "crt-royale/shaders/crt-royale-computed-mask.fxh"
+	#include "crt-royale/shaders/deinterlace.fxh"
+	#include "crt-royale/shaders/computed-mask.fxh"
+	#include "crt-royale/shaders/brightpass.fxh"
+	#include "crt-royale/shaders/bloom-vertical.fxh"
+	#include "crt-royale/shaders/bloom-horizontal-reconstitute.fxh"
+	#include "crt-royale/shaders/geometry-aa-last-pass.fxh"
+	#include "crt-royale/shaders/content-uncrop.fxh"
 #endif
 
 
@@ -52,6 +53,22 @@ technique CRT_Royale
 			PixelShader = contentBoxPixelShader;
 		}
 	#else
+		#if ENABLE_PREBLUR
+			pass PreblurVert
+			{
+				VertexShader = PostProcessVS;
+				PixelShader = preblurVertPS;
+
+				RenderTarget = texPreblurVert;
+			}
+			pass PreblurHoriz
+			{
+				VertexShader = PostProcessVS;
+				PixelShader = preblurHorizPS;
+				
+				RenderTarget = texPreblurHoriz;
+			}
+		#endif
 		pass beamDistPass
 		{
 			// Simulate emission of the interlaced video as electron beams. 	
@@ -203,7 +220,7 @@ technique CRT_Royale
 
 			RenderTarget = texGeometry;
 		}
-		// content-crop.fxh
+		// content-uncrop.fxh
 		pass uncropPass
 		{
 			// Uncrop the video, so we draw the game's content

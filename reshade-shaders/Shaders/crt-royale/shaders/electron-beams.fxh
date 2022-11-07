@@ -207,12 +207,20 @@ void simulateEletronBeamsPS(
         pixel_grid_offset * rcp(content_size),
 		runtime_bin_shapes.xy
     );
-    const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
+    
+    #if ENABLE_PREBLUR
+        // If the pre-blur pass ran, then it's already handled cropping.
+        const float2 texcoord_uncropped = texcoord_pixellated;
+        #define source_sampler samplerPreblurHoriz
+    #else
+        const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
+        #define source_sampler ReShade::BackBuffer
+    #endif
 	
 	// [branch]
     if (beam_shape_mode < 3) {
 		const float4 scanline_color = tex2D_linearize(
-            ReShade::BackBuffer,
+            source_sampler,
             texcoord_uncropped,
             get_input_gamma()
         );
@@ -228,17 +236,17 @@ void simulateEletronBeamsPS(
         const float2 offset = float2(0, scanline_thickness) * (1 + enable_interlacing) * rcp(content_size);
 
 		const float4 curr_scanline_color = tex2D_linearize(
-            ReShade::BackBuffer,
+            source_sampler,
             texcoord_uncropped,
             get_input_gamma()
         );
         const float4 upper_scanline_color = tex2D_linearize(
-            ReShade::BackBuffer,
+            source_sampler,
             texcoord_uncropped - offset,
             get_input_gamma()
         );
         const float4 lower_scanline_color = tex2D_linearize(
-            ReShade::BackBuffer,
+            source_sampler,
             texcoord_uncropped + offset,
             get_input_gamma()
         );

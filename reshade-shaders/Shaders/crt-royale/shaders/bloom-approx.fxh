@@ -62,11 +62,11 @@ void approximateBloomVertPS(
 ) {
     const float2 delta_uv = blur_radius * float2(0.0, rcp(TEX_BEAMCONVERGENCE_HEIGHT));
 
-    color = linear_downsample(
+    color = float4(opaque_linear_downsample(
         samplerBeamConvergence, texcoord,
-        bloomapprox_downsizing_factor,
+        uint((bloomapprox_downsizing_factor - 1)/2),
         delta_uv
-    );
+    ), 1);
 }
 
 void approximateBloomHorizPS(
@@ -77,9 +77,9 @@ void approximateBloomHorizPS(
 ) {
     const float2 delta_uv = blur_radius * float2(rcp(TEX_BEAMCONVERGENCE_WIDTH), 0.0);
 
-    color = linear_downsample(
+    color = float4(opaque_linear_downsample(
         samplerBloomApproxVert, texcoord,
-        bloomapprox_downsizing_factor,
+        uint((bloomapprox_downsizing_factor - 1)/2),
         delta_uv
-    );
+    ), 1);
 }

@@ -70,6 +70,29 @@
 //   Last usage is in beamConvergencePass
 
 
+#define TEX_PREBLUR_VERT_WIDTH content_size.x
+#define TEX_PREBLUR_VERT_HEIGHT content_size.y
+static const uint2 TEX_PREBLUR_SIZE = uint2(TEX_PREBLUR_VERT_WIDTH, TEX_PREBLUR_VERT_HEIGHT);
+texture2D texPreblurVert < pooled = true; > {
+	Width = TEX_PREBLUR_VERT_WIDTH;
+	Height = TEX_PREBLUR_VERT_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerPreblurVert { Texture = texPreblurVert; };
+
+#define TEX_PREBLUR_HORIZ_WIDTH content_size.x
+#define TEX_PREBLUR_HORIZ_HEIGHT content_size.y
+static const uint2 TEX_PREBLUR_SIZE = uint2(TEX_PREBLUR_HORIZ_WIDTH, TEX_PREBLUR_HORIZ_HEIGHT);
+texture2D texPreblurHoriz < pooled = true; > {
+	Width = TEX_PREBLUR_HORIZ_WIDTH;
+	Height = TEX_PREBLUR_HORIZ_HEIGHT;
+
+	Format = RGBA16;
+};
+sampler2D samplerPreblurHoriz { Texture = texPreblurHoriz; };
+
+
 #define TEX_BEAMDIST_WIDTH num_beamdist_color_samples
 #define TEX_BEAMDIST_HEIGHT num_beamdist_dist_samples
 #define TEX_BEAMDIST_SIZE int2(TEX_BEAMDIST_WIDTH, TEX_BEAMDIST_HEIGHT)
