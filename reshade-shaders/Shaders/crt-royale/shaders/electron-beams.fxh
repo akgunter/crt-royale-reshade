@@ -102,7 +102,7 @@ void calculateBeamDistsPS(
         const float freq_adj = interpolation_data.triangle_wave_freq * rcp(beam_dist_factor);
         // The conditional 0.25*f offset ensures the interlaced scanlines align with the non-interlaced ones as in the other beam shapes
         const float frame_offset = enable_interlacing * (!interpolation_data.field_parity * 0.5 + 0.25) * rcp(freq_adj);
-		const float beam_dist_y = triangle_wave(texcoord.y - frame_offset, freq_adj);
+		const float beam_dist_y = triangle_wave((texcoord.y - frame_offset), freq_adj) * rcp(linear_beam_thickness);
 
         const float interlacing_brightness_factor = 1 + float(
             !enable_interlacing &&
@@ -133,9 +133,9 @@ void calculateBeamDistsPS(
         const float freq_adj = interpolation_data.triangle_wave_freq * rcp(beam_dist_factor);
         // The conditional 0.25*f offset ensures the interlaced scanlines align with the non-interlaced ones as in the other beam shapes
         const float frame_offset = enable_interlacing * (!interpolation_data.field_parity * 0.5 + 0.25) * rcp(freq_adj);
-		const float curr_beam_dist_y = triangle_wave(texcoord.y - frame_offset, freq_adj);
-		const float upper_beam_dist_y = sawtooth_incr_wave(texcoord.y - frame_offset, freq_adj)*2 + 1;
-        const float lower_beam_dist_y = 4 - upper_beam_dist_y;
+		const float curr_beam_dist_y = triangle_wave(texcoord.y - frame_offset, freq_adj) * rcp(linear_beam_thickness);
+		const float upper_beam_dist_y = (sawtooth_incr_wave(texcoord.y - frame_offset, freq_adj)*2 + 1) * rcp(linear_beam_thickness);
+        const float lower_beam_dist_y = 4 * rcp(linear_beam_thickness) - upper_beam_dist_y;
 
         const float upper_beam_strength = get_gaussian_beam_strength(
             upper_beam_dist_y, color_corrected,

@@ -236,7 +236,7 @@ uniform float scale_triad_height<
         ui_type    = "drag";
         ui_min     = 0.01;
         ui_max     = 10.0;
-        ui_step    = 0.01;
+        ui_step    = 0.001;
 
     #if ADVANCED_SETTINGS
     ui_spacing = 2;
@@ -406,7 +406,7 @@ uniform float deinterlacing_blend_gamma <
 
 uniform float linear_beam_thickness <
         ui_label   = "Linear Beam Thickness";
-        ui_tooltip = "For Linear Beam Shape, makes the beams thinner or thicker";
+        ui_tooltip = "Linearly widens or narrows the beam";
         ui_type    = "slider";
         ui_min     = 0.01;
         ui_max     = 3.0;
