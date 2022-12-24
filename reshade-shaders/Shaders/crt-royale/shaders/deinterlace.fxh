@@ -31,7 +31,10 @@ void deinterlacePS(
     // bool wrong_field;
     // calc_wrong_field(texcoord, scanline_offset_norm, triangle_wave_freq, field_parity, wrong_field);
     
-    InterpolationFieldData interpolation_data = calc_interpolation_field_data(texcoord);
+    float2 rotated_coord = lerp(texcoord.yx, texcoord, geom_rotation_mode == 0 || geom_rotation_mode == 2);
+    float scale = lerp(CONTENT_WIDTH, CONTENT_HEIGHT, geom_rotation_mode == 0 || geom_rotation_mode == 2);
+
+    InterpolationFieldData interpolation_data = calc_interpolation_field_data(rotated_coord, scale);
 
     // TODO: add scanline_parity to calc_wrong_field()
 

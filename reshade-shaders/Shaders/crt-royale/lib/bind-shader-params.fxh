@@ -620,10 +620,21 @@ static const float aa_gauss_sigma = aa_gauss_sigma_static;
 
 
 // ==== GEOMETRY ====
-uniform uint geom_mode_runtime <
+uniform uint geom_rotation_mode <
         #if !HIDE_HELP_SECTIONS
         ui_text    = "Change the geometry of the screen's glass.\n\n";
         #endif
+        ui_label   = "Rotate Screen";
+        ui_type    = "combo";
+        ui_items   = "0 degrees\0"
+                     "90 degrees\0"
+                     "180 degrees\0"
+                     "270 degrees\0";
+
+    ui_category = "Screen Geometry";
+    ui_category_closed = true;
+> = 0;
+uniform uint geom_mode_runtime <
         ui_label   = "Geometry Mode";
         ui_tooltip = "Select screen curvature type";
         ui_type    = "combo";
@@ -631,9 +642,8 @@ uniform uint geom_mode_runtime <
                     "Spherical\0"
                     "Spherical (Alt)\0"
                     "Cylindrical (Trinitron)\0";
-
+                    
     ui_category = "Screen Geometry";
-    ui_category_closed = true;
 > = geom_mode_static;
 
 uniform float geom_radius <

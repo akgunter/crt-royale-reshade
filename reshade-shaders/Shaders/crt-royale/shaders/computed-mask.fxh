@@ -106,6 +106,16 @@ SHADOW EDP = SHADOW w/ 50% vertical stretch
  *  operatons, but the resulting square wave approximation isn't quite as good. It ends up having more rounded peaks.
  *  In order to achieve g(t) ~= f(t), you have to choose q_g ~= q_f^2. This is because our "stretching" operations
  *  are not associative.
+ *
+ *  
+ *
+ *  One might expect it'd be way better to use a clamped triangle wave rather than a gamma-encoded cosine wave. 
+ *  As far as I can tell, this ends up being incorrect surprisingly enough. Although it's a good bit faster,
+ *  it has terrible aliasing artifacts at small scales. The cosine implementation is slower, but it produces
+ *  evenly-sized RGB phosphors for a variety of configurations even when the triad width is 3 pixels. At that
+ *  scale, the triangle wave approach produces triads where one of the phosphors is thicker than the others.
+ *  Taking into account the compute_mask_factor trick, the triangle wave approach would be a negligible
+ *  performance improvement at the cost of a large drop in visual quality and user friendliness.
  */
 
 /*
@@ -236,7 +246,10 @@ float3 get_phosphor_intensity_grille(
     const float2 viewport_frequency_factor,
     const float2 grille_pq
 ) {
-    const float3 theta = 2 * pi * (texcoord.x * viewport_frequency_factor.x - grille_norm_center_offsets);
+    float3 center_offsets = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        grille_norm_center_offsets.bgr : grille_norm_center_offsets;
+
+    const float3 theta = 2 * pi * (texcoord.x * viewport_frequency_factor.x - center_offsets);
     const float3 alpha = cos(theta) * 0.5 + 0.5;
 
     return 1 - pow(1 - pow(alpha, grille_pq.x), grille_pq.y);
@@ -252,11 +265,16 @@ float3 get_phosphor_intensity_slot(
     const float2 slot_pq_x,
     const float2 slot_pq_y
 ) {
-    const float3 theta_x = pi * (texcoord.x * viewport_frequency_factor.x - slot_norm_center_offsets_x);
+    float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        slot_norm_center_offsets_x.bgr : slot_norm_center_offsets_x;
+    float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        slot_norm_center_offsets_y.bgr : slot_norm_center_offsets_y;
+    
+    const float3 theta_x = pi * (texcoord.x * viewport_frequency_factor.x - center_offsets_x);
     const float3 alpha_x1 = cos(theta_x) * 0.5 + 0.5;
     const float3 alpha_x2 = cos(theta_x + pi) * 0.5 + 0.5;
     
-    const float3 theta_y = 2 * pi * (texcoord.y * viewport_frequency_factor.y - slot_norm_center_offsets_y);
+    const float3 theta_y = 2 * pi * (texcoord.y * viewport_frequency_factor.y - center_offsets_y);
     const float3 alpha_y1 = cos(theta_y) * 0.5 + 0.5;
     const float3 alpha_y2 = cos(theta_y + pi) * 0.5 + 0.5;
 
@@ -275,9 +293,14 @@ float3 get_phosphor_intensity_shadow(
     const float2 texcoord,
     const float2 viewport_frequency_factor
 ) {
+    float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        shadow_norm_center_offsets_x.bgr : shadow_norm_center_offsets_x;
+    float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        shadow_norm_center_offsets_y.bgr : shadow_norm_center_offsets_y;
+
     const float2 shadow_q = phosphor_sharpness;
 
-    const float3 x_adj = texcoord.x * viewport_frequency_factor.x - shadow_norm_center_offsets_x;
+    const float3 x_adj = texcoord.x * viewport_frequency_factor.x - center_offsets_x;
 	const float3 theta_x = 2 * pi * x_adj;
 
     const float3 texcoord_x_periodic1 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2) + 1);
@@ -310,7 +333,7 @@ float3 get_phosphor_intensity_shadow(
     );
 
     const float3 theta_y = pi * (
-        texcoord.y * viewport_frequency_factor.y - shadow_norm_center_offsets_y
+        texcoord.y * viewport_frequency_factor.y - center_offsets_y
     );
     const float3 alpha_y1 = cos(theta_y) * 0.5 + 0.5;
     const float3 alpha_y2 = cos(theta_y + pi) * 0.5 + 0.5;
@@ -329,7 +352,6 @@ void generatePhosphorMaskVS(
     out float2 mask_pq_x : TEXCOORD2,
     out float2 mask_pq_y : TEXCOORD3
 ) {
-
     const float compute_mask_factor = frame_count % 60 == 0 || overlay_active > 0;
     
     texcoord.x = (id == 2) ? compute_mask_factor*2.0 : 0.0;
@@ -337,11 +359,22 @@ void generatePhosphorMaskVS(
     position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 
     const float aspect_ratio = scale_triad_height * ((mask_type == 1) ? slot_aspect_ratio : shadow_aspect_ratio);
-    const float2 triad_size_factor = content_size * rcp(mask_triad_width * float2(1, aspect_ratio));
-    const float2 num_triads_factor = mask_num_triads_across * float2(1, content_size.y * rcp(content_size.x) * rcp(aspect_ratio));
+
+    float2 triad_size_factor;
+    float2 num_triads_factor;
+    [branch]
+    if (geom_rotation_mode == 0 || geom_rotation_mode == 2) {
+        triad_size_factor = content_size * rcp(mask_triad_width * float2(1, aspect_ratio));
+        num_triads_factor = mask_num_triads_across * float2(1, content_size.y * rcp(content_size.x) * rcp(aspect_ratio));
+    }
+    else {
+        triad_size_factor = content_size * rcp(mask_triad_width * float2(1, aspect_ratio)).yx;
+        num_triads_factor = mask_num_triads_across * float2(1, content_size.y * rcp(content_size.x) * rcp(aspect_ratio)).yx;
+    }
 
     viewport_frequency_factor = ((mask_size_param == 0) ? triad_size_factor : num_triads_factor);
 
+    // We don't alter these based on screen rotation because they're independent of screen dimensions.
     const float edge_norm_tx = (mask_type == 0) ? grille_edge_norm_t : ((mask_type == 1) ? slot_edge_norm_tx*0.5 : shadow_edge_norm_tx);
     const float edge_norm_ty = (mask_type == 1) ? slot_edge_norm_ty : shadow_edge_norm_ty*0.5;
 
@@ -360,6 +393,12 @@ void generatePhosphorMaskPS(
     
     out float4 color : SV_Target
 ) {
+    [branch]
+    if (geom_rotation_mode == 1 || geom_rotation_mode == 3) {
+        texcoord = texcoord.yx;
+        viewport_frequency_factor = viewport_frequency_factor.yx;
+    }
+
     float3 phosphor_color;
     if (mask_type == 0) {
         phosphor_color = get_phosphor_intensity_grille(

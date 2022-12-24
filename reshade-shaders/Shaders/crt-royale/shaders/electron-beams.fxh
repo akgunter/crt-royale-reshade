@@ -173,11 +173,18 @@ void simulateEletronBeamsVS(
     out float4 runtime_bin_shapes : TEXCOORD1
 ) {
     PostProcessVS(id, position, texcoord);
+    
+    bool screen_is_landscape = geom_rotation_mode == 0 || geom_rotation_mode == 2;
 
     // Mode 0: size of pixel in [0, 1] = pixel_dims / viewport_size
     // Mode 1: size of pixel in [0, 1] = viewport_size / grid_dims
-    const float2 runtime_pixel_size = (pixel_grid_mode == 0) ? pixel_size * rcp(content_size) : rcp(pixel_grid_resolution);
-    const float2 runtime_scanline_shape = float2(1, scanline_thickness) * rcp(content_size);
+    float2 runtime_pixel_size = (pixel_grid_mode == 0) ? pixel_size * rcp(content_size) : rcp(pixel_grid_resolution);
+    float2 runtime_scanline_shape = lerp(
+        float2(scanline_thickness, 1),
+        float2(1, scanline_thickness),
+        screen_is_landscape
+    ) * rcp(content_size);
+    
     runtime_bin_shapes = float4(runtime_pixel_size, runtime_scanline_shape);
 }
 
@@ -188,17 +195,32 @@ void simulateEletronBeamsPS(
     
     out float4 color : SV_Target
 ) {
-    InterpolationFieldData interpolation_data = calc_interpolation_field_data(texcoord);
-    const float ypos = (texcoord.y * interpolation_data.triangle_wave_freq + interpolation_data.field_parity) * 0.5;
+    bool screen_is_landscape = geom_rotation_mode == 0 || geom_rotation_mode == 2;
+    float2 rotated_coord = lerp(texcoord.yx, texcoord, screen_is_landscape);
+    float scale = lerp(CONTENT_WIDTH, CONTENT_HEIGHT, screen_is_landscape);
+
+    // InterpolationFieldData interpolation_data = precalc_interpolation_field_data(rotated_coord);
+
+    // // We have to subtract off the texcoord offset to make sure we're using domain [0, 1]
+    // const float color_corrected = rotated_coord.x - 1.0 / scale;
+
+
+    InterpolationFieldData interpolation_data = calc_interpolation_field_data(rotated_coord, scale);
+    const float ypos = (rotated_coord.y * interpolation_data.triangle_wave_freq + interpolation_data.field_parity) * 0.5;
 
 	float2 texcoord_scanlined = round_coord(texcoord, 0, runtime_bin_shapes.zw);
 
     // Sample from the neighboring scanline when in the wrong field
     [branch]
-    if (interpolation_data.wrong_field) {
+    if (interpolation_data.wrong_field && screen_is_landscape) {
         const float coord_moved_up = texcoord_scanlined.y <= texcoord.y;
         const float direction = lerp(-1, 1, coord_moved_up);
         texcoord_scanlined.y += direction * scanline_thickness * rcp(content_size.y);
+    }
+    else if (interpolation_data.wrong_field) {
+        const float coord_moved_up = texcoord_scanlined.x <= texcoord.x;
+        const float direction = lerp(-1, 1, coord_moved_up);
+        texcoord_scanlined.x += direction * scanline_thickness * rcp(content_size.x);
     }
 
     // Now we apply pixellation and cropping

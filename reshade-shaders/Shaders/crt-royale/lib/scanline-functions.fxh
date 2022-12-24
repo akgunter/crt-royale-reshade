@@ -67,10 +67,11 @@ InterpolationFieldData precalc_interpolation_field_data(float2 texcoord) {
     return data;
 }
 
-InterpolationFieldData calc_interpolation_field_data(float2 texcoord) {
+InterpolationFieldData calc_interpolation_field_data(float2 texcoord, float scale) {
     InterpolationFieldData data;
     
-	data.triangle_wave_freq = content_size.y * rcp(scanline_thickness);
+	data.triangle_wave_freq = scale * rcp(scanline_thickness);
+	// data.triangle_wave_freq = content_size.y * rcp(scanline_thickness);
 
 	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 3);
     data.field_parity = (frame_count_parity && !interlace_back_field_first) || (!frame_count_parity && interlace_back_field_first);
