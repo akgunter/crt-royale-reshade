@@ -21,8 +21,10 @@
 //  IN THE SOFTWARE.
 
 
-#include "shared-objects.fxh"
 #include "../lib/blur-functions.fxh"
+
+#include "content-cropping.fxh"
+#include "shared-objects.fxh"
 
 
 void preblurVertPS(
@@ -31,10 +33,9 @@ void preblurVertPS(
 
     out float4 color : SV_Target
 ) {
-    const float2 texcoord_uncropped = texcoord * content_scale + content_offset;
+    const float2 texcoord_uncropped = texcoord;
 
     const float2 max_delta_uv = float2(0.0, rcp(content_size.y)) * preblur_effect_radius;
-    // const uint n = preblur_sampling_radius.y * 2 + 1;
     const float2 delta_uv = max_delta_uv * rcp(max(preblur_sampling_radius.y, 1));
 
 	color = float4(opaque_linear_downsample(
@@ -52,8 +53,6 @@ void preblurHorizPS(
     out float4 color : SV_Target
 ) {
     const float2 max_delta_uv = float2(rcp(content_size.x), 0.0) * preblur_effect_radius;
-    // const uint n = preblur_sampling_radius.x * 2 + 1;
-    // const float2 delta_uv = max_delta_uv * rcp(preblur_sampling_radius.x);
     const float2 delta_uv = max_delta_uv * rcp(max(preblur_sampling_radius.x, 1));
 	
 	color = float4(opaque_linear_downsample(

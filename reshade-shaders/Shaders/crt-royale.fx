@@ -37,7 +37,7 @@
 	#include "crt-royale/shaders/bloom-vertical.fxh"
 	#include "crt-royale/shaders/bloom-horizontal-reconstitute.fxh"
 	#include "crt-royale/shaders/geometry-aa-last-pass.fxh"
-	#include "crt-royale/shaders/content-uncrop.fxh"
+	#include "crt-royale/shaders/content-cropping.fxh"
 #endif
 
 
@@ -56,10 +56,13 @@ technique CRT_Royale
 		#if ENABLE_PREBLUR
 			pass PreblurVert
 			{
-				VertexShader = PostProcessVS;
+				VertexShader = contentCropVS;
 				PixelShader = preblurVertPS;
 
 				RenderTarget = texPreblurVert;
+
+				PrimitiveTopology = TRIANGLESTRIP;
+				VertexCount = 4;
 			}
 			pass PreblurHoriz
 			{
@@ -87,6 +90,11 @@ technique CRT_Royale
 			PixelShader = simulateEletronBeamsPS;
 
 			RenderTarget = texElectronBeams;
+
+			#if !ENABLE_PREBLUR
+			PrimitiveTopology = TRIANGLESTRIP;
+			VertexCount = 4;
+			#endif
 		}
 		pass beamConvergencePass
 		{
@@ -220,13 +228,16 @@ technique CRT_Royale
 
 			RenderTarget = texGeometry;
 		}
-		// content-uncrop.fxh
+		// content-cropping.fxh
 		pass uncropPass
 		{
 			// Uncrop the video, so we draw the game's content
 			//   in the same position it started in.
-			VertexShader = PostProcessVS;
+			VertexShader = contentUncropVS;
 			PixelShader = uncropContentPixelShader;
+			
+			PrimitiveTopology = TRIANGLESTRIP;
+			VertexCount = 4;
 		}
 	#endif
 }

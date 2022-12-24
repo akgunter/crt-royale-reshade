@@ -20,7 +20,7 @@
 //  Place, Suite 330, Boston, MA 02111-1307 USA
 
 
-#include "content-uncrop.fxh"
+#include "content-cropping.fxh"
 
 
 #if CONTENT_BOX_VISIBLE

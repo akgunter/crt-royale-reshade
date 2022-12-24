@@ -7,7 +7,10 @@ The vast majority of the code here is taken from the current libretro shader rep
 [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders)<br>
 [libretro/slang-shaders](https://github.com/libretro/slang-shaders)
 
-Special thanks goes to Matsilagi for his time, suggestions, testing, debugging, and enthusiasm. It's been tremendously helpful, especially in figuring out some of the nastier bugs. Lord of Lunacy and Marty McFly helped me with some optimizations that were really cool. Also thank you Crosire and co. for all their work on ReShade.
+Special thanks goes to Matsilagi for his time, suggestions, testing, debugging, and enthusiasm. It's been tremendously helpful, especially in figuring out some of the nastier bugs.
+Lord of Lunacy and Marty McFly helped me with some optimizations that were really cool.
+Thank you Crosire and co. for all their work on ReShade.
+Thanks to andersstorhaug for the idea to let the user rotate the screen.
 
 
 #### API SUPPORT

@@ -444,7 +444,7 @@ void applyComputedPhosphorMaskPS(
     //  and hitting the wrong phosphors (of any color).  It desaturates, so
     //  average the halation electrons to a scalar.  Reduce the local scanline
     //  intensity accordingly to conserve energy.
-    const float halation_intensity_dim_scalar = dot(halation_color, 1.0 / float3(1, 1, 1));
+    const float halation_intensity_dim_scalar = dot(halation_color, float3(1, 1, 1)) / 3.0;
     const float3 halation_intensity_dim = halation_intensity_dim_scalar * float3(1, 1, 1);
     const float3 electron_intensity_dim = lerp(scanline_color_dim, halation_intensity_dim, halation_weight);
 

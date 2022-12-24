@@ -23,20 +23,43 @@
 #include "shared-objects.fxh"
 
 
+void contentCropVS(
+    in uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0
+) {
+	texcoord.x = (id == 0 || id == 2) ? content_left : content_right;
+	texcoord.y = (id < 2) ? content_lower : content_upper;
+
+	position.x = (id == 0 || id == 2) ? -1 : 1;
+	position.y = (id < 2) ? -1 : 1;
+	position.zw = 1;
+}
+
+void contentUncropVS(
+    in uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0
+) {
+	texcoord.x = (id == 0 || id == 2) ? 0 : 1;
+	texcoord.y = (id < 2) ? 1 : 0;
+	
+	position.x = (id == 0 || id == 2) ? -1 : 1;
+	position.y = (id < 2) ? -1 : 1;
+	position.zw = 1;
+	
+	position.xy *= content_scale;
+}
+
 void uncropContentPixelShader(
     in float4 pos : SV_Position,
     in float2 texcoord : TEXCOORD0,
 
     out float4 color : SV_Target
 ) {
-    const bool is_in_boundary = float(
-        texcoord.x >= content_left && texcoord.x <= content_right &&
-        texcoord.y >= content_upper && texcoord.y <= content_lower
-    );
-    const float2 texcoord_uncropped = ((texcoord - content_offset) * buffer_size + 0) / content_size;
-
-    const float4 raw_color = tex2D(samplerGeometry, texcoord_uncropped);
-    color = float4(is_in_boundary * raw_color.rgb, raw_color.a);
+    color = tex2D(samplerGeometry, texcoord);
 }
 
 #endif  //  _CONTENT_CROPPING

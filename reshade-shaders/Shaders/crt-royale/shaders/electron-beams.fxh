@@ -24,6 +24,7 @@
 #include "../lib/gamma-management.fxh"
 #include "../lib/scanline-functions.fxh"
 
+#include "content-cropping.fxh"
 #include "shared-objects.fxh"
 
 
@@ -172,7 +173,16 @@ void simulateEletronBeamsVS(
     out float2 texcoord : TEXCOORD0,
     out float4 runtime_bin_shapes : TEXCOORD1
 ) {
-    PostProcessVS(id, position, texcoord);
+    #if ENABLE_PREBLUR
+        PostProcessVS(id, position, texcoord);
+    #else
+        // texcoord.x = (id == 0 || id == 2) ? content_left : content_right;
+        // texcoord.y = (id < 2) ? content_lower : content_upper;
+        // position.x = (id == 0 || id == 2) ? -1 : 1;
+        // position.y = (id < 2) ? -1 : 1;
+        // position.zw = 1;
+        contentCropVS(id, position, texcoord);
+    #endif
     
     bool screen_is_landscape = geom_rotation_mode == 0 || geom_rotation_mode == 2;
 
@@ -230,12 +240,13 @@ void simulateEletronBeamsPS(
 		runtime_bin_shapes.xy
     );
     
+    const float2 texcoord_uncropped = texcoord_pixellated;
     #if ENABLE_PREBLUR
         // If the pre-blur pass ran, then it's already handled cropping.
-        const float2 texcoord_uncropped = texcoord_pixellated;
+        // const float2 texcoord_uncropped = texcoord_pixellated;
         #define source_sampler samplerPreblurHoriz
     #else
-        const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
+        // const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
         #define source_sampler ReShade::BackBuffer
     #endif
 	
