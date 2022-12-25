@@ -1,3 +1,6 @@
+#ifndef ELECTRON_BEAMS_H
+#define ELECTRON_BEAMS_H
+
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale: A full-featured CRT shader, with cheese.
@@ -24,7 +27,7 @@
 #include "../lib/gamma-management.fxh"
 #include "../lib/scanline-functions.fxh"
 
-#include "content-cropping.fxh"
+#include "content-box.fxh"
 #include "shared-objects.fxh"
 
 
@@ -60,8 +63,8 @@ void calculateBeamDistsPS(
         // Double the intensity when interlacing to maintain the same apparent brightness
         const float interlacing_brightness_factor = 1 + float(
 			enable_interlacing &&
-			(scanline_deinterlacing_mode != 1) &&
-			(scanline_deinterlacing_mode != 2)
+			(scanline_deinterlacing_mode != 2) &&
+			(scanline_deinterlacing_mode != 3)
 		);
         const float raw_beam_strength = (1 - interpolation_data.scanline_parity * enable_interlacing) * interlacing_brightness_factor * levels_autodim_temp;
 
@@ -77,8 +80,8 @@ void calculateBeamDistsPS(
         const bool scanline_is_wider_than_1 = scanline_thickness > 1;
         const bool deinterlacing_mode_requires_boost = (
             enable_interlacing &&
-            (scanline_deinterlacing_mode != 1) &&
-            (scanline_deinterlacing_mode != 2)
+            (scanline_deinterlacing_mode != 2) &&
+            (scanline_deinterlacing_mode != 3)
         );
 
         const float interlacing_brightness_factor = (1 + scanline_is_wider_than_1) * (1 + deinterlacing_mode_requires_boost);
@@ -110,8 +113,8 @@ void calculateBeamDistsPS(
             (scanline_thickness > 1)
         ) + float(
             enable_interlacing &&
-            (scanline_deinterlacing_mode != 1) &&
-            (scanline_deinterlacing_mode != 2)
+            (scanline_deinterlacing_mode != 2) &&
+            (scanline_deinterlacing_mode != 3)
         );
         const float raw_beam_strength = get_gaussian_beam_strength(
             beam_dist_y, color_corrected,
@@ -156,8 +159,8 @@ void calculateBeamDistsPS(
             (scanline_thickness > 1)
         ) + float(
             enable_interlacing &&
-            (scanline_deinterlacing_mode != 1) &&
-            (scanline_deinterlacing_mode != 2)
+            (scanline_deinterlacing_mode != 2) &&
+            (scanline_deinterlacing_mode != 3)
         );
         const float3 raw_beam_strength = float3(curr_beam_strength, upper_beam_strength, lower_beam_strength) * interlacing_brightness_factor * levels_autodim_temp;
 
@@ -188,7 +191,8 @@ void simulateEletronBeamsVS(
 
     // Mode 0: size of pixel in [0, 1] = pixel_dims / viewport_size
     // Mode 1: size of pixel in [0, 1] = viewport_size / grid_dims
-    float2 runtime_pixel_size = (pixel_grid_mode == 0) ? pixel_size * rcp(content_size) : rcp(pixel_grid_resolution);
+    // float2 runtime_pixel_size = (pixel_grid_mode == 0) ? pixel_size * rcp(content_size) : rcp(pixel_grid_resolution);
+    float2 runtime_pixel_size = rcp(content_size);
     float2 runtime_scanline_shape = lerp(
         float2(scanline_thickness, 1),
         float2(1, scanline_thickness),
@@ -234,11 +238,12 @@ void simulateEletronBeamsPS(
     }
 
     // Now we apply pixellation and cropping
-    float2 texcoord_pixellated = round_coord(
-        texcoord_scanlined,
-        pixel_grid_offset * rcp(content_size),
-		runtime_bin_shapes.xy
-    );
+    // float2 texcoord_pixellated = round_coord(
+    //     texcoord_scanlined,
+    //     pixel_grid_offset * rcp(content_size),
+	// 	runtime_bin_shapes.xy
+    // );
+    float2 texcoord_pixellated = texcoord_scanlined;
     
     const float2 texcoord_uncropped = texcoord_pixellated;
     #if ENABLE_PREBLUR
@@ -250,7 +255,7 @@ void simulateEletronBeamsPS(
         #define source_sampler ReShade::BackBuffer
     #endif
 	
-	// [branch]
+	[branch]
     if (beam_shape_mode < 3) {
 		const float4 scanline_color = tex2D_linearize(
             source_sampler,
@@ -338,3 +343,5 @@ void beamConvergencePS(
         color = float4(offset_sample, 1);
     }
 }
+
+#endif  //  ELECTRON_BEAMS_H

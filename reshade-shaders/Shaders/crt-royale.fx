@@ -26,18 +26,14 @@
 #include "crt-royale/shaders/content-box.fxh"
 
 #if !CONTENT_BOX_VISIBLE
-	#include "crt-royale/shaders/linear-preblur.fxh"
+	#include "crt-royale/shaders/input-blurring.fxh"
 	#include "crt-royale/shaders/electron-beams.fxh"
-	#include "crt-royale/shaders/bloom-approx.fxh"
-	#include "crt-royale/shaders/blur9fast-vertical.fxh"
-	#include "crt-royale/shaders/blur9fast-horizontal.fxh"
+	#include "crt-royale/shaders/blurring.fxh"
 	#include "crt-royale/shaders/deinterlace.fxh"
-	#include "crt-royale/shaders/computed-mask.fxh"
+	#include "crt-royale/shaders/phosphor-mask.fxh"
 	#include "crt-royale/shaders/brightpass.fxh"
-	#include "crt-royale/shaders/bloom-vertical.fxh"
-	#include "crt-royale/shaders/bloom-horizontal-reconstitute.fxh"
+	#include "crt-royale/shaders/bloom.fxh"
 	#include "crt-royale/shaders/geometry-aa-last-pass.fxh"
-	#include "crt-royale/shaders/content-cropping.fxh"
 #endif
 
 
@@ -45,9 +41,9 @@ technique CRT_Royale
 {
 	// Toggle the content box to help users configure it
 	#if CONTENT_BOX_VISIBLE
-		// content-box.fxh
 		pass contentBoxPass
 		{
+			// content-box.fxh
 			// Draw a box that displays the crop we'll perform.
 			VertexShader = PostProcessVS;
 			PixelShader = contentBoxPixelShader;
@@ -56,6 +52,8 @@ technique CRT_Royale
 		#if ENABLE_PREBLUR
 			pass PreblurVert
 			{
+				// input-blurring.fxh
+				// Optionally blur the input buffer a little
 				VertexShader = contentCropVS;
 				PixelShader = preblurVertPS;
 
@@ -66,6 +64,7 @@ technique CRT_Royale
 			}
 			pass PreblurHoriz
 			{
+				// input-blurring.fxh
 				VertexShader = PostProcessVS;
 				PixelShader = preblurHorizPS;
 				
@@ -74,6 +73,7 @@ technique CRT_Royale
 		#endif
 		pass beamDistPass
 		{
+			// electron-beams.fxh
 			// Simulate emission of the interlaced video as electron beams. 	
 			VertexShader = calculateBeamDistsVS;
 			PixelShader = calculateBeamDistsPS;
@@ -85,12 +85,14 @@ technique CRT_Royale
 		}
 		pass electronBeamPass
 		{
+			// electron-beams.fxh
 			// Simulate emission of the interlaced video as electron beams. 	
 			VertexShader = simulateEletronBeamsVS;
 			PixelShader = simulateEletronBeamsPS;
 
 			RenderTarget = texElectronBeams;
 
+			// If the preblur passes are disabled, we have to crop in this pass
 			#if !ENABLE_PREBLUR
 			PrimitiveTopology = TRIANGLESTRIP;
 			VertexCount = 4;
@@ -98,6 +100,7 @@ technique CRT_Royale
 		}
 		pass beamConvergencePass
 		{
+			// electron-beams.fxh
 			// Simulate beam convergence miscalibration
 			//   Not to be confused with beam purity
 			VertexShader = beamConvergenceVS;
@@ -105,13 +108,9 @@ technique CRT_Royale
 
 			RenderTarget = texBeamConvergence;
 		}
-		// crt-royale-bloom-approx.fxh
 		pass bloomApproxPassVert
 		{
-			// The original crt-royale did a bunch of math in this pass
-			//   and then threw it all away. So this is a no-op for now.
-			//   It still has a blur effect b/c its a smaller buffer.
-			// TODO: activate the math in this pass and see what happens.
+			// bloom.fxh
 			VertexShader = PostProcessVS;
 			PixelShader = approximateBloomVertPS;
 			
@@ -119,39 +118,36 @@ technique CRT_Royale
 		}
 		pass bloomApproxPassHoriz
 		{
-			// The original crt-royale did a bunch of math in this pass
-			//   and then threw it all away. So this is a no-op for now.
-			//   It still has a blur effect b/c its a smaller buffer.
-			// TODO: activate the math in this pass and see what happens.
+			// bloom.fxh
 			VertexShader = PostProcessVS;
 			PixelShader = approximateBloomHorizPS;
 			
 			RenderTarget = texBloomApproxHoriz;
 		}
-		// blur9fast-vertical.fxh
 		pass blurVerticalPass
 		{
+			// blurring.fxh
 			// Vertically blur the approx bloom
 			VertexShader = blurVerticalVS;
 			PixelShader = blurVerticalPS;
 			
 			RenderTarget = texBlurVertical;
 		}
-		// blur9fast-horizontal.fxh
 		pass blurHorizontalPass
 		{
+			// blurring.fxh
 			// Horizontally blur the approx bloom
 			VertexShader = blurHorizontalVS;
 			PixelShader = blurHorizontalPS;
 			
 			RenderTarget = texBlurHorizontal;
 		}
-		// crt-royale-deinterlace.fxh
 		pass deinterlacePass
 		{
-			// Optionally deinterlace the video. This can produce more
-			//   consistent behavior across monitors and emulators.
-			//   It can also help simulate some edge cases.
+			// deinterlace.fxh
+			// Optionally deinterlace the video if interlacing is enabled.
+			//   Can help approximate the original crt-royale's appearance
+			//   without some issues like image retention.
 			VertexShader = deinterlaceVS;
 			PixelShader = deinterlacePS;
 			
@@ -159,9 +155,10 @@ technique CRT_Royale
 		}
 		pass freezeFramePass
 		{
+			// deinterlace.fxh
 			// Capture the current frame, so we can use it in the next
 			//   frame's deinterlacing pass.
-			VertexShader = PostProcessVS;
+			VertexShader = freezeFrameVS;
 			PixelShader = freezeFramePS;
 
 			RenderTarget = texFreezeFrame;
@@ -170,9 +167,9 @@ technique CRT_Royale
 			//   scanlineBlendPass will not work properly if this ever defaults to true
 			ClearRenderTargets = false;
 		}
-		// crt-royale-computed-mask.fxh
 		pass generatePhosphorMask
 		{
+			// phosphor-mask.fxh
 			VertexShader = generatePhosphorMaskVS;
 			PixelShader = generatePhosphorMaskPS;
 
@@ -183,6 +180,7 @@ technique CRT_Royale
 		}
 		pass applyPhosphormask
 		{
+			// phosphor-mask.fxh
 			// Tile the scaled phosphor mask and apply it to
 			//   the deinterlaced image.
 			VertexShader = PostProcessVS;
@@ -191,27 +189,27 @@ technique CRT_Royale
 			RenderTarget = texMaskedScanlines;
 			// RenderTarget = texGeometry;
 		}
-		// crt-royale-brightpass.fxh
 		pass brightpassPass
 		{
+			// brightpass.fxh
 			// Apply a brightpass filter for the bloom effect
 			VertexShader = brightpassVS;
 			PixelShader = brightpassPS;
 			
 			RenderTarget = texBrightpass;
 		}
-		// crt-royale-bloom-vertical.fxh
 		pass bloomVerticalPass
 		{
+			// bloom.fxh
 			// Blur vertically for the bloom effect
 			VertexShader = bloomVerticalVS;
 			PixelShader = bloomVerticalPS;
 			
 			RenderTarget = texBloomVertical;
 		}
-		// crt-royale-bloom-horizontal-reconstitute.fxh
 		pass bloomHorizontalPass
 		{
+			// bloom.fxh
 			// Blur horizontally for the bloom effect.
 			//   Also apply various color changes and effects.
 			VertexShader = bloomHorizontalVS;
@@ -219,18 +217,18 @@ technique CRT_Royale
 			
 			RenderTarget = texBloomHorizontal;
 		}
-		// crt-royale-geometry-aa-last-pass.fxh
 		pass geometryPass
 		{
+			// geometry-aa-last-pass.fxh
 			// Apply screen geometry and anti-aliasing.
 			VertexShader = geometryVS;
 			PixelShader = geometryPS;
 
 			RenderTarget = texGeometry;
 		}
-		// content-cropping.fxh
 		pass uncropPass
 		{
+			// content-box.fxh
 			// Uncrop the video, so we draw the game's content
 			//   in the same position it started in.
 			VertexShader = contentUncropVS;

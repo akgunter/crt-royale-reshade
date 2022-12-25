@@ -1,3 +1,6 @@
+#ifndef BLOOM_H
+#define BLOOM_H
+
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale: A full-featured CRT shader, with cheese.
@@ -23,46 +26,65 @@
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
-#include "../lib/phosphor-mask-resizing.fxh"
-#include "../lib/scanline-functions.fxh"
+#include "../lib/downsampling-functions.fxh"
+#include "../lib/blur-functions.fxh"
 #include "../lib/bloom-functions.fxh"
+
+#include "shared-objects.fxh"
+
+
+void approximateBloomVertPS(
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+    const float2 delta_uv = blur_radius * float2(0.0, rcp(TEX_BEAMCONVERGENCE_HEIGHT));
+
+    color = float4(opaque_linear_downsample(
+        samplerBeamConvergence, texcoord,
+        uint((bloomapprox_downsizing_factor - 1)/2),
+        delta_uv
+    ), 1);
+}
+
+void approximateBloomHorizPS(
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+    const float2 delta_uv = blur_radius * float2(rcp(TEX_BEAMCONVERGENCE_WIDTH), 0.0);
+
+    color = float4(opaque_linear_downsample(
+        samplerBloomApproxVert, texcoord,
+        uint((bloomapprox_downsizing_factor - 1)/2),
+        delta_uv
+    ), 1);
+}
+
 
 void bloomHorizontalVS(
     in uint id : SV_VertexID,
 
     out float4 position : SV_Position,
     out float2 texcoord : TEXCOORD0,
-    out float2 bloom_dxdy : TEXCOORD1,
-    out float bloom_sigma_runtime : TEXCOORD2
+    out float bloom_sigma_runtime : TEXCOORD1
 ) {
     PostProcessVS(id, position, texcoord);
-
-    const float2 input_size = tex2Dsize(samplerBloomVertical);
-
-    //  We're horizontally blurring the bloom input (vertically blurred
-    //  brightpass).  Get the uv distance between output pixels / input texels
-    //  in the horizontal direction (this pass must NOT resize):
-    bloom_dxdy = float2(1.0/input_size.x, 0.0);
-
-    //  Calculate a runtime bloom_sigma in case it's needed:
-    const float2 estimated_viewport_size = content_size;
-    // const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
-    const float2 estimated_mask_resize_output_size = mask_size_xy;
-    const float mask_tile_size_x = get_resized_mask_tile_size(
-        estimated_viewport_size, estimated_mask_resize_output_size, true).x;
-
-    bloom_sigma_runtime = get_min_sigma_to_blur_triad(
-        mask_tile_size_x / mask_triads_per_tile, bloom_diff_thresh_);
+    
+    bloom_sigma_runtime = get_min_sigma_to_blur_triad(calc_triad_size().x, bloom_diff_thresh_);
 }
 
 void bloomHorizontalPS(
     in float4 pos : SV_Position,
     in float2 texcoord : TEXCOORD0,
-    in float2 bloom_dxdy : TEXCOORD1,
-    in float bloom_sigma_runtime : TEXCOORD2,
+    in float bloom_sigma_runtime : TEXCOORD1,
 
     out float4 color : SV_Target
 ) {
+    const float2 bloom_dxdy = float2(rcp(TEX_BLOOMVERTICAL_WIDTH), 0);
+
     //  Blur the vertically blurred brightpass horizontally by 9/17/25/43x:
     const float bloom_sigma = get_final_bloom_sigma(bloom_sigma_runtime);
     const float3 blurred_brightpass = tex2DblurNfast(samplerBloomVertical,
@@ -84,9 +106,44 @@ void bloomHorizontalPS(
     //  Sample the halation texture, and let some light bleed into refractive
     //  diffusion.  Conceptually this occurs before the phosphor bloom, but
     //  adding it in earlier passes causes black crush in the diffusion colors.
-    const float3 diffusion_color = levels_contrast * tex2D_linearize(samplerBlurHorizontal, texcoord, get_intermediate_gamma()).rgb;
+    const float3 raw_diffusion_color = tex2D_linearize(samplerBlurHorizontal, texcoord, get_intermediate_gamma()).rgb;
+    const float3 raw_halation_color = dot(raw_diffusion_color, float3(1, 1, 1)) / 3.0;
+    const float3 diffusion_color = levels_contrast * lerp(raw_diffusion_color, raw_halation_color, halation_weight);
     const float3 final_bloom = lerp(phosphor_bloom, diffusion_color, diffusion_weight);
 
     //  Encode and output the bloomed image:
     color = encode_output(float4(final_bloom, 1.0), get_intermediate_gamma());
 }
+
+
+void bloomVerticalVS(
+    in uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+    out float bloom_sigma_runtime : TEXCOORD1
+) {
+    PostProcessVS(id, position, texcoord);
+    
+    bloom_sigma_runtime = get_min_sigma_to_blur_triad(calc_triad_size().x, bloom_diff_thresh_);
+}
+
+void bloomVerticalPS(
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float bloom_sigma_runtime : TEXCOORD1,
+
+    out float4 color : SV_Target
+) {
+    const float2 bloom_dxdy = float2(0, rcp(TEX_BLOOMVERTICAL_HEIGHT));
+
+    //  Blur the brightpass horizontally with a 9/17/25/43x blur:
+    const float bloom_sigma = get_final_bloom_sigma(bloom_sigma_runtime);
+    const float3 color3 = tex2DblurNfast(samplerBrightpass, texcoord,
+        bloom_dxdy, bloom_sigma, get_intermediate_gamma());
+
+    //  Encode and output the blurred image:
+    color = encode_output(float4(color3, 1.0), get_intermediate_gamma());
+}
+
+#endif  //  BLOOM_H

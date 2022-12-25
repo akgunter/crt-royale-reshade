@@ -1,3 +1,6 @@
+#ifndef BRIGHTPASS_H
+#define BRIGHTPASS_H
+
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale: A full-featured CRT shader, with cheese.
@@ -24,7 +27,7 @@
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
-#include "../lib/phosphor-mask-resizing.fxh"
+#include "../lib/phosphor-mask-calculations.fxh"
 #include "../lib/scanline-functions.fxh"
 #include "../lib/bloom-functions.fxh"
 #include "../lib/blur-functions.fxh"
@@ -39,14 +42,7 @@ void brightpassVS(
 ) {
     PostProcessVS(id, position, texcoord);
 
-    float2 output_size = TEX_BRIGHTPASS_SIZE;
-    //  Calculate a runtime bloom_sigma in case it's needed:
-    const float2 estimated_viewport_size = content_size;
-    // const float2 estimated_mask_resize_output_size = tex2Dsize(samplerMaskResizeHorizontal);
-    const float2 estimated_mask_resize_output_size = mask_size_xy;
-    const float mask_tile_size_x = get_resized_mask_tile_size(estimated_viewport_size, estimated_mask_resize_output_size, true).x;
-    bloom_sigma_runtime = get_min_sigma_to_blur_triad(
-        mask_tile_size_x / mask_triads_per_tile, bloom_diff_thresh_);
+    bloom_sigma_runtime = get_min_sigma_to_blur_triad(calc_triad_size().x, bloom_diff_thresh_);
 }
 
 void brightpassPS(
@@ -59,10 +55,8 @@ void brightpassPS(
     //  Sample the masked scanlines:
     const float3 intensity_dim = tex2D_linearize(samplerMaskedScanlines, texcoord, get_intermediate_gamma()).rgb;
     //  Get the full intensity, including auto-undimming, and mask compensation:
-    const float auto_dim_factor = levels_autodim_temp;
-    const float undim_factor = 1.0/auto_dim_factor;
     const float mask_amplify = get_mask_amplify();
-    const float3 intensity = intensity_dim * undim_factor * mask_amplify * levels_contrast;
+    const float3 intensity = intensity_dim * rcp(levels_autodim_temp) * mask_amplify * levels_contrast;
 
     //  Sample BLOOM_APPROX to estimate what a straight blur of masked scanlines
     //  would look like, so we can estimate how much energy we'll receive from
@@ -81,21 +75,9 @@ void brightpassPS(
     const float3 area_contrib_underestimate = bloom_underestimate_levels * max_area_contribution_approx;
     const float3 intensity_underestimate = bloom_underestimate_levels * intensity;
     //  Calculate the blur_ratio, the ratio of intensity we want to blur:
-    #ifdef BRIGHTPASS_AREA_BASED
-        //  This area-based version changes blur_ratio more smoothly and blurs
-        //  more, clipping less but offering less phosphor differentiation:
-        const float3 phosphor_blur_underestimate = bloom_underestimate_levels *
-            phosphor_blur_approx;
-        const float3 soft_intensity = max(intensity_underestimate,
-            phosphor_blur_underestimate * mask_amplify);
-        const float3 blur_ratio_temp =
-            ((float3(1.0, 1.0, 1.0) - area_contrib_underestimate) /
-            soft_intensity - float3(1.0, 1.0, 1.0)) / (center_weight - 1.0);
-    #else
-        const float3 blur_ratio_temp =
-            ((float3(1.0, 1.0, 1.0) - area_contrib_underestimate) /
-            intensity_underestimate - float3(1.0, 1.0, 1.0)) / (center_weight - 1.0);
-    #endif
+    const float3 blur_ratio_temp =
+        ((float3(1.0, 1.0, 1.0) - area_contrib_underestimate) /
+        intensity_underestimate - float3(1.0, 1.0, 1.0)) / (center_weight - 1.0);
     const float3 blur_ratio = saturate(blur_ratio_temp);
     //  Calculate the brightpass based on the auto-dimmed, unamplified, masked
     //  scanlines, encode if necessary, and return!
@@ -104,3 +86,5 @@ void brightpassPS(
     
     color = encode_output(float4(brightpass, 1.0), get_intermediate_gamma());
 }
+
+#endif  //  BRIGHTPASS_H

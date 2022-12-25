@@ -1,3 +1,6 @@
+#ifndef GEOMETRY_AA_LAST_PASS_H
+#define GEOMETRY_AA_LAST_PASS_H
+
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale: A full-featured CRT shader, with cheese.
@@ -214,3 +217,5 @@ void geometryPS(
 
     color = encode_output(float4(final_color, 1.0), get_output_gamma());
 }
+
+#endif  //  GEOMETRY_AA_LAST_PASS_H

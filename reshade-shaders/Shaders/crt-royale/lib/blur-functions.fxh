@@ -246,26 +246,6 @@ float get_fast_gaussian_weight_sum_inv(const float sigma)
         (sigma - 0.0860587260734721))), 0.399334576340352/sigma);
 }
 
-//////////////////// SIMPLE DOWNSAMPLING FUNCTIONS ////////////////////
-float3 opaque_linear_downsample(
-    const sampler2D tex,
-    const float2 texcoord,
-    const uint num_pairs,
-    // const uint total_num_samples,
-    const float2 delta_uv
-) {
-    const uint total_num_samples = num_pairs * 2 + 1;
-    const float2 coord_left = texcoord - delta_uv * num_pairs;
-
-    float3 acc = 0;
-    for(int i = 0; i < total_num_samples; i++) {
-        const float2 coord = coord_left + i * delta_uv;
-        acc += tex2Dlod(tex, float4(coord, 0, 0)).rgb;
-    }
-    
-    return acc / total_num_samples;
-}
-
 
 ////////////////////  ARBITRARILY RESIZABLE SEPARABLE BLURS  ///////////////////
 

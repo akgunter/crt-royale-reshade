@@ -1,3 +1,6 @@
+#ifndef BLURRING_H
+#define BLURRING_H
+
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
 //  crt-royale: A full-featured CRT shader, with cheese.
@@ -49,6 +52,7 @@
 
 #include "shared-objects.fxh"
 
+
 void blurHorizontalVS(
     in uint id : SV_VertexID,
 
@@ -85,3 +89,43 @@ void blurHorizontalPS(
     // color = encode_output(float4(blur_color, 1.0), 1.0);
     color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());
 }
+
+
+void blurVerticalVS(
+    in uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0,
+    out float2 blur_dxdy : TEXCOORD1
+) {
+    PostProcessVS(id, position, texcoord);
+
+    //  Get the uv sample distance between output pixels.  Blurs are not generic
+    //  Gaussian resizers, and correct blurs require:
+    //  1.) OutputSize == InputSize * 2^m, where m is an integer <= 0.
+    //  2.) mipmap_inputN = "true" for this pass in the preset if m != 0
+    //  3.) filter_linearN = "true" except for 1x scale nearest neighbor blurs
+    //  Gaussian resizers would upsize using the distance between input texels
+    //  (not output pixels), but we avoid this and consistently blur at the
+    //  destination size.  Otherwise, combining statically calculated weights
+    //  with bilinear sample exploitation would result in terrible artifacts.
+    static const float2 output_size = TEX_BLURVERTICAL_SIZE;
+    static const float2 dxdy = 1.0 / output_size;
+    //  This blur is vertical-only, so zero out the horizontal offset:
+    blur_dxdy = float2(0.0, dxdy.y);
+}
+
+void blurVerticalPS(
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+    in float2 blur_dxdy : TEXCOORD1,
+
+    out float4 color : SV_Target
+) {
+    static const float3 blur_color = tex2Dblur9fast(samplerBloomApproxHoriz, texcoord, blur_dxdy, get_intermediate_gamma());
+    //  Encode and output the blurred image:
+    // color = encode_output(float4(blur_color, 1.0), 1.0);
+    color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());
+}
+
+#endif  //  BLURRING_H

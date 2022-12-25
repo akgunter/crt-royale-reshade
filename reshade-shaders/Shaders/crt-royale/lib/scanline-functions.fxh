@@ -6,6 +6,9 @@
 //  crt-royale: A full-featured CRT shader, with cheese.
 //  Copyright (C) 2014 TroggleMonkey <trogglemonkey@gmx.com>
 //
+//  crt-royale-reshade: A port of TroggleMonkey's crt-royale from libretro to ReShade.
+//  Copyright (C) 2020 Alex Gunter <akg7634@gmail.com>
+//
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
 //  Software Foundation; either version 2 of the License, or any later version.
@@ -73,7 +76,7 @@ InterpolationFieldData calc_interpolation_field_data(float2 texcoord, float scal
 	data.triangle_wave_freq = scale * rcp(scanline_thickness);
 	// data.triangle_wave_freq = content_size.y * rcp(scanline_thickness);
 
-	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 3);
+	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 1);
     data.field_parity = (frame_count_parity && !interlace_back_field_first) || (!frame_count_parity && interlace_back_field_first);
 
 	const float field_wave = triangle_wave(texcoord.y + rcp(2*data.triangle_wave_freq), data.triangle_wave_freq * 0.5) * 2 - 1;
@@ -147,8 +150,7 @@ float get_gaussian_sigma(const float color, const float sigma_range)
     }
 }
 
-float get_generalized_gaussian_beta(const float color,
-    const float shape_range)
+float get_generalized_gaussian_beta(const float color, const float shape_range)
 {
     //  Requires:   Globals:
     //              1.) gaussian_beam_min_shape and gaussian_beam_max_shape are global floats
@@ -483,33 +485,6 @@ float get_gaussian_beam_strength(
     const float scale = color * beta * 0.5 * alpha_inv / gamma_impl(beta_inv, beta);
     
     return scale * exp(-pow(abs(dist*alpha_inv), beta));
-}
-
-float get_gaussian_beam_strength(
-    const float dist,
-    const float prev_dist,
-    const float color,
-    const float sigma_range,
-    const float shape_range
-) {
-    // entry point in original is scanline_contrib()
-    // this is based on scanline_generalized_gaussian_sampled_contrib() from original
-
-    //  See scanline_generalized_gaussian_integral_contrib() for details!
-    //  generalized sample =
-    //      beta/(2*alpha*gamma(1/beta)) * e**(-(|x|/alpha)**beta)
-    const float alpha = sqrt(2.0) * get_gaussian_sigma(color, sigma_range);
-    const float beta = get_generalized_gaussian_beta(color, shape_range);
-    //  Avoid repeated divides:
-    const float alpha_inv = 1.0 / alpha;
-    const float beta_inv = 1.0 / beta;
-    const float scale = color * beta * 0.5 * alpha_inv /
-        gamma_impl(beta_inv, beta);
-
-    const float strength_at_sample = scale * exp(-pow(abs(dist*alpha_inv), beta));
-    const float strength_at_prev_sample = scale * exp(-pow(abs(prev_dist*alpha_inv), beta));
-
-    return 0.5 * (strength_at_sample + strength_at_prev_sample);
 }
 
 float get_linear_beam_strength(

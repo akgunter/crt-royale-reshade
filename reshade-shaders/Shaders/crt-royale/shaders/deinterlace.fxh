@@ -1,8 +1,60 @@
+#ifndef DEINTERLACE_H
+#define DEINTERLACE_H
+
+/////////////////////////////////  MIT LICENSE  ////////////////////////////////
+
+//  Copyright (C) 2020 Alex Gunter
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to
+//  deal in the Software without restriction, including without limitation the
+//  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+//  sell copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//  
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+//  IN THE SOFTWARE.
+
+
 #include "../lib/user-settings.fxh"
 #include "../lib/derived-settings-and-constants.fxh"
 #include "../lib/bind-shader-params.fxh"
 #include "../lib/gamma-management.fxh"
 #include "../lib/scanline-functions.fxh"
+
+
+
+void freezeFrameVS(
+    in uint id : SV_VertexID,
+
+    out float4 position : SV_Position,
+    out float2 texcoord : TEXCOORD0
+) {
+    float use_deinterlacing_tex = enable_interlacing && (
+        scanline_deinterlacing_mode == 2 || scanline_deinterlacing_mode == 3
+    );
+
+	texcoord.x = (id == 2) ? use_deinterlacing_tex*2.0 : 0.0;
+	texcoord.y = (id == 1) ? 2.0 : 0.0;
+	position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+}
+
+void freezeFramePS(
+    in float4 pos : SV_Position,
+    in float2 texcoord : TEXCOORD0,
+
+    out float4 color : SV_Target
+) {
+    color = tex2D(samplerBeamConvergence, texcoord);
+}
 
 
 void deinterlaceVS(
@@ -12,8 +64,8 @@ void deinterlaceVS(
     out float2 texcoord : TEXCOORD0,
     out float2 v_step : TEXCOORD1
 ) {
-    PostProcessVS(id, position, texcoord);
-
+    freezeFrameVS(id, position, texcoord);
+    
     v_step = float2(0.0, scanline_thickness * rcp(TEX_FREEZEFRAME_HEIGHT));
 }
 
@@ -43,7 +95,8 @@ void deinterlacePS(
     // If we're in the correct field, use the current sample
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're probably averaging a color with 0 and producing a brightness of 0.5.
-    if (enable_interlacing && scanline_deinterlacing_mode == 1) {
+    [branch]
+    if (enable_interlacing && scanline_deinterlacing_mode == 2) {
         // const float cur_scanline_idx = get_curr_scanline_idx(texcoord.y, content_size.y);
         // const float wrong_field = curr_line_is_wrong_field(cur_scanline_idx);
         
@@ -63,7 +116,7 @@ void deinterlacePS(
     // If we're in the correct field, use the current sample
     // If we're in the wrong field, average the current and prev samples
     //   In this case, we're averaging two fully illuminated colors
-    else if (enable_interlacing && scanline_deinterlacing_mode == 2) {
+    else if (enable_interlacing && scanline_deinterlacing_mode == 3) {
         const float2 raw_offset = lerp(1, -1, interpolation_data.scanline_parity) * v_step;
         const float2 curr_offset = lerp(0, raw_offset, interpolation_data.wrong_field);
         const float2 prev_offset = lerp(raw_offset, 0, interpolation_data.wrong_field);
@@ -81,11 +134,4 @@ void deinterlacePS(
     }
 }
 
-void freezeFramePS(
-    in float4 pos : SV_Position,
-    in float2 texcoord : TEXCOORD0,
-
-    out float4 color : SV_Target
-) {
-    color = tex2D(samplerBeamConvergence, texcoord);
-}
+#endif  //  DEINTERLACE_H

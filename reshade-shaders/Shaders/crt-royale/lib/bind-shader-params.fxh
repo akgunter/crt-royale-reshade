@@ -29,6 +29,7 @@
 #include "helper-functions-and-macros.fxh"
 #include "user-settings.fxh"
 #include "derived-settings-and-constants.fxh"
+#include "../version-number.fxh"
 
 ////////////////////////////////  END INCLUDES  ////////////////////////////////
 
@@ -135,7 +136,14 @@ uniform int overlay_active < source = "overlay_active"; >;
 static const float gba_gamma = 3.5; //  Irrelevant but necessary to define.
 
 
-// === HELP ===
+// === HELP AND INFO ===
+
+uniform int APPEND_VERSION_SUFFIX(version) <
+	ui_text = "Version: " DOT_VERSION_STR;
+	ui_label = " ";
+	ui_type = "radio";
+>;
+
 uniform int basic_setup_help <
 	ui_text = "1. Configure the Content Box if your game has letter-boxing.\n"
 			  "2. Configure the Phosphor Mask.\n"
@@ -269,6 +277,9 @@ uniform float2 phosphor_sharpness <
 > = 50;
 
 
+// static const uint pixel_grid_mode = 0;
+// static const float2 pixel_size = 1;
+/*
 // ==== PIXELATION ===
 uniform uint pixel_grid_mode <
         #if !HIDE_HELP_SECTIONS
@@ -326,6 +337,7 @@ uniform float2 pixel_grid_offset <
     #endif
     ui_category = "Pixelation";
 > = float2(0, 0);
+*/
 
 // ==== SCANLINES ====
 uniform uint scanline_thickness <
@@ -386,9 +398,9 @@ uniform uint scanline_deinterlacing_mode <
         ui_tooltip = "Selects the deinterlacing algorithm, if any.";
         ui_type    = "combo";
         ui_items   = "None\0"
-                    "Weaving\0"
-                    "Blended Weaving\0"
-                    "Static\0";
+                     "Fake-Progressive\0"  
+                     "Weaving\0"
+                     "Blended Weaving\0";
 
     ui_category = "Scanlines";
 > = 1;
@@ -603,6 +615,11 @@ uniform float bloom_excess <
 
     ui_category = "Colors and Effects";
 > = bloom_excess_static;
+uniform bool brightpass_area_based <
+        ui_label   = "Area-Based Brightpass";
+    
+    ui_category = "Colors and Effects";
+> = false;
 
 uniform float2 aa_subpixel_r_offset_runtime <
         ui_label   = "AA Subpixel R Offet XY";
