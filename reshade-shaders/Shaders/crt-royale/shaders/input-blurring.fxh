@@ -1,5 +1,5 @@
-#ifndef INPUT_BLURRING_H
-#define INPUT_BLURRING_H
+#ifndef _INPUT_BLURRING_H
+#define _INPUT_BLURRING_H
 
 /////////////////////////////////  MIT LICENSE  ////////////////////////////////
 
@@ -71,4 +71,4 @@ void preblurHorizPS(
 	), 1);
 }
 
-#endif  //  INPUT_BLURRING_H
+#endif  //  _INPUT_BLURRING_H

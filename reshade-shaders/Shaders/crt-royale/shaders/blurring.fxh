@@ -1,5 +1,5 @@
-#ifndef BLURRING_H
-#define BLURRING_H
+#ifndef _BLURRING_H
+#define _BLURRING_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -128,4 +128,4 @@ void blurVerticalPS(
     color = encode_output(float4(blur_color, 1.0), get_intermediate_gamma());
 }
 
-#endif  //  BLURRING_H
+#endif  //  _BLURRING_H

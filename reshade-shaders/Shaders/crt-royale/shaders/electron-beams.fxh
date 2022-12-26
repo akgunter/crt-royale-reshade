@@ -1,5 +1,5 @@
-#ifndef ELECTRON_BEAMS_H
-#define ELECTRON_BEAMS_H
+#ifndef _ELECTRON_BEAMS_H
+#define _ELECTRON_BEAMS_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -344,4 +344,4 @@ void beamConvergencePS(
     }
 }
 
-#endif  //  ELECTRON_BEAMS_H
+#endif  //  _ELECTRON_BEAMS_H

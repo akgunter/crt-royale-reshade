@@ -1,5 +1,5 @@
-#ifndef GEOMETRY_AA_LAST_PASS_H
-#define GEOMETRY_AA_LAST_PASS_H
+#ifndef _GEOMETRY_AA_LAST_PASS_H
+#define _GEOMETRY_AA_LAST_PASS_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -218,4 +218,4 @@ void geometryPS(
     color = encode_output(float4(final_color, 1.0), get_output_gamma());
 }
 
-#endif  //  GEOMETRY_AA_LAST_PASS_H
+#endif  //  _GEOMETRY_AA_LAST_PASS_H

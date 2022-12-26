@@ -1,5 +1,5 @@
-#ifndef PHOSPHOR_MASK_H
-#define PHOSPHOR_MASK_H
+#ifndef _PHOSPHOR_MASK_H
+#define _PHOSPHOR_MASK_H
 
 /////////////////////////////////  MIT LICENSE  ////////////////////////////////
 
@@ -136,4 +136,4 @@ void applyComputedPhosphorMaskPS(
     color = float4(phosphor_emission_dim, 1.0);
 }
 
-#endif  //  PHOSPHOR_MASK_H
+#endif  //  _PHOSPHOR_MASK_H

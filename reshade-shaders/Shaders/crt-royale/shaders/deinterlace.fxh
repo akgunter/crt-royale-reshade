@@ -1,5 +1,5 @@
-#ifndef DEINTERLACE_H
-#define DEINTERLACE_H
+#ifndef _DEINTERLACE_H
+#define _DEINTERLACE_H
 
 /////////////////////////////////  MIT LICENSE  ////////////////////////////////
 
@@ -134,4 +134,4 @@ void deinterlacePS(
     }
 }
 
-#endif  //  DEINTERLACE_H
+#endif  //  _DEINTERLACE_H

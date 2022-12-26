@@ -1,5 +1,5 @@
-#ifndef BRIGHTPASS_H
-#define BRIGHTPASS_H
+#ifndef _BRIGHTPASS_H
+#define _BRIGHTPASS_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -87,4 +87,4 @@ void brightpassPS(
     color = encode_output(float4(brightpass, 1.0), get_intermediate_gamma());
 }
 
-#endif  //  BRIGHTPASS_H
+#endif  //  _BRIGHTPASS_H

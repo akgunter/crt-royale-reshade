@@ -1,5 +1,5 @@
-#ifndef BLOOM_H
-#define BLOOM_H
+#ifndef _BLOOM_H
+#define _BLOOM_H
 
 /////////////////////////////  GPL LICENSE NOTICE  /////////////////////////////
 
@@ -146,4 +146,4 @@ void bloomVerticalPS(
     color = encode_output(float4(color3, 1.0), get_intermediate_gamma());
 }
 
-#endif  //  BLOOM_H
+#endif  //  _BLOOM_H
