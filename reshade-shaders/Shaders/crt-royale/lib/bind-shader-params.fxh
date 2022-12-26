@@ -615,11 +615,6 @@ uniform float bloom_excess <
 
     ui_category = "Colors and Effects";
 > = bloom_excess_static;
-uniform bool brightpass_area_based <
-        ui_label   = "Area-Based Brightpass";
-    
-    ui_category = "Colors and Effects";
-> = false;
 
 uniform float2 aa_subpixel_r_offset_runtime <
         ui_label   = "AA Subpixel R Offet XY";
