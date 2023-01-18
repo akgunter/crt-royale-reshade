@@ -78,7 +78,7 @@ SHADOW EDP = SHADOW w/ 50% vertical stretch
  *  I've found that `f(t) = 1 - (1 - (0.5 + 0.5 cos(2 pi (t n - o)))^p)^q` can approximate a pulse wave well.
  *    t is the input coordinate in the domain [0, 1].
  *      t = 0 is the left side of the screen, and t = 1 is the right side.
- *    n is desired number of triads to render along this axis.
+ *    n is the desired number of triads to render along this axis.
  *      Because t is in [0, 1], this is also the periodicity of the pulse wave.
  *    o is the horizontal offset along this axis, normalized to raw_offset / raw_triad_width.
  *      We have `tn - o` instead of `n (t - o)` because t in [0, 1] spans the entire screen, while o in [0, 1] only spans
@@ -97,7 +97,7 @@ SHADOW EDP = SHADOW w/ 50% vertical stretch
  *    p = log(1 - (1 - y0)^(1/q)) / log(0.5 + 0.5 cos(2 pi t))
  *
  *    For this step, we can use o = 0 to simplify the math and make the function more user-friendly.
- *    Using n = 1 makes this work significantly better. Multiplying by n produces peaks
+ *    Using n = 1 makes this work significantly better. Using n > 1 produces peaks
  *    that are too wide when we plug p back into f(t). I don't know why.
  *
  *  For the GRILLE and SLOT masks, we can compute p once and recycle it.
@@ -105,12 +105,12 @@ SHADOW EDP = SHADOW w/ 50% vertical stretch
  *
  *  Technically you could also use the form g(t) = (1 - (0.5 - 0.5 cos(t))^p)^q. This would save a couple subtraction
  *  operatons, but the resulting square wave approximation isn't quite as good. It ends up having more rounded peaks.
- *  In order to achieve g(t) ~= f(t), you have to choose q_g ~= q_f^2. This is because our "stretching" operations
+ *  In order to achieve g(t) ~= f(t), you have to choose q_g ~= q_f^2. This is because our "flattening" operations
  *  are not associative.
  *
  *  
  *
- *  One might expect it'd be way better to use a clamped triangle wave rather than a gamma-encoded cosine wave. 
+ *  One might expect it'd be way better to use a clamped triangle wave rather than an exponentiated cosine wave. 
  *  As far as I can tell, this ends up being incorrect surprisingly enough. Although it's a good bit faster,
  *  it has terrible aliasing artifacts at small scales. The cosine implementation is slower, but it produces
  *  evenly-sized RGB phosphors for a variety of configurations even when the triad width is 3 pixels. At that
@@ -120,7 +120,8 @@ SHADOW EDP = SHADOW w/ 50% vertical stretch
  */
 
 
-#include "../lib/bind-shader-params.fxh"
+#include "bind-shader-params.fxh"
+#include "scanline-functions.fxh"
 
 /*
  *  The GRILLE mask consists of an array of vertical stripes, so each channel will vary along the x-axis and will be constant
@@ -185,7 +186,9 @@ static const float3 slot_norm_center_offsets_x = float3(
 static const float3 slot_norm_center_offsets_y = float3(0.5, 0.5, 0.5);
 
 static const float slot_edge_tx = slot_raw_phosphor_width / 2;
-static const float slot_edge_norm_tx = slot_edge_tx / slot_raw_triad_width;
+// We draw the slot mask as two sets of columns. To do that, we have to pretend the horizontal gap is the size of a whole triad.
+//   Then we need to halve the position of the phosphor edge.
+static const float slot_edge_norm_tx = 0.5 * slot_edge_tx / slot_raw_triad_width;
 static const float slot_edge_ty = slot_raw_phosphor_height / 2;
 static const float slot_edge_norm_ty = slot_edge_ty / slot_raw_triad_height;
 
@@ -223,12 +226,195 @@ static const float3 shadow_norm_center_offsets_y = float3(0.0, 0.0, 0.0);
 static const float shadow_edge_tx = shadow_raw_phosphor_diam / 2;
 static const float shadow_edge_norm_tx = shadow_edge_tx / shadow_raw_triad_width;
 static const float shadow_edge_ty = shadow_raw_phosphor_diam / 2;
-static const float shadow_edge_norm_ty = shadow_edge_ty / shadow_raw_triad_height;
+// We draw the shadow mask as two sets of rows. To do that, we have to pretend the vertical gap is the size of a whole triad.
+//   Then we need to halve the position of the phosphor edge.
+static const float shadow_edge_norm_ty = 0.5 * shadow_edge_ty / shadow_raw_triad_height;
 static const float shadow_norm_phosphor_rad = (shadow_raw_phosphor_diam/2) / shadow_raw_triad_width;
 
 
+/*
+ *  The SMALL GRILLE mask is composed of magenta and green stripes.
+ *  Sourced from http://filthypants.blogspot.com/2020/02/crt-shader-masks.html
+ *  
+ *  It has the following dimensions:
+ *    Stripes are 32 units wide.
+ *    Stripes in a triad are 0 units apart.
+ *    Triads are 0 units apart horizontally.
+ *    
+ *  Each triad has two quads, side-by-side and aligned.
+ *    Neighboring triads are offset vertically.
+ *    Below is an array of 2 triads.
+ *    x's denote magenta stripes, and o's denote green ones.
+ *
+ *      xxooxxoo
+ *      xxooxxoo
+ *      xxooxxoo
+ *      xxooxxoo
+ *      xxooxxoo
+ *      xxooxxoo
+ *
+ *    The phosphors follow a MG pattern.
+ *    The left-most phosphor is magenta and offset by 16 units to the right.
+ */
+
+static const float smallgrille_raw_stripe_width = 32;
+static const float smallgrille_raw_triad_width = 2*smallgrille_raw_stripe_width;
+
+static const float smallgrille_raw_r_offset_x = 0.5 * smallgrille_raw_stripe_width;
+static const float smallgrille_raw_g_offset_x = smallgrille_raw_r_offset_x + smallgrille_raw_stripe_width;
+static const float smallgrille_raw_b_offset_x = smallgrille_raw_r_offset_x;
+static const float3 smallgrille_norm_center_offsets_x = float3(
+    smallgrille_raw_r_offset_x,
+    smallgrille_raw_g_offset_x,
+    smallgrille_raw_b_offset_x
+) / smallgrille_raw_triad_width;
+
+static const float smallgrille_edge_t = 0.5 * smallgrille_raw_stripe_width;
+static const float smallgrille_edge_norm_t = smallgrille_edge_t / smallgrille_raw_triad_width;
+
+
+/*
+ *  The SMALL SLOT mask is composed of magenta and green quads.
+ *  Sourced from http://filthypants.blogspot.com/2020/02/crt-shader-masks.html
+ *  
+ *  It has the following dimensions:
+ *    Quads are 32 units wide and 48 units tall.
+ *    Quads in a triad are 0 units apart.
+ *    Triads are 0 units apart horizontally and 16 units apart vertically.
+ *    
+ *  Each triad has two quads, side-by-side and aligned.
+ *    Neighboring triads are offset vertically.
+ *    Below is a 2x2 matrix of 4 triads.
+ *    x's denote magenta quads, and o's denote green ones.
+ *
+ *      xxoo    
+ *      xxooxxoo
+ *      xxooxxoo
+ *          xxoo
+ *      xxoo    
+ *      xxooxxoo
+ *      xxooxxoo
+ *          xxoo
+ *
+ *    The phosphors follow a MG pattern.
+ *    The upper-left-most phosphor is magenta and offset by 16 units to the right and 16 units down.
+ */
+
+static const float smallslot_raw_quad_width = 32;
+static const float smallslot_raw_triad_width = 2*smallslot_raw_quad_width;
+
+static const float smallslot_raw_quad_height = 1.5 * smallslot_raw_quad_width;
+static const float smallslot_raw_triad_vert_gap = 0.5 * smallslot_raw_quad_width;
+static const float smallslot_raw_triad_height = smallslot_raw_quad_height + smallslot_raw_triad_vert_gap;
+
+static const float smallslot_aspect_ratio = smallslot_raw_triad_height / smallslot_raw_triad_width;
+
+static const float smallslot_raw_r_offset_x = 0.5 * smallslot_raw_quad_width;
+static const float smallslot_raw_g_offset_x = smallslot_raw_r_offset_x + smallslot_raw_quad_width;
+static const float smallslot_raw_b_offset_x = smallslot_raw_r_offset_x;
+static const float3 smallslot_norm_center_offsets_x = float3(
+    smallslot_raw_r_offset_x,
+    smallslot_raw_g_offset_x,
+    smallslot_raw_b_offset_x
+) / smallslot_raw_triad_width;
+
+static const float3 smallslot_norm_center_offsets_y1 = 0.5 * smallslot_raw_quad_height / smallslot_raw_triad_height;
+static const float3 smallslot_norm_center_offsets_y2 = smallslot_norm_center_offsets_y1 + smallslot_raw_triad_vert_gap / smallslot_raw_triad_height;
+
+static const float smallslot_edge_tx = 0.5 * smallslot_raw_quad_width;
+// We draw the slot mask as two sets of columns. To do that, we have to pretend the horizontal gap is the size of a whole triad.
+//   Then we need to halve the position of the phosphor edge.
+static const float smallslot_edge_norm_tx = 0.5 * smallslot_edge_tx / smallslot_raw_triad_width;
+static const float smallslot_edge_ty = smallslot_raw_quad_height / 2;
+static const float smallslot_edge_norm_ty = smallslot_edge_ty / smallslot_raw_triad_height;
+
+/*
+ *  The SMALL SHADOW mask is composed of magenta and green quads.
+ *  Sourced from http://filthypants.blogspot.com/2020/02/crt-shader-masks.html
+ *  
+ *  It has the following dimensions:
+ *    Quads are 17 units wide and 17 units tall.
+ *    Quads in a triad are 0 units apart.
+ *    Triads are 0 units apart horizontally and 0 units apart vertically.
+ *    
+ *  Each triad has two quads, side-by-side and aligned.
+ *    Neighboring triads are offset vertically.
+ *    Below is a 2x2 matrix of 4 triads.
+ *    x's denote magenta quads, and o's denote green ones.
+ *
+ *      xxooxxoo
+ *      xxooxxoo
+ *      ooxxooxx
+ *      ooxxooxx
+ *
+ *    The phosphors follow a MG pattern.
+ *    The upper-left-most phosphor is magenta and offset by 16 units to the right and 16 units down.
+ */
+
+static const float smallshadow_raw_quad_width = 17;
+static const float smallshadow_raw_triad_width = 2 * smallshadow_raw_quad_width;
+
+static const float smallshadow_raw_quad_height = 17;
+static const float smallshadow_raw_triad_height = smallshadow_raw_quad_height;
+
+static const float smallshadow_aspect_ratio = smallshadow_raw_triad_height / smallshadow_raw_triad_width;
+
+static const float smallshadow_raw_r_offset_x = 0.5 * smallshadow_raw_quad_width;
+static const float smallshadow_raw_g_offset_x = smallshadow_raw_r_offset_x + smallshadow_raw_quad_width;
+static const float smallshadow_raw_b_offset_x = smallshadow_raw_r_offset_x;
+static const float3 smallshadow_norm_center_offsets_x = float3(
+    smallshadow_raw_r_offset_x,
+    smallshadow_raw_g_offset_x,
+    smallshadow_raw_b_offset_x
+) / smallshadow_raw_triad_width;
+
+static const float3 smallshadow_norm_center_offsets_y = 0.5 * smallshadow_raw_triad_height;
+
+static const float smallshadow_edge_tx = 0.5 * smallshadow_raw_quad_width;
+static const float smallshadow_edge_norm_tx = smallshadow_edge_tx / smallshadow_raw_triad_width;
+static const float smallshadow_edge_ty = 0.5 * smallshadow_raw_quad_height;
+// We draw the shadow mask as two sets of rows. To do that, we have to pretend the vertical gap is the size of a whole triad.
+//   Then we need to halve the position of the phosphor edge.
+static const float smallshadow_edge_norm_ty = 0.5 * smallshadow_edge_ty / smallshadow_raw_triad_height;
+
+
+
+
 float get_selected_aspect_ratio() {
-    return scale_triad_height * ((mask_type == 1) ? slot_aspect_ratio : shadow_aspect_ratio);
+    float aspect_ratio;
+    [flatten]
+    if (mask_type == 0 || mask_type == 3) {
+            aspect_ratio = scale_triad_height;
+    }
+    else if (mask_type == 1 || mask_type == 4) {
+            aspect_ratio = scale_triad_height * slot_aspect_ratio;
+    }
+    else {
+            aspect_ratio = scale_triad_height * shadow_aspect_ratio;
+    }
+    [flatten]
+    switch (mask_type) {
+        case 0:
+            aspect_ratio = scale_triad_height;
+            break;
+        case 1:
+            aspect_ratio = scale_triad_height * slot_aspect_ratio;
+            break;
+        case 2:
+            aspect_ratio = scale_triad_height * shadow_aspect_ratio;
+            break;
+        case 3:
+            aspect_ratio = scale_triad_height;
+            break;
+        case 4:
+            aspect_ratio = scale_triad_height * smallslot_aspect_ratio;
+            break;
+        default:
+            aspect_ratio = scale_triad_height * smallshadow_aspect_ratio;
+            break;
+    }
+
+    return aspect_ratio;
 }
 
 float2 calc_triad_size() {
@@ -246,7 +432,7 @@ float2 calc_triad_size() {
 }
 
 float2 calc_phosphor_viewport_frequency_factor() {
-    const float aspect_ratio = scale_triad_height * ((mask_type == 1) ? slot_aspect_ratio : shadow_aspect_ratio);
+    const float aspect_ratio = get_selected_aspect_ratio();
 
     float2 triad_size_factor;
     float2 num_triads_factor;
@@ -342,10 +528,10 @@ float3 get_phosphor_intensity_shadow(
     const float2 shadow_q = phosphor_sharpness;
 
     const float3 x_adj = texcoord.x * viewport_frequency_factor.x - center_offsets_x;
-	const float3 theta_x = 2 * pi * x_adj;
+    const float3 theta_x = 2 * pi * x_adj;
 
-    const float3 texcoord_x_periodic1 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2) + 1);
-    const float3 texcoord_x_periodic2 = shadow_norm_phosphor_rad * abs(-abs(1 - fmod(3*x_adj, 1.0) * 2));
+    const float3 texcoord_x_periodic1 = shadow_norm_phosphor_rad * triangle_wave(x_adj * 3 - 0.5, 1.0);
+    const float3 texcoord_x_periodic2 = shadow_norm_phosphor_rad * triangle_wave(x_adj * 3, 1.0);
     const float3 ty1 = sqrt(
         shadow_norm_phosphor_rad*shadow_norm_phosphor_rad - texcoord_x_periodic1*texcoord_x_periodic1
     );
@@ -381,7 +567,80 @@ float3 get_phosphor_intensity_shadow(
 
     const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, shadow_py1), shadow_q.y);
     const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, shadow_py2), shadow_q.y);
-    return saturate(f_x1 * f_y1) + saturate(f_x2 * f_y2);
+    return f_x1 * f_y1 + f_x2 * f_y2;
+}
+
+float3 get_phosphor_intensity_grille_small(
+    const float2 texcoord,
+    const float2 viewport_frequency_factor,
+    const float2 slot_pq_x
+) {
+    float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        smallgrille_norm_center_offsets_x.grg : smallgrille_norm_center_offsets_x;
+    
+    const float3 theta_x = 2 * pi * (texcoord.x * viewport_frequency_factor.x - center_offsets_x);
+    const float3 alpha_x = cos(theta_x) * 0.5 + 0.5;
+
+    const float3 f_x = 1 - pow(1 - pow(alpha_x, slot_pq_x.x), slot_pq_x.y);
+
+    // Taking a sqrt here helps hide the gaps between the pixels when the triad size is small
+    return sqrt(f_x);
+}
+
+float3 get_phosphor_intensity_slot_small(
+    const float2 texcoord,
+    const float2 viewport_frequency_factor,
+    const float2 slot_pq_x,
+    const float2 slot_pq_y
+) {
+    float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        smallslot_norm_center_offsets_x.grg : smallslot_norm_center_offsets_x;
+    float3 center_offsets_y1 = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        smallslot_norm_center_offsets_y1.grg : smallslot_norm_center_offsets_y1;
+    float3 center_offsets_y2 = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        smallslot_norm_center_offsets_y2.grg : smallslot_norm_center_offsets_y2;
+    
+    const float3 theta_x = pi * (texcoord.x * viewport_frequency_factor.x - center_offsets_x);
+    const float3 alpha_x1 = cos(theta_x) * 0.5 + 0.5;
+    const float3 alpha_x2 = cos(theta_x + pi) * 0.5 + 0.5;
+    
+    const float3 theta_y1 = 2 * pi * (texcoord.y * viewport_frequency_factor.y - center_offsets_y1);
+    const float3 alpha_y1 = cos(theta_y1) * 0.5 + 0.5;
+    const float3 theta_y2 = 2 * pi * (texcoord.y * viewport_frequency_factor.y - center_offsets_y2);
+    const float3 alpha_y2 = cos(theta_y2) * 0.5 + 0.5;
+
+    const float3 f_x1 = 1 - pow(1 - pow(alpha_x1, slot_pq_x.x), slot_pq_x.y);
+    const float3 f_x2 = 1 - pow(1 - pow(alpha_x2, slot_pq_x.x), slot_pq_x.y);
+    const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, slot_pq_y.x), slot_pq_y.y);
+    const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, slot_pq_y.x), slot_pq_y.y);
+
+    // Taking a sqrt here helps hide the gaps between the pixels when the triad size is small
+    return sqrt(f_x1 * f_y1 + f_x2 * f_y2);
+}
+
+float3 get_phosphor_intensity_shadow_small(
+    const float2 texcoord,
+    const float2 viewport_frequency_factor,
+    const float2 shadow_pq_x,
+    const float2 shadow_pq_y
+) {
+    float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        smallshadow_norm_center_offsets_x.grg : smallshadow_norm_center_offsets_x;
+    float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
+        smallshadow_norm_center_offsets_y.grg : smallshadow_norm_center_offsets_y;
+    
+    const float3 alpha_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 1.0);
+    const float3 alpha_x2 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x + 0.5, 1.0);
+    const float3 alpha_y1 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y, 0.5);
+    const float3 alpha_y2 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y + 1, 0.5);
+
+    const float3 f_x1 = 1 - pow(1 - pow(alpha_x1, shadow_pq_x.x), shadow_pq_x.y);
+    const float3 f_x2 = 1 - pow(1 - pow(alpha_x2, shadow_pq_x.x), shadow_pq_x.y);
+    const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, shadow_pq_y.x), shadow_pq_y.y);
+    const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, shadow_pq_y.x), shadow_pq_y.y);
+
+    // Taking a sqrt here helps hide the gaps between the pixels when the triad size is small
+    return sqrt(f_x1 * f_y1 + f_x2 * f_y2);
 }
 
 #endif  //  _PHOSHOR_MASK_CALCULATIONS_H

@@ -48,8 +48,36 @@ void generatePhosphorMaskVS(
     viewport_frequency_factor = calc_phosphor_viewport_frequency_factor();
 
     // We don't alter these based on screen rotation because they're independent of screen dimensions.
-    const float edge_norm_tx = (mask_type == 0) ? grille_edge_norm_t : ((mask_type == 1) ? slot_edge_norm_tx*0.5 : shadow_edge_norm_tx);
-    const float edge_norm_ty = (mask_type == 1) ? slot_edge_norm_ty : shadow_edge_norm_ty*0.5;
+    float edge_norm_tx;
+    float edge_norm_ty;
+    [flatten]
+    switch (mask_type) {
+        case 0:
+            edge_norm_tx = grille_edge_norm_t;
+            break;
+        case 1:
+            edge_norm_tx = slot_edge_norm_tx;
+            edge_norm_ty = slot_edge_norm_ty;
+            break;
+        case 2:
+            edge_norm_tx = shadow_edge_norm_tx;
+            edge_norm_ty = shadow_edge_norm_ty;
+            break;
+        case 3:
+            edge_norm_tx = smallgrille_edge_norm_t;
+            break;
+        case 4:
+            edge_norm_tx = smallslot_edge_norm_tx;
+            edge_norm_ty = smallslot_edge_norm_ty;
+            break;
+        default:
+            edge_norm_tx = smallshadow_edge_norm_tx;
+            edge_norm_ty = smallshadow_edge_norm_ty;
+            break;
+    }
+    
+    // const float edge_norm_tx = (mask_type == 0) ? grille_edge_norm_t : ((mask_type == 1) ? slot_edge_norm_tx*0.5 : shadow_edge_norm_tx);
+    // const float edge_norm_ty = (mask_type == 1) ? slot_edge_norm_ty : shadow_edge_norm_ty*0.5;
 
     const float mask_p_x = calculate_phosphor_p_value(edge_norm_tx, phosphor_thickness.x, phosphor_sharpness.x);
     const float mask_p_y = calculate_phosphor_p_value(edge_norm_ty, phosphor_thickness.y, phosphor_sharpness.y);
@@ -66,6 +94,8 @@ void generatePhosphorMaskPS(
     
     out float4 color : SV_Target
 ) {
+	texcoord += phosphor_offset * rcp(content_size);
+    
     [branch]
     if (geom_rotation_mode == 1 || geom_rotation_mode == 3) {
         texcoord = texcoord.yx;
@@ -89,10 +119,33 @@ void generatePhosphorMaskPS(
             mask_pq_y
         );
     }
-    else {
+    else if (mask_type == 2) {
         phosphor_color = get_phosphor_intensity_shadow(
             texcoord,
             viewport_frequency_factor
+        );
+    }
+    else if (mask_type == 3) {
+        phosphor_color = get_phosphor_intensity_grille_small(
+            texcoord,
+            viewport_frequency_factor,
+            mask_pq_x
+        );
+    }
+    else if (mask_type == 4) {
+        phosphor_color = get_phosphor_intensity_slot_small(
+            texcoord,
+            viewport_frequency_factor,
+            mask_pq_x,
+            mask_pq_y
+        );
+    }
+    else {
+        phosphor_color = get_phosphor_intensity_shadow_small(
+            texcoord,
+            viewport_frequency_factor,
+            mask_pq_x,
+            mask_pq_y
         );
     }
 

@@ -204,7 +204,10 @@ uniform int mask_type <
         ui_type    = "combo";
         ui_items   = "Grille\0"
                     "Slot\0"
-                    "Shadow\0";
+                    "Shadow\0"
+                    "LowRes Grille\0"
+                    "LowRes Slot\0"
+                    "LowRes Shadow\0";
 
     ui_category = "Phosphor Mask";
     ui_category_closed = true;
@@ -260,7 +263,7 @@ uniform float scale_triad_height<
 > = 1.0;
 
 uniform float2 phosphor_thickness <
-        ui_label   = "Phosphor Thickness";
+        ui_label   = "Phosphor Thickness XY";
         ui_tooltip = "Makes the phosphors appear thicker in each direction";
         ui_type    = "drag";
         ui_min     = 0.01;
@@ -272,7 +275,7 @@ uniform float2 phosphor_thickness <
 > = 0.2;
 
 uniform float2 phosphor_sharpness <
-        ui_label   = "Phosphor Sharpness";
+        ui_label   = "Phosphor Sharpness XY";
         ui_tooltip = "Makes the phosphors appear more crisp in each direction";
         ui_type    = "drag";
         ui_min     = 0.01;
@@ -283,6 +286,17 @@ uniform float2 phosphor_sharpness <
     ui_category = "Phosphor Mask";
 > = 50;
 
+uniform float2 phosphor_offset <
+        ui_label   = "Phosphor Offset XY";
+        ui_tooltip = "Very slightly shifts the phosphor mask. Can help with subpixel alignment.";
+        ui_type    = "drag";
+        ui_min     = -1;
+        ui_max     = 1;
+        ui_step    = 0.01;
+        hidden     = !ADVANCED_SETTINGS;
+
+    ui_category = "Phosphor Mask";
+> = 0;
 
 // static const uint pixel_grid_mode = 0;
 // static const float2 pixel_size = 1;
@@ -852,9 +866,32 @@ float get_mask_amplify()
     static const float mask_grille_amplify = 1.0/mask_grille_avg_color;
     static const float mask_slot_amplify = 1.0/mask_slot_avg_color;
     static const float mask_shadow_amplify = 1.0/mask_shadow_avg_color;
-    return mask_type < 0.5 ? mask_grille_amplify :
-        mask_type < 1.5 ? mask_slot_amplify :
-        mask_shadow_amplify;
+
+    float mask_amplify;
+    [flatten]
+    switch (mask_type) {
+        case 0:
+            mask_amplify = mask_grille_amplify;
+            break;
+        case 1:
+            mask_amplify = mask_slot_amplify;
+            break;
+        case 2:
+            mask_amplify = mask_shadow_amplify;
+            break;
+        case 3:
+            mask_amplify = mask_grille_amplify;
+            break;
+        case 4:
+            mask_amplify = mask_slot_amplify;
+            break;
+        default:
+            mask_amplify = mask_shadow_amplify;
+            break;
+                    
+    }
+    
+    return mask_amplify;
 }
 
 #endif  //  _BIND_SHADER_PARAMS_H
