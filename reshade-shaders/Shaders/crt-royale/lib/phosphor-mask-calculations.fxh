@@ -25,49 +25,9 @@
 
 
 /*
-SLOT
-    p_height:   60 + 6
-    p_width:    12 + 6
-    p_gap:      2
-    horiz_gap:  6
-    vert_gap:   6
-
-    pattern: RGB
-    top-left: middle of horiz_gap and vert_gap
-
-
-GRILLE
-    p_width:    13 + 4
-    p_gap:      3
-    horiz_gap:  6
-
-    pattern: RGB
-    top-left: middle of horiz_gap
-
-
-SHADOW
-    p_diam:   16 + 6
-    p_gap:      0
-    vert_gap:   0
-    
-    pattern: GBR -> RGB
-    top-left: middle of green dot
-
-
-SHADOW EDP = SHADOW w/ 50% vertical stretch
-    p_width:    16 + 6
-    p_height:   24 + 8
-    p_gap:      0
-    vert_gap:   0
-    
-    pattern: GBR -> RGB
-    top-left: middle of green dot
-*/
-
-/*
  *  Our goal is to use arithmetic to generate the phosphor mask.
  *  Phosphor masks are regular patterns, so we want something periodic.
- *  We want to avoid modular arithmetic because it tends to be inconsistent.
+ *  We need to avoid integer arithmetic because it tends to cause rounding errors.
  *  
  *  For all masks, we want to approximate a pulse wave in at least one dimension. This pulse wave
  *  will have narrow peaks, wide troughs, and constant periodicity.
@@ -75,44 +35,45 @@ SHADOW EDP = SHADOW w/ 50% vertical stretch
  *    SLOT and SHADOW will likely have a superposition of two out-of-phase pulse waves along each axis.
  *      For SHADOW, the width of the peaks will vary such that they generate ellipsoids on the screen.
  *
- *  I've found that `f(t) = 1 - (1 - (0.5 + 0.5 cos(2 pi (t n - o)))^p)^q` can approximate a pulse wave well.
- *    t is the input coordinate in the domain [0, 1].
- *      t = 0 is the left side of the screen, and t = 1 is the right side.
- *    n is the desired number of triads to render along this axis.
- *      Because t is in [0, 1], this is also the periodicity of the pulse wave.
- *    o is the horizontal offset along this axis, normalized to raw_offset / raw_triad_width.
- *      We have `tn - o` instead of `n (t - o)` because t in [0, 1] spans the entire screen, while o in [0, 1] only spans
- *      one triad. Multiplying t by n fixes this mismatch.
- *    p primarily controls the width of troughs, and q primarily the width of peaks.
- *      Large values of p and q produce better approximations of a square wave, but also tend to produce narrower peaks.
- *      In the limit of p and q, f(t) becomes a periodic delta function with frequency 1/s.
+ *  We can get a periodic function by starting with a triangle wave: T(t, f) = abs(1 - 2*frac(t * f)).
+ *    This function gives us a triangle wave with f cycles in the domain [0, 1].
+ *    Note that T(0, f) = 1.
  *
- *    This function works by scaling cos(x) to the range [0, 1], so raising it to a large power flattens out the troughs
- *    and sharpens the peaks. Subtracting this result from 1 lets us flip around to flattening the peaks and
- *    sharpening the troughs. We subtract from 1 again to flip back to our original orientation.
+ *  Then we can compose this with a sigmoid curve to squish the triangle wave into a pulse wave.
+ *     P(s, p, q) = exp(q s - q/2) / (exp(q s - q/2) + exp(-p))
+ *     s(t, f, o) = T(t*f - o, 1)
  *
- *  It's impractical to describe the effects of p and q analytically, but we can define p in terms of q if we are
- *  willing to choose a pair (t0, y0) that satisfies f(t0) = y0. This equates to us deciding the intensity that denotes the
- *  approximate edge of a phosphor and the width of the phosphor in this axis, which is precisely what we need.
- *    p = log(1 - (1 - y0)^(1/q)) / log(0.5 + 0.5 cos(2 pi t))
+ *     f is the number of pulses to render along the given axis.
+ *     o is the channel's horizontal ofset along the given axis, normalized via the quotient raw_offset / raw_triad width.
+ *     p and q control how closely P resembles an ideal pulse wave and also how wide the peaks and troughs are.
  *
- *    For this step, we can use o = 0 to simplify the math and make the function more user-friendly.
- *    Using n = 1 makes this work significantly better. Using n > 1 produces peaks
- *    that are too wide when we plug p back into f(t). I don't know why.
+ *  The interaction between p and q is rather complicated and difficult to describe, so they're not a good pair
+ *  of parameters for users. But we have the info necessary to solve for p in terms of q.
+ *    We know the width of a phosphor and the width of a triad, and we know the domain and range of P.
+ *    We can choose a coordinate (t0, y0) that will denote the edge of the phosphor.
+ *      Note that y0 = P(t0, p, q) for some p and q.
+ *    We let t0 = raw_phosphor_width / raw_triad_width, since we need to respect the shape of the phosphor.
+ *    We let the user define P(t0).
+ *      Technically, this means the user is defining the brightness of the phosphor's furthest edge.
+ *      Visually, this looks like the user is defining the width of the phosphor.
+ *      We'll call this the Phosphor Thickness.
+ *   We let the user define q.
+ *      Technically, this means the user is defining the squareness of the pulse wave.
+ *      Visually, this looks like the user is defining the sharpness of the phosphor.
+ *      We'll call this the Phosphor Sharpness.
+ *
+ *   We can solve for p in terms of q very efficiently.
+ *     p = (ln(y0 / (1 - y0)) - q) / (0.5 - 2 t0)
+ *
+ *     Note that, if you work through the algebra, you get a denominator of (t0 - 0.5).
+ *       Using (0.5 - 2 t0) actually works better. It also matches up when you try plotting P and (t0, y0).
  *
  *  For the GRILLE and SLOT masks, we can compute p once and recycle it.
  *  For the SHADOW mask, we can either compute p on each iteration or find a way to interpolate between min_p and max_p.
  *
- *  Technically you could also use the form g(t) = (1 - (0.5 - 0.5 cos(t))^p)^q. This would save a couple subtraction
- *  operatons, but the resulting square wave approximation isn't quite as good. It ends up having more rounded peaks.
- *  In order to achieve g(t) ~= f(t), you have to choose q_g ~= q_f^2. This is because our "flattening" operations
- *  are not associative.
- *
- *  
- *
- *  One might expect it'd be way better to use a clamped triangle wave rather than an exponentiated cosine wave. 
+ *  One might expect it'd be way better to use a clamped triangle wave rather than a sigmoid or exponentiated cosine wave. 
  *  As far as I can tell, this ends up being incorrect surprisingly enough. Although it's a good bit faster,
- *  it has terrible aliasing artifacts at small scales. The cosine implementation is slower, but it produces
+ *  it has terrible aliasing artifacts at small scales. The other implementations are slower, but they produce
  *  evenly-sized RGB phosphors for a variety of configurations even when the triad width is 3 pixels. At that
  *  scale, the triangle wave approach produces triads where one of the phosphors is thicker than the others.
  *  Taking into account the compute_mask_factor trick, the triangle wave approach would be a negligible
@@ -454,16 +415,14 @@ float2 calc_phosphor_viewport_frequency_factor() {
  *  We have a pulse wave f(t0_norm, p, q) = y0 with unknown p.
  *  This function solves for p.
  */
-float calculate_phosphor_p_value(
-    const float t0_norm,
-    const float y0,
-    const float q
-) {
-    static const float n = log(1 - pow(1 - y0, 1/q));
-    static const float d = log(0.5 + 0.5 * cos(t0_norm * 2 * pi));
+#define calculate_phosphor_p_value(t0_norm, y0, q) (log((y0) * rcp(1 - (y0))) - (q) * (0.5 - 2*(t0_norm)))
 
-    return n / d;
-}
+/*
+ *  If we don't rescale the phosphor_thickness parameter, it has a logarithmic effect on the phosphor shape.
+ *  Rescaling it makes it look closer to a linear effect.
+ */
+#define linearize_phosphor_thickness_param(p) (1 - exp(-(p)))
+
 
 /*
  *  Generates a grille mask with the desired resolution and sharpness.
@@ -476,10 +435,9 @@ float3 get_phosphor_intensity_grille(
     float3 center_offsets = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         grille_norm_center_offsets.bgr : grille_norm_center_offsets;
 
-    const float3 theta = 2 * pi * (texcoord.x * viewport_frequency_factor.x - center_offsets);
-    const float3 alpha = cos(theta) * 0.5 + 0.5;
-
-    return 1 - pow(1 - pow(alpha, grille_pq.x), grille_pq.y);
+    float3 theta = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets, 1);
+    float3 alpha = exp((theta - 0.5) * grille_pq.y);
+    return alpha * rcp(alpha + grille_pq.x);
 }
 
 
@@ -496,21 +454,24 @@ float3 get_phosphor_intensity_slot(
         slot_norm_center_offsets_x.bgr : slot_norm_center_offsets_x;
     float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         slot_norm_center_offsets_y.bgr : slot_norm_center_offsets_y;
-    
-    const float3 theta_x = pi * (texcoord.x * viewport_frequency_factor.x - center_offsets_x);
-    const float3 alpha_x1 = cos(theta_x) * 0.5 + 0.5;
-    const float3 alpha_x2 = cos(theta_x + pi) * 0.5 + 0.5;
-    
-    const float3 theta_y = 2 * pi * (texcoord.y * viewport_frequency_factor.y - center_offsets_y);
-    const float3 alpha_y1 = cos(theta_y) * 0.5 + 0.5;
-    const float3 alpha_y2 = cos(theta_y + pi) * 0.5 + 0.5;
 
-    const float3 f_x1 = 1 - pow(1 - pow(alpha_x1, slot_pq_x.x), slot_pq_x.y);
-    const float3 f_x2 = 1 - pow(1 - pow(alpha_x2, slot_pq_x.x), slot_pq_x.y);
-    const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, slot_pq_y.x), slot_pq_y.y);
-    const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, slot_pq_y.x), slot_pq_y.y);
+    float3 theta_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 0.5);
+    float3 alpha_x1 = exp((theta_x1 - 0.5) * slot_pq_x.y);
+    alpha_x1 *= rcp(alpha_x1 + slot_pq_x.x);
+    
+    float3 theta_x2 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x + 1, 0.5);
+    float3 alpha_x2 = exp((theta_x2 - 0.5) * slot_pq_x.y);
+    alpha_x2 *= rcp(alpha_x2 + slot_pq_x.x);
 
-    return f_x1 * f_y1 + f_x2 * f_y2;
+    float3 theta_y1 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y, 1);
+    float3 alpha_y1 = exp((theta_y1 - 0.5) * slot_pq_y.y);
+    alpha_y1 *= rcp(alpha_y1 + slot_pq_y.x);
+    
+    float3 theta_y2 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y + 0.5, 1);
+    float3 alpha_y2 = exp((theta_y2 - 0.5) * slot_pq_y.y);
+    alpha_y2 *= rcp(alpha_y2 + slot_pq_y.x);
+
+    return alpha_x1 * alpha_y1 + alpha_x2 * alpha_y2;
 }
 
 /*
@@ -518,17 +479,18 @@ float3 get_phosphor_intensity_slot(
  */
 float3 get_phosphor_intensity_shadow(
     const float2 texcoord,
-    const float2 viewport_frequency_factor
+    const float2 viewport_frequency_factor,
+    const float2 shadow_q
 ) {
     float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         shadow_norm_center_offsets_x.bgr : shadow_norm_center_offsets_x;
     float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         shadow_norm_center_offsets_y.bgr : shadow_norm_center_offsets_y;
 
-    const float2 shadow_q = phosphor_sharpness;
+    const float2 thickness_scaled = linearize_phosphor_thickness_param(phosphor_thickness);
 
-    const float3 x_adj = texcoord.x * viewport_frequency_factor.x - center_offsets_x;
-    const float3 theta_x = 2 * pi * x_adj;
+    const float3 x_adj = texcoord.x * viewport_frequency_factor.x - center_offsets_x;    
+    const float3 y_adj = texcoord.y * viewport_frequency_factor.y - center_offsets_y;
 
     const float3 texcoord_x_periodic1 = shadow_norm_phosphor_rad * triangle_wave(x_adj * 3 - 0.5, 1.0);
     const float3 texcoord_x_periodic2 = shadow_norm_phosphor_rad * triangle_wave(x_adj * 3, 1.0);
@@ -539,52 +501,43 @@ float3 get_phosphor_intensity_shadow(
         shadow_norm_phosphor_rad*shadow_norm_phosphor_rad - texcoord_x_periodic2*texcoord_x_periodic2
     );
 
-    const float shadow_px = (
-        log(1 - pow(1 - phosphor_thickness.x, 1/shadow_q.x)) /
-        log(0.5 + 0.5 * cos(shadow_edge_norm_tx * 2 * pi))
-    );
-    const float3 alpha_x1 = cos(theta_x) * 0.5 + 0.5;
-    const float3 alpha_x2 = cos(theta_x + pi) * 0.5 + 0.5;
-    const float3 f_x1 = 1 - pow(1 - pow(alpha_x1, shadow_px), shadow_q.x);
-    const float3 f_x2 = 1 - pow(1 - pow(alpha_x2, shadow_px), shadow_q.x);
+    const float shadow_px = exp(-calculate_phosphor_p_value(shadow_edge_norm_tx, thickness_scaled.x, shadow_q.x));
+    const float3 shadow_py1 = exp(-calculate_phosphor_p_value(ty1 * 0.5 * rcp(shadow_aspect_ratio), thickness_scaled.y, shadow_q.y));
+    const float3 shadow_py2 = exp(-calculate_phosphor_p_value(ty2 * 0.5 * rcp(shadow_aspect_ratio), thickness_scaled.y, shadow_q.y));
 
-    const float3 shadow_py_gamma1 = 0.5 + 0.5 * cos(ty1 * pi / shadow_aspect_ratio);
-    const float3 shadow_py_gamma2 = 0.5 + 0.5 * cos(ty2 * pi / shadow_aspect_ratio);
-    const float3 shadow_py1 = (
-        log(1 - pow(1 - phosphor_thickness.y, 1/shadow_q.y)) /
-        log(shadow_py_gamma1)
-    );
-    const float3 shadow_py2 = (
-        log(1 - pow(1 - phosphor_thickness.y, 1/shadow_q.y)) /
-        log(shadow_py_gamma2)
-    );
+    float3 theta_x1 = triangle_wave(x_adj, 1);
+    float3 alpha_x1 = exp((theta_x1 - 0.5) * shadow_q.x);
+    alpha_x1 *= rcp(alpha_x1 + shadow_px);
+    
+    float3 theta_x2 = triangle_wave(x_adj + 0.5, 1);
+    float3 alpha_x2 = exp((theta_x2 - 0.5) * shadow_q.x);
+    alpha_x2 *= rcp(alpha_x2 + shadow_px);
+    
+    float3 theta_y1 = triangle_wave(y_adj, 0.5);
+    float3 alpha_y1 = exp((theta_y1 - 0.5) * shadow_q.y);
+    alpha_y1 *= rcp(alpha_y1 + shadow_py1);
+    
+    float3 theta_y2 = triangle_wave(y_adj + 1, 0.5);
+    float3 alpha_y2 = exp((theta_y2 - 0.5) * shadow_q.y);
+    alpha_y2 *= rcp(alpha_y2 + shadow_py2);
 
-    const float3 theta_y = pi * (
-        texcoord.y * viewport_frequency_factor.y - center_offsets_y
-    );
-    const float3 alpha_y1 = cos(theta_y) * 0.5 + 0.5;
-    const float3 alpha_y2 = cos(theta_y + pi) * 0.5 + 0.5;
-
-    const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, shadow_py1), shadow_q.y);
-    const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, shadow_py2), shadow_q.y);
-    return f_x1 * f_y1 + f_x2 * f_y2;
+    return alpha_x1 * alpha_y1 + alpha_x2 * alpha_y2;
 }
 
 float3 get_phosphor_intensity_grille_small(
     const float2 texcoord,
     const float2 viewport_frequency_factor,
-    const float2 slot_pq_x
+    const float2 grille_pq_x
 ) {
     float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         smallgrille_norm_center_offsets_x.grg : smallgrille_norm_center_offsets_x;
     
-    const float3 theta_x = 2 * pi * (texcoord.x * viewport_frequency_factor.x - center_offsets_x);
-    const float3 alpha_x = cos(theta_x) * 0.5 + 0.5;
-
-    const float3 f_x = 1 - pow(1 - pow(alpha_x, slot_pq_x.x), slot_pq_x.y);
+    float3 theta = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 1);
+    float3 alpha = exp((theta - 0.5) * grille_pq_x.y);
+    alpha *= rcp(alpha + grille_pq_x.x);
 
     // Taking a sqrt here helps hide the gaps between the pixels when the triad size is small
-    return sqrt(f_x);
+    return sqrt(alpha);
 }
 
 float3 get_phosphor_intensity_slot_small(
@@ -599,23 +552,25 @@ float3 get_phosphor_intensity_slot_small(
         smallslot_norm_center_offsets_y1.grg : smallslot_norm_center_offsets_y1;
     float3 center_offsets_y2 = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         smallslot_norm_center_offsets_y2.grg : smallslot_norm_center_offsets_y2;
-    
-    const float3 theta_x = pi * (texcoord.x * viewport_frequency_factor.x - center_offsets_x);
-    const float3 alpha_x1 = cos(theta_x) * 0.5 + 0.5;
-    const float3 alpha_x2 = cos(theta_x + pi) * 0.5 + 0.5;
-    
-    const float3 theta_y1 = 2 * pi * (texcoord.y * viewport_frequency_factor.y - center_offsets_y1);
-    const float3 alpha_y1 = cos(theta_y1) * 0.5 + 0.5;
-    const float3 theta_y2 = 2 * pi * (texcoord.y * viewport_frequency_factor.y - center_offsets_y2);
-    const float3 alpha_y2 = cos(theta_y2) * 0.5 + 0.5;
 
-    const float3 f_x1 = 1 - pow(1 - pow(alpha_x1, slot_pq_x.x), slot_pq_x.y);
-    const float3 f_x2 = 1 - pow(1 - pow(alpha_x2, slot_pq_x.x), slot_pq_x.y);
-    const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, slot_pq_y.x), slot_pq_y.y);
-    const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, slot_pq_y.x), slot_pq_y.y);
+    float3 theta_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 0.5);
+    float3 alpha_x1 = exp((theta_x1 - 0.5) * slot_pq_x.y);
+    alpha_x1 *= rcp(alpha_x1 + slot_pq_x.x);
+    
+    float3 theta_x2 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x + 1, 0.5);
+    float3 alpha_x2 = exp((theta_x2 - 0.5) * slot_pq_x.y);
+    alpha_x2 *= rcp(alpha_x2 + slot_pq_x.x);
+
+    float3 theta_y1 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y1, 1);
+    float3 alpha_y1 = exp((theta_y1 - 0.5) * slot_pq_y.y);
+    alpha_y1 *= rcp(alpha_y1 + slot_pq_y.x);
+    
+    float3 theta_y2 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y2 + 0.5, 1);
+    float3 alpha_y2 = exp((theta_y2 - 0.5) * slot_pq_y.y);
+    alpha_y2 *= rcp(alpha_y2 + slot_pq_y.x);
 
     // Taking a sqrt here helps hide the gaps between the pixels when the triad size is small
-    return sqrt(f_x1 * f_y1 + f_x2 * f_y2);
+    return (alpha_x1 * alpha_y1 + alpha_x2 * alpha_y2);
 }
 
 float3 get_phosphor_intensity_shadow_small(
@@ -629,18 +584,24 @@ float3 get_phosphor_intensity_shadow_small(
     float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         smallshadow_norm_center_offsets_y.grg : smallshadow_norm_center_offsets_y;
     
-    const float3 alpha_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 1.0);
-    const float3 alpha_x2 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x + 0.5, 1.0);
-    const float3 alpha_y1 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y, 0.5);
-    const float3 alpha_y2 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y + 1, 0.5);
+    float3 theta_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 1);
+    float3 alpha_x1 = exp((theta_x1 - 0.5) * shadow_pq_x.y);
+    alpha_x1 *= rcp(alpha_x1 + shadow_pq_x.x);
+    
+    float3 theta_x2 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x + 0.5, 1);
+    float3 alpha_x2 = exp((theta_x2 - 0.5) * shadow_pq_x.y);
+    alpha_x2 *= rcp(alpha_x2 + shadow_pq_x.x);
 
-    const float3 f_x1 = 1 - pow(1 - pow(alpha_x1, shadow_pq_x.x), shadow_pq_x.y);
-    const float3 f_x2 = 1 - pow(1 - pow(alpha_x2, shadow_pq_x.x), shadow_pq_x.y);
-    const float3 f_y1 = 1 - pow(1 - pow(alpha_y1, shadow_pq_y.x), shadow_pq_y.y);
-    const float3 f_y2 = 1 - pow(1 - pow(alpha_y2, shadow_pq_y.x), shadow_pq_y.y);
+    float3 theta_y1 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y, 0.5);
+    float3 alpha_y1 = exp((theta_y1 - 0.5) * shadow_pq_y.y);
+    alpha_y1 *= rcp(alpha_y1 + shadow_pq_y.x);
+    
+    float3 theta_y2 = triangle_wave(texcoord.y * viewport_frequency_factor.y - center_offsets_y + 1, 0.5);
+    float3 alpha_y2 = exp((theta_y2 - 0.5) * shadow_pq_y.y);
+    alpha_y2 *= rcp(alpha_y2 + shadow_pq_y.x);
 
     // Taking a sqrt here helps hide the gaps between the pixels when the triad size is small
-    return sqrt(f_x1 * f_y1 + f_x2 * f_y2);
+    return sqrt(alpha_x1 * alpha_y1 + alpha_x2 * alpha_y2);
 }
 
 #endif  //  _PHOSHOR_MASK_CALCULATIONS_H

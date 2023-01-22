@@ -30,6 +30,11 @@
 #include "shared-objects.fxh"
 
 
+// Split into 64 segments that overlap a little bit
+static const float num_segments = 64;
+static const float segment_offset = 0.015625;  // 1/64
+static const float segment_width = 0.0234375;  // 1/128
+
 void generatePhosphorMaskVS(
     in uint id : SV_VertexID,
 
@@ -39,11 +44,28 @@ void generatePhosphorMaskVS(
     out float2 mask_pq_x : TEXCOORD2,
     out float2 mask_pq_y : TEXCOORD3
 ) {
-    const float compute_mask_factor = frame_count % 60 == 0 || overlay_active > 0;
-    
-    texcoord.x = (id == 2) ? compute_mask_factor*2.0 : 0.0;
-    texcoord.y = (id == 1) ? 2.0 : 0.0;
-    position = float4(texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
+    const float screen_segment_idx = frame_count % num_segments;
+    const float left_coord = lerp(segment_offset * screen_segment_idx, 0, overlay_active > 0);
+    const float right_coord = lerp(left_coord + segment_width, 1, overlay_active > 0);
+    const float pos_center = 2 * (left_coord + 0.5 * segment_width - 0.5);
+    const float pos_left = lerp(pos_center - segment_width, -1, overlay_active > 0);
+    const float pos_right = lerp(pos_center + segment_width, 1, overlay_active > 0);
+
+    #if _DX9_ACTIVE
+        texcoord.x = (id == 1 || id == 3) ? right_coord : left_coord;
+        texcoord.y = (id > 1) ? 1 : 0;
+
+        position.x = (id == 1 || id == 3) ?  pos_right : pos_left;
+        position.y = (id > 1) ? -1 :  1;
+        position.zw = 1;
+    #else
+        texcoord.x = (id & 1) ? right_coord : left_coord;
+        texcoord.y = (id & 2) ? 1 : 0;
+
+        position.x = (id & 1) ?  pos_right : pos_left;
+        position.y = (id & 2) ? -1 :  1;
+        position.zw = 1;
+    #endif
 
     viewport_frequency_factor = calc_phosphor_viewport_frequency_factor();
 
@@ -76,11 +98,9 @@ void generatePhosphorMaskVS(
             break;
     }
     
-    // const float edge_norm_tx = (mask_type == 0) ? grille_edge_norm_t : ((mask_type == 1) ? slot_edge_norm_tx*0.5 : shadow_edge_norm_tx);
-    // const float edge_norm_ty = (mask_type == 1) ? slot_edge_norm_ty : shadow_edge_norm_ty*0.5;
-
-    const float mask_p_x = calculate_phosphor_p_value(edge_norm_tx, phosphor_thickness.x, phosphor_sharpness.x);
-    const float mask_p_y = calculate_phosphor_p_value(edge_norm_ty, phosphor_thickness.y, phosphor_sharpness.y);
+    const float2 thickness_scaled = linearize_phosphor_thickness_param(phosphor_thickness);
+    const float mask_p_x = exp(-calculate_phosphor_p_value(edge_norm_tx, thickness_scaled.x, phosphor_sharpness.x));
+    const float mask_p_y = exp(-calculate_phosphor_p_value(edge_norm_ty, thickness_scaled.y, phosphor_sharpness.y));
     mask_pq_x = float2(mask_p_x, phosphor_sharpness.x);
     mask_pq_y = float2(mask_p_y, phosphor_sharpness.y);
 }
@@ -95,7 +115,7 @@ void generatePhosphorMaskPS(
     out float4 color : SV_Target
 ) {
 	texcoord += phosphor_offset * rcp(content_size);
-    
+
     [branch]
     if (geom_rotation_mode == 1 || geom_rotation_mode == 3) {
         texcoord = texcoord.yx;
@@ -122,7 +142,8 @@ void generatePhosphorMaskPS(
     else if (mask_type == 2) {
         phosphor_color = get_phosphor_intensity_shadow(
             texcoord,
-            viewport_frequency_factor
+            viewport_frequency_factor,
+            float2(mask_pq_x.y, mask_pq_y.y)
         );
     }
     else if (mask_type == 3) {

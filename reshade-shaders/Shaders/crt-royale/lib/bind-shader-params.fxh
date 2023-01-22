@@ -278,9 +278,9 @@ uniform float2 phosphor_sharpness <
         ui_label   = "Phosphor Sharpness XY";
         ui_tooltip = "Makes the phosphors appear more crisp in each direction";
         ui_type    = "drag";
-        ui_min     = 0.01;
-        ui_max     = 1000.0;
-        ui_step    = 0.01;
+        ui_min     = 1;
+        ui_max     = 100;
+        ui_step    = 1;
         hidden     = !ADVANCED_SETTINGS;
 
     ui_category = "Phosphor Mask";
