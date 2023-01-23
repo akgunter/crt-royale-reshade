@@ -114,8 +114,6 @@ void generatePhosphorMaskPS(
     
     out float4 color : SV_Target
 ) {
-	texcoord += phosphor_offset * rcp(content_size);
-
     [branch]
     if (geom_rotation_mode == 1 || geom_rotation_mode == 3) {
         texcoord = texcoord.yx;

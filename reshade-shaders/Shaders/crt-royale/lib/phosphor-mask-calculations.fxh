@@ -434,6 +434,8 @@ float3 get_phosphor_intensity_grille(
 ) {
     float3 center_offsets = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         grille_norm_center_offsets.bgr : grille_norm_center_offsets;
+        
+    center_offsets += phosphor_offset_x * 0.5;
 
     float3 theta = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets, 1);
     float3 alpha = exp((theta - 0.5) * grille_pq.y);
@@ -454,6 +456,9 @@ float3 get_phosphor_intensity_slot(
         slot_norm_center_offsets_x.bgr : slot_norm_center_offsets_x;
     float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         slot_norm_center_offsets_y.bgr : slot_norm_center_offsets_y;
+        
+    center_offsets_x += phosphor_offset_x * 0.5;
+    center_offsets_y += phosphor_offset_y * 0.5;
 
     float3 theta_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 0.5);
     float3 alpha_x1 = exp((theta_x1 - 0.5) * slot_pq_x.y);
@@ -486,6 +491,9 @@ float3 get_phosphor_intensity_shadow(
         shadow_norm_center_offsets_x.bgr : shadow_norm_center_offsets_x;
     float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         shadow_norm_center_offsets_y.bgr : shadow_norm_center_offsets_y;
+        
+    center_offsets_x += phosphor_offset_x * 0.5;
+    center_offsets_y += phosphor_offset_y * 0.5;
 
     const float2 thickness_scaled = linearize_phosphor_thickness_param(phosphor_thickness);
 
@@ -531,6 +539,8 @@ float3 get_phosphor_intensity_grille_small(
 ) {
     float3 center_offsets_x = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         smallgrille_norm_center_offsets_x.grg : smallgrille_norm_center_offsets_x;
+        
+    center_offsets_x += phosphor_offset_x * 0.5;
     
     float3 theta = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 1);
     float3 alpha = exp((theta - 0.5) * grille_pq_x.y);
@@ -552,6 +562,10 @@ float3 get_phosphor_intensity_slot_small(
         smallslot_norm_center_offsets_y1.grg : smallslot_norm_center_offsets_y1;
     float3 center_offsets_y2 = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         smallslot_norm_center_offsets_y2.grg : smallslot_norm_center_offsets_y2;
+        
+    center_offsets_x += phosphor_offset_x * 0.5;
+    center_offsets_y1 += phosphor_offset_y * 0.5;
+    center_offsets_y2 += phosphor_offset_y * 0.5;
 
     float3 theta_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 0.5);
     float3 alpha_x1 = exp((theta_x1 - 0.5) * slot_pq_x.y);
@@ -583,6 +597,9 @@ float3 get_phosphor_intensity_shadow_small(
         smallshadow_norm_center_offsets_x.grg : smallshadow_norm_center_offsets_x;
     float3 center_offsets_y = (geom_rotation_mode == 2 || geom_rotation_mode == 3) ?
         smallshadow_norm_center_offsets_y.grg : smallshadow_norm_center_offsets_y;
+
+    center_offsets_x += phosphor_offset_x * 0.5;
+    center_offsets_y += phosphor_offset_y * 0.5;
     
     float3 theta_x1 = triangle_wave(texcoord.x * viewport_frequency_factor.x - center_offsets_x, 1);
     float3 alpha_x1 = exp((theta_x1 - 0.5) * shadow_pq_x.y);

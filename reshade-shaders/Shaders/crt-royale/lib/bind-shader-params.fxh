@@ -256,9 +256,7 @@ uniform float scale_triad_height<
         ui_max     = 10.0;
         ui_step    = 0.001;
 
-    #if ADVANCED_SETTINGS
     ui_spacing = 2;
-    #endif
     ui_category = "Phosphor Mask";
 > = 1.0;
 
@@ -269,7 +267,7 @@ uniform float2 phosphor_thickness <
         ui_min     = 0.01;
         ui_max     = 0.99;
         ui_step    = 0.01;
-        hidden     = !ADVANCED_SETTINGS;
+        // hidden     = !ADVANCED_SETTINGS;
 
     ui_category = "Phosphor Mask";
 > = 0.2;
@@ -281,19 +279,32 @@ uniform float2 phosphor_sharpness <
         ui_min     = 1;
         ui_max     = 100;
         ui_step    = 1;
-        hidden     = !ADVANCED_SETTINGS;
+        // hidden     = !ADVANCED_SETTINGS;
 
     ui_category = "Phosphor Mask";
 > = 50;
 
-uniform float2 phosphor_offset <
-        ui_label   = "Phosphor Offset XY";
+uniform float3 phosphor_offset_x <
+        ui_label   = "Phosphor Offset RGB X";
         ui_tooltip = "Very slightly shifts the phosphor mask. Can help with subpixel alignment.";
         ui_type    = "drag";
         ui_min     = -1;
         ui_max     = 1;
         ui_step    = 0.01;
-        hidden     = !ADVANCED_SETTINGS;
+        // hidden     = !ADVANCED_SETTINGS;
+
+    ui_spacing = 2;
+    ui_category = "Phosphor Mask";
+> = 0;
+
+uniform float3 phosphor_offset_y <
+        ui_label   = "Phosphor Offset RGB Y";
+        ui_tooltip = "Very slightly shifts the phosphor mask. Can help with subpixel alignment.";
+        ui_type    = "drag";
+        ui_min     = -1;
+        ui_max     = 1;
+        ui_step    = 0.01;
+        // hidden     = !ADVANCED_SETTINGS;
 
     ui_category = "Phosphor Mask";
 > = 0;
