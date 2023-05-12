@@ -210,48 +210,34 @@ void simulateEletronBeamsPS(
     out float4 color : SV_Target
 ) {
     bool screen_is_landscape = geom_rotation_mode == 0 || geom_rotation_mode == 2;
-    float2 rotated_coord = lerp(texcoord.yx, texcoord, screen_is_landscape);
-    float scale = lerp(CONTENT_WIDTH, CONTENT_HEIGHT, screen_is_landscape);
+    float2 rotated_coord = screen_is_landscape ? texcoord : texcoord.yx;
+    float2 rotated_scanline_offset = scanline_offset * rcp(CONTENT_HEIGHT) * float2(0, 1);
+    rotated_scanline_offset = screen_is_landscape ? rotated_scanline_offset : rotated_scanline_offset.yx;
 
-    // InterpolationFieldData interpolation_data = precalc_interpolation_field_data(rotated_coord);
-
-    // // We have to subtract off the texcoord offset to make sure we're using domain [0, 1]
-    // const float color_corrected = rotated_coord.x - 1.0 / scale;
-
+    float scale = screen_is_landscape ? CONTENT_HEIGHT : CONTENT_WIDTH;
 
     InterpolationFieldData interpolation_data = calc_interpolation_field_data(rotated_coord, scale);
     const float ypos = (rotated_coord.y * interpolation_data.triangle_wave_freq + interpolation_data.field_parity) * 0.5;
 
-	float2 texcoord_scanlined = round_coord(texcoord, 0, runtime_bin_shapes.zw);
+	float2 texcoord_scanlined = use_fake_scanlines ? texcoord : round_coord(texcoord, 0, runtime_bin_shapes.zw);
+	texcoord_scanlined += rotated_scanline_offset;
 
     // Sample from the neighboring scanline when in the wrong field
     [branch]
-    if (interpolation_data.wrong_field && screen_is_landscape) {
+    if (interpolation_data.wrong_field && !use_fake_scanlines && screen_is_landscape) {
         const float coord_moved_up = texcoord_scanlined.y <= texcoord.y;
         const float direction = lerp(-1, 1, coord_moved_up);
         texcoord_scanlined.y += direction * scanline_thickness * rcp(content_size.y);
     }
-    else if (interpolation_data.wrong_field) {
+    else if (interpolation_data.wrong_field && !use_fake_scanlines) {
         const float coord_moved_up = texcoord_scanlined.x <= texcoord.x;
         const float direction = lerp(-1, 1, coord_moved_up);
         texcoord_scanlined.x += direction * scanline_thickness * rcp(content_size.x);
     }
-
-    // Now we apply pixellation and cropping
-    // float2 texcoord_pixellated = round_coord(
-    //     texcoord_scanlined,
-    //     pixel_grid_offset * rcp(content_size),
-	// 	runtime_bin_shapes.xy
-    // );
-    float2 texcoord_pixellated = texcoord_scanlined;
     
-    const float2 texcoord_uncropped = texcoord_pixellated;
     #if ENABLE_PREBLUR
-        // If the pre-blur pass ran, then it's already handled cropping.
-        // const float2 texcoord_uncropped = texcoord_pixellated;
         #define source_sampler samplerPreblurHoriz
     #else
-        // const float2 texcoord_uncropped = texcoord_pixellated * content_scale + content_offset;
         #define source_sampler ReShade::BackBuffer
     #endif
 	
@@ -259,7 +245,7 @@ void simulateEletronBeamsPS(
     if (beam_shape_mode < 3) {
 		const float4 scanline_color = tex2Dlod_linearize(
             source_sampler,
-            texcoord_uncropped,
+            texcoord_scanlined,
             get_input_gamma()
         );
 
@@ -275,17 +261,17 @@ void simulateEletronBeamsPS(
 
 		const float4 curr_scanline_color = tex2Dlod_linearize(
             source_sampler,
-            texcoord_uncropped,
+            texcoord_scanlined,
             get_input_gamma()
         );
         const float4 upper_scanline_color = tex2Dlod_linearize(
             source_sampler,
-            texcoord_uncropped - offset,
+            texcoord_scanlined - offset,
             get_input_gamma()
         );
         const float4 lower_scanline_color = tex2Dlod_linearize(
             source_sampler,
-            texcoord_uncropped + offset,
+            texcoord_scanlined + offset,
             get_input_gamma()
         );
 
@@ -330,13 +316,17 @@ void beamConvergencePS(
 
     out float4 color : SV_TARGET
 ) {
+    bool screen_is_landscape = geom_rotation_mode == 0 || geom_rotation_mode == 2;
+    float2 rotated_scanline_offset = scanline_offset * rcp(CONTENT_HEIGHT) * float2(0, 1);
+    rotated_scanline_offset = screen_is_landscape ? rotated_scanline_offset : rotated_scanline_offset.yx;
+
     // [branch]
     if (!run_convergence) {
-        color = tex2D(samplerElectronBeams, texcoord - float2(0, scanline_offset * rcp(content_size.y)));
+        color = tex2D(samplerElectronBeams, texcoord - rotated_scanline_offset);
     }
     else {
         const float3 offset_sample = sample_rgb_scanline(
-            samplerElectronBeams, texcoord - float2(0, scanline_offset * rcp(content_size.y)),
+            samplerElectronBeams, texcoord - rotated_scanline_offset,
             TEX_ELECTRONBEAMS_SIZE, rcp(TEX_ELECTRONBEAMS_SIZE)
         );
 

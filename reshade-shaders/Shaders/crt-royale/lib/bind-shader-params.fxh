@@ -372,7 +372,7 @@ uniform float2 pixel_grid_offset <
 */
 
 // ==== SCANLINES ====
-uniform uint scanline_thickness <
+uniform float scanline_thickness <
         #if !HIDE_HELP_SECTIONS
         ui_text    = "Configure the electron beams and interlacing.\n\n";
         #endif
@@ -381,7 +381,7 @@ uniform uint scanline_thickness <
         ui_type    = "slider";
         ui_min     = 1;
         ui_max     = 30;
-        ui_step    = 1;
+        ui_step    = 0.1;
 
     ui_category = "Scanlines";
     ui_category_closed = true;
@@ -393,7 +393,7 @@ uniform float scanline_offset <
         ui_type    = "slider";
         ui_min     = -30;
         ui_max     = 30;
-        ui_step    = 1;
+        ui_step    = 0.1;
         hidden     = !ADVANCED_SETTINGS;
 
     ui_category = "Scanlines";
@@ -411,8 +411,14 @@ uniform uint beam_shape_mode <
     ui_category = "Scanlines";
 > = 1;
 
+uniform bool use_fake_scanlines <
+		ui_label   = "Use Fake Scanlines";
+	
+	ui_category = "Scanlines";
+> = false;
 uniform bool enable_interlacing <
         ui_label   = "Enable Interlacing";
+        ui_tooltip = "For best results, match your display's refresh rate to your game's FPS and enable old-school vsync.";
 
     ui_spacing = 5;
     ui_category = "Scanlines";

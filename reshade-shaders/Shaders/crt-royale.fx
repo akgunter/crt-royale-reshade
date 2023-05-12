@@ -190,7 +190,6 @@ technique CRT_Royale
 			PixelShader = applyComputedPhosphorMaskPS;
 			
 			RenderTarget = texMaskedScanlines;
-			// RenderTarget = texGeometry;
 		}
 		pass brightpassPass
 		{

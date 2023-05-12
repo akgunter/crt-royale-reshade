@@ -74,10 +74,11 @@ InterpolationFieldData calc_interpolation_field_data(float2 texcoord, float scal
     InterpolationFieldData data;
     
 	data.triangle_wave_freq = scale * rcp(scanline_thickness);
-	// data.triangle_wave_freq = content_size.y * rcp(scanline_thickness);
 
+	// const bool frame_count_parity = (int(frame_count / 30) % 2 == 1) && (scanline_deinterlacing_mode != 1);
 	const bool frame_count_parity = (frame_count % 2 == 1) && (scanline_deinterlacing_mode != 1);
     data.field_parity = (frame_count_parity && !interlace_back_field_first) || (!frame_count_parity && interlace_back_field_first);
+    // data.field_parity = interlace_back_field_first;
 
 	const float field_wave = triangle_wave(texcoord.y + rcp(2*data.triangle_wave_freq), data.triangle_wave_freq * 0.5) * 2 - 1;
     data.scanline_parity = field_wave >= 0;

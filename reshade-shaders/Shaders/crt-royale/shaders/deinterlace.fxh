@@ -77,19 +77,16 @@ void deinterlacePS(
     
     out float4 color : SV_Target
 ) {
-    // float2 scanline_offset_norm;
-    // float triangle_wave_freq;
-    // bool field_parity;
-    // bool wrong_field;
-    // calc_wrong_field(texcoord, scanline_offset_norm, triangle_wave_freq, field_parity, wrong_field);
+    bool screen_is_landscape = geom_rotation_mode == 0 || geom_rotation_mode == 2;
+    v_step = screen_is_landscape ? v_step : v_step.yx;
+    float2 rotated_coord = screen_is_landscape ? texcoord : texcoord.yx;
+    float2 rotated_scanline_offset = scanline_offset * rcp(CONTENT_HEIGHT) * float2(0, 1);
+    rotated_scanline_offset = screen_is_landscape ? rotated_scanline_offset : rotated_scanline_offset.yx;
+
+    float scale = screen_is_landscape ? CONTENT_HEIGHT : CONTENT_WIDTH;
+
+    InterpolationFieldData interpolation_data = calc_interpolation_field_data(rotated_coord + rotated_scanline_offset, scale);
     
-    float2 rotated_coord = lerp(texcoord.yx, texcoord, geom_rotation_mode == 0 || geom_rotation_mode == 2);
-    float scale = lerp(CONTENT_WIDTH, CONTENT_HEIGHT, geom_rotation_mode == 0 || geom_rotation_mode == 2);
-
-    InterpolationFieldData interpolation_data = calc_interpolation_field_data(rotated_coord, scale);
-
-    // TODO: add scanline_parity to calc_wrong_field()
-
     // Weaving
     // Sample texcoord from this frame and the previous frame
     // If we're in the correct field, use the current sample
@@ -127,6 +124,7 @@ void deinterlacePS(
         const float4 avg_color = (cur_line_color + prev_line_color) / 2.0;
         const float4 raw_out_color = lerp(cur_line_color, avg_color, interpolation_data.wrong_field);
         color = encode_output(raw_out_color, deinterlacing_blend_gamma);
+        // color = tex2D_nograd(samplerBeamConvergence, texcoord + raw_offset);
     }
     // No temporal blending
     else {
